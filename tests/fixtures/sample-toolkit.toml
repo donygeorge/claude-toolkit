@@ -1,0 +1,51 @@
+[toolkit]
+remote_url = "git@github.com:user/my-project.git"
+
+[project]
+name = "my-project"
+version_file = "VERSION"
+stacks = ["python", "ios"]
+
+[hooks.setup]
+python_min_version = "3.11"
+required_tools = ["ruff", "jq"]
+optional_tools = ["axe"]
+security_tools = ["gitleaks", "semgrep"]
+
+[hooks.post-edit-lint.linters]
+[hooks.post-edit-lint.linters.py]
+cmd = ".venv/bin/ruff check"
+fmt = ".venv/bin/ruff format"
+fallback = "ruff"
+
+[hooks.task-completed.gates]
+[hooks.task-completed.gates.lint]
+glob = "*.py"
+cmd = ".venv/bin/ruff check --quiet"
+
+[hooks.task-completed.gates.tests]
+glob = "*.py"
+cmd = "make test-changed"
+timeout = 120
+
+[hooks.auto-approve]
+write_paths = ["*/app/*", "*/tests/*"]
+bash_commands = ["docker"]
+
+[hooks.subagent-context]
+critical_rules = ["Never use date.today()", "Plugin isolation"]
+available_tools = ["make", "ruff"]
+stack_info = "Python 3.11 + FastAPI"
+
+[hooks.compact]
+source_dirs = ["app", "lib"]
+source_extensions = ["*.py", "*.swift"]
+state_dirs = ["artifacts"]
+
+[hooks.session-end]
+agent_memory_max_lines = 300
+hook_log_max_lines = 1000
+
+[notifications]
+app_name = "My Project"
+permission_sound = "Ping"

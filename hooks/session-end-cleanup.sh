@@ -10,30 +10,30 @@ PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(cd "$(dirname "$0")/../.." && pwd)}"
 COMPACT_STATE="$PROJECT_DIR/.claude/compact-state.txt"
 [ -f "$COMPACT_STATE" ] && rm -f "$COMPACT_STATE"
 
-# Auto-truncate agent memory files > 250 lines
+# Auto-truncate agent memory files (configurable max lines)
+MAX_MEMORY_LINES="$TOOLKIT_HOOKS_SESSION_END_AGENT_MEMORY_MAX_LINES"
 MEMORY_DIR="$PROJECT_DIR/.claude/agent-memory"
 if [ -d "$MEMORY_DIR" ]; then
   for MEM_FILE in "$MEMORY_DIR"/*/MEMORY.md; do
     [ -f "$MEM_FILE" ] || continue
     LINE_COUNT=$(wc -l < "$MEM_FILE" | tr -d ' ')
-    if [ "$LINE_COUNT" -gt 250 ]; then
-      { head -5 "$MEM_FILE"; echo ""; echo "<!-- Auto-truncated from $LINE_COUNT lines -->"; echo ""; tail -195 "$MEM_FILE"; } > "$MEM_FILE.tmp"
+    if [ "$LINE_COUNT" -gt "$MAX_MEMORY_LINES" ]; then
+      TAIL_LINES=$((MAX_MEMORY_LINES - 55))
+      { head -5 "$MEM_FILE"; echo ""; echo "<!-- Auto-truncated from $LINE_COUNT lines -->"; echo ""; tail -"$TAIL_LINES" "$MEM_FILE"; } > "$MEM_FILE.tmp"
       mv "$MEM_FILE.tmp" "$MEM_FILE"
     fi
   done
 fi
 
-# Prune hook logs > 500 lines
+# Prune hook logs (configurable max lines)
+MAX_LOG_LINES="$TOOLKIT_HOOKS_SESSION_END_HOOK_LOG_MAX_LINES"
 HOOK_LOG="$PROJECT_DIR/.claude/hook-log.jsonl"
 if [ -f "$HOOK_LOG" ]; then
   LINE_COUNT=$(wc -l < "$HOOK_LOG" | tr -d ' ')
-  if [ "$LINE_COUNT" -gt 500 ]; then
-    tail -500 "$HOOK_LOG" > "$HOOK_LOG.tmp"
+  if [ "$LINE_COUNT" -gt "$MAX_LOG_LINES" ]; then
+    tail -"$MAX_LOG_LINES" "$HOOK_LOG" > "$HOOK_LOG.tmp"
     mv "$HOOK_LOG.tmp" "$HOOK_LOG"
   fi
 fi
-
-# TODO: read from config — additional cleanup paths can be added per-project
-# e.g., artifacts directories with age-based cleanup
 
 exit 0

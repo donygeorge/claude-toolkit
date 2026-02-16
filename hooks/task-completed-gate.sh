@@ -12,15 +12,13 @@ cat > /dev/null
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(cd "$(dirname "$0")/../.." && pwd)}"
 cd "$PROJECT_DIR" || exit 0
 
-# Collect changed Python files (staged + unstaged + untracked)
-CHANGED_PY=$(
-  { git diff --name-only HEAD 2>/dev/null; git ls-files --others --exclude-standard 2>/dev/null; } | grep '\.py$' | sort -u
+# Collect changed files (staged + unstaged + untracked)
+CHANGED_FILES=$(
+  { git diff --name-only HEAD 2>/dev/null; git ls-files --others --exclude-standard 2>/dev/null; } | sort -u
 )
 
 # Collect changed shell scripts in .claude/hooks/
-CHANGED_SH=$(
-  { git diff --name-only HEAD 2>/dev/null; git ls-files --others --exclude-standard 2>/dev/null; } | grep -E '\.claude/hooks/.*\.sh$' | sort -u
-)
+CHANGED_SH=$(echo "$CHANGED_FILES" | grep -E '\.claude/hooks/.*\.sh$')
 
 # =============================================================================
 # 1. Validate shell script syntax for changed hook scripts
@@ -38,38 +36,98 @@ if [ -n "$CHANGED_SH" ]; then
 fi
 
 # =============================================================================
-# 2. Python lint with ruff (soft-fail if ruff not available)
+# 2. Run configurable quality gates
 # =============================================================================
-if [ -n "$CHANGED_PY" ]; then
-  # Find ruff — prefer .venv version
-  RUFF=".venv/bin/ruff"
-  [ ! -x "$RUFF" ] && RUFF="ruff"
+# Gate configuration comes from toolkit.toml [hooks.task-completed.gates]
+# Each gate has: glob (file pattern), cmd (command to run), timeout (seconds)
 
-  if command -v "$RUFF" >/dev/null 2>&1; then
-    # Filter to only files that actually exist
-    EXISTING_PY=""
-    for F in $CHANGED_PY; do
-      [ -f "$F" ] && EXISTING_PY="$EXISTING_PY $F"
-    done
+# Helper: check if any changed files match a glob pattern
+files_match_glob() {
+  local PATTERN="$1"
+  echo "$CHANGED_FILES" | while read -r F; do
+    [ -z "$F" ] && continue
+    # Use bash pattern matching
+    # shellcheck disable=SC2254
+    case "$F" in
+      $PATTERN) echo "$F"; return 0 ;;
+    esac
+  done
+}
 
-    if [ -n "$EXISTING_PY" ]; then
-      if ! LINT_OUTPUT=$(echo "$EXISTING_PY" | xargs "$RUFF" check --quiet 2>&1); then
+# --- Lint gate ---
+if [ -n "$TOOLKIT_HOOKS_TASK_COMPLETED_GATES_LINT_CMD" ]; then
+  LINT_GLOB="$TOOLKIT_HOOKS_TASK_COMPLETED_GATES_LINT_GLOB"
+  LINT_CMD="$TOOLKIT_HOOKS_TASK_COMPLETED_GATES_LINT_CMD"
+
+  MATCHING_FILES=""
+  while read -r F; do
+    [ -z "$F" ] && continue
+    [ ! -f "$F" ] && continue
+    # shellcheck disable=SC2254
+    case "$F" in
+      $LINT_GLOB) MATCHING_FILES="$MATCHING_FILES $F" ;;
+    esac
+  done <<< "$CHANGED_FILES"
+
+  if [ -n "$MATCHING_FILES" ]; then
+    # Resolve command: try configured path, fall back to command name
+    LINT_FIRST=$(echo "$LINT_CMD" | awk '{print $1}')
+    if [ ! -x "$LINT_FIRST" ] && ! command -v "$LINT_FIRST" >/dev/null 2>&1; then
+      # Try just the basename as fallback
+      LINT_BASE=$(basename "$LINT_FIRST")
+      if command -v "$LINT_BASE" >/dev/null 2>&1; then
+        LINT_CMD="$LINT_BASE ${LINT_CMD#"$LINT_FIRST"}"
+      fi
+    fi
+
+    if command -v "$(echo "$LINT_CMD" | awk '{print $1}')" >/dev/null 2>&1 || [ -x "$(echo "$LINT_CMD" | awk '{print $1}')" ]; then
+      # shellcheck disable=SC2086
+      if ! LINT_OUTPUT=$(echo "$MATCHING_FILES" | xargs $LINT_CMD 2>&1); then
         echo "Task cannot be completed: lint errors found. Fix lint issues and retry." >&2
         echo "$LINT_OUTPUT" >&2
         exit 2
       fi
     fi
   fi
+fi
 
-  # ===========================================================================
-  # 3. Run tests if a test command is available (90s timeout)
-  # ===========================================================================
-  # TODO: read from config — test command should be configurable
-  if [ -f "Makefile" ] && grep -q 'test-changed' Makefile 2>/dev/null; then
-    if ! TEST_OUTPUT=$(timeout 90 make test-changed 2>&1); then
-      echo "Task cannot be completed: tests failing." >&2
-      echo "$TEST_OUTPUT" | tail -20 >&2
-      exit 2
+# --- Tests gate ---
+if [ -n "$TOOLKIT_HOOKS_TASK_COMPLETED_GATES_TESTS_CMD" ]; then
+  TESTS_GLOB="$TOOLKIT_HOOKS_TASK_COMPLETED_GATES_TESTS_GLOB"
+  TESTS_CMD="$TOOLKIT_HOOKS_TASK_COMPLETED_GATES_TESTS_CMD"
+  TESTS_TIMEOUT="${TOOLKIT_HOOKS_TASK_COMPLETED_GATES_TESTS_TIMEOUT:-90}"
+
+  HAS_MATCHING=false
+  while read -r F; do
+    [ -z "$F" ] && continue
+    # shellcheck disable=SC2254
+    case "$F" in
+      $TESTS_GLOB) HAS_MATCHING=true; break ;;
+    esac
+  done <<< "$CHANGED_FILES"
+
+  if [ "$HAS_MATCHING" = "true" ]; then
+    # Check if the test command is available
+    TESTS_FIRST=$(echo "$TESTS_CMD" | awk '{print $1}')
+    CAN_RUN=false
+
+    if [ "$TESTS_FIRST" = "make" ]; then
+      # For make commands, check if Makefile has the target
+      MAKE_TARGET=$(echo "$TESTS_CMD" | awk '{print $2}')
+      if [ -f "Makefile" ] && grep -q "$MAKE_TARGET" Makefile 2>/dev/null; then
+        CAN_RUN=true
+      fi
+    elif command -v "$TESTS_FIRST" >/dev/null 2>&1 || [ -x "$TESTS_FIRST" ]; then
+      CAN_RUN=true
+    fi
+
+    if [ "$CAN_RUN" = "true" ]; then
+      # shellcheck disable=SC2086
+      if ! TEST_OUTPUT=$(timeout "$TESTS_TIMEOUT" $TESTS_CMD 2>&1); then
+        echo "Task cannot be completed: tests failing." >&2
+        echo "$TEST_OUTPUT" | tail -20 >&2
+        exit 2
+      fi
     fi
   fi
 fi

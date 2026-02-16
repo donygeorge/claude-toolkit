@@ -12,8 +12,8 @@ source "$(dirname "$0")/_config.sh"
 
 TITLE="${1:-Notification}"
 MESSAGE="${2:-}"
-SOUND="${3:-${TOOLKIT_NOTIFY_SOUND:-Blow}}"
-APP_NAME="${TOOLKIT_NOTIFY_APP_NAME:-Claude Code}"
+SOUND="${3:-${TOOLKIT_NOTIFICATIONS_PERMISSION_SOUND}}"
+APP_NAME="$TOOLKIT_NOTIFICATIONS_APP_NAME"
 
 # No message = nothing to notify
 [ -z "$MESSAGE" ] && exit 0

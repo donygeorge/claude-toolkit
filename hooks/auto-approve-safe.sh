@@ -67,8 +67,19 @@ esac
 
 if [ "$TOOL" = "Write" ] || [ "$TOOL" = "Edit" ]; then
   if [ -n "$FILE_PATH" ]; then
-    # TODO: read from config — safe write paths should be configurable per-project
-    # Default covers common project structures
+    # Check against configurable write paths from toolkit.toml
+    toolkit_iterate_array "$TOOLKIT_HOOKS_AUTO_APPROVE_WRITE_PATHS" | while read -r PATTERN; do
+      [ -z "$PATTERN" ] && continue
+      # Use bash pattern matching (case) for glob-style patterns
+      # shellcheck disable=SC2254
+      case "$FILE_PATH" in
+        $PATTERN)
+          approve
+          ;;
+      esac
+    done
+
+    # Hardcoded defaults (always present as safety net)
     case "$FILE_PATH" in
       */src/*|*/app/*|*/lib/*|*/tests/*|*/test/*|*/docs/*|*/artifacts/*|*/scripts/*|\
       */.claude/*|*/CLAUDE.md|*/PROJECT_CONTEXT.md|*/Makefile|\
@@ -111,6 +122,14 @@ if [ "$TOOL" = "Bash" ] && [ -n "$COMMAND" ]; then
       approve_and_persist "Bash(git ${COMMAND#git })"
       ;;
   esac
+
+  # --- Check configurable bash commands ---
+  toolkit_iterate_array "$TOOLKIT_HOOKS_AUTO_APPROVE_BASH_COMMANDS" | while read -r APPROVED_CMD; do
+    [ -z "$APPROVED_CMD" ] && continue
+    if [ "$CMD_FIRST" = "$APPROVED_CMD" ]; then
+      approve
+    fi
+  done
 
   # --- One-Time Approve: Safe filesystem reads ---
   case "$CMD_FIRST" in

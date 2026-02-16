@@ -1,0 +1,53 @@
+# Adversarial test cases: special characters, edge cases, unicode
+
+[toolkit]
+remote_url = "git@github.com:user/project-with-special's.git"
+
+[project]
+name = "project with spaces & 'quotes'"
+version_file = "VERSION"
+stacks = []
+
+[hooks.setup]
+python_min_version = "3.12"
+required_tools = []
+optional_tools = []
+security_tools = []
+
+[hooks.post-edit-lint.linters]
+[hooks.post-edit-lint.linters.py]
+cmd = ".venv/bin/ruff check"
+fmt = ".venv/bin/ruff format"
+fallback = "ruff"
+
+[hooks.task-completed.gates]
+[hooks.task-completed.gates.lint]
+glob = "*.py"
+cmd = ".venv/bin/ruff check --quiet"
+
+[hooks.auto-approve]
+write_paths = ["*/src/**/*.py", "*/tests/*.test.ts"]
+bash_commands = []
+
+[hooks.subagent-context]
+critical_rules = [
+    "Rule with $VARIABLE reference",
+    "Rule with `backticks` in it",
+    "Rule with \"double quotes\"",
+    "Rule with unicode: cafe\u0301 \u2603 \u2764\ufe0f",
+]
+available_tools = []
+stack_info = "Stack with $pecial chars & pipes | stuff"
+
+[hooks.compact]
+source_dirs = ["src"]
+source_extensions = ["*.py", "*.ts", "*.tsx"]
+state_dirs = []
+
+[hooks.session-end]
+agent_memory_max_lines = 100
+hook_log_max_lines = 200
+
+[notifications]
+app_name = "Claude's Code"
+permission_sound = "none"

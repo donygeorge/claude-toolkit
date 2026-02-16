@@ -1,6 +1,6 @@
 #!/bin/bash
 # SubagentStart hook: Inject project context into subagents
-# Provides branch state, modified files, and active plan/solve state.
+# Provides branch state, modified files, active plan/solve state, and critical rules.
 
 # shellcheck source=_config.sh
 source "$(dirname "$0")/_config.sh"
@@ -16,8 +16,8 @@ else
   AGENT_TYPE=$(echo "$INPUT" | grep -o '"agent_name"[[:space:]]*:[[:space:]]*"[^"]*"' | sed 's/.*"\([^"]*\)"$/\1/')
 fi
 
-PROJECT_NAME="${TOOLKIT_PROJECT_NAME:-$(basename "$PROJECT_DIR")}"
-VERSION_FILE="${TOOLKIT_VERSION_FILE:-VERSION}"
+PROJECT_NAME="$TOOLKIT_PROJECT_NAME"
+VERSION_FILE="$TOOLKIT_PROJECT_VERSION_FILE"
 
 # =============================================================================
 # 1. Gather project state
@@ -73,8 +73,43 @@ if [ -n "$MOD_FILES" ]; then
 Changed: $(echo "$MOD_FILES" | tr '\n' ', ' | sed 's/,$//')"
 fi
 
-# TODO: read from config — critical rules should be injected from per-project config
-# Projects can define their own critical rules in toolkit.toml
+# Inject critical rules from config
+toolkit_iterate_array "$TOOLKIT_HOOKS_SUBAGENT_CONTEXT_CRITICAL_RULES" | while read -r RULE; do
+  [ -z "$RULE" ] && continue
+  echo "$RULE"
+done > /tmp/toolkit_rules_$$ 2>/dev/null
+RULES_CONTENT=$(cat /tmp/toolkit_rules_$$ 2>/dev/null)
+rm -f /tmp/toolkit_rules_$$
+
+if [ -n "$RULES_CONTENT" ]; then
+  CONTEXT="$CONTEXT
+
+--- Critical Rules ---"
+  while IFS= read -r LINE; do
+    CONTEXT="$CONTEXT
+- $LINE"
+  done <<< "$RULES_CONTENT"
+fi
+
+# Inject available tools
+TOOLS_CONTENT=""
+toolkit_iterate_array "$TOOLKIT_HOOKS_SUBAGENT_CONTEXT_AVAILABLE_TOOLS" | while read -r T; do
+  [ -z "$T" ] && continue
+  echo "$T"
+done > /tmp/toolkit_tools_$$ 2>/dev/null
+TOOLS_CONTENT=$(cat /tmp/toolkit_tools_$$ 2>/dev/null)
+rm -f /tmp/toolkit_tools_$$
+
+if [ -n "$TOOLS_CONTENT" ]; then
+  CONTEXT="$CONTEXT
+Available tools: $(echo "$TOOLS_CONTENT" | tr '\n' ', ' | sed 's/,$//')"
+fi
+
+# Inject stack info
+if [ -n "$TOOLKIT_HOOKS_SUBAGENT_CONTEXT_STACK_INFO" ]; then
+  CONTEXT="$CONTEXT
+Stack: $TOOLKIT_HOOKS_SUBAGENT_CONTEXT_STACK_INFO"
+fi
 
 # =============================================================================
 # 4. Output as structured JSON

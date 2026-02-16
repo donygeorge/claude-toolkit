@@ -1,0 +1,157 @@
+# Claude Toolkit Configuration
+# Copy this file to .claude/toolkit.toml in your project and customize.
+# Run: python3 generate-config-cache.py --toml .claude/toolkit.toml --output .claude/toolkit-cache.env
+
+# ---------------------------------------------------------------------------
+# [toolkit] — Toolkit-level metadata
+# ---------------------------------------------------------------------------
+[toolkit]
+# Git remote for the toolkit repo (used for updates)
+remote_url = "git@github.com:user/claude-toolkit.git"
+
+# ---------------------------------------------------------------------------
+# [project] — Project identification
+# ---------------------------------------------------------------------------
+[project]
+# Display name used in session banners and notifications
+name = "my-project"
+
+# File containing the current version (read by session-start, subagent-context)
+version_file = "VERSION"
+
+# Technology stacks present in the project
+# Options: "python", "ios", "typescript", "go", "rust"
+stacks = ["python"]
+
+# ---------------------------------------------------------------------------
+# [hooks.setup] — Environment validation (runs once per session)
+# ---------------------------------------------------------------------------
+[hooks.setup]
+# Minimum Python version required (major.minor)
+python_min_version = "3.11"
+
+# Tools that MUST be installed (setup fails with warning if missing)
+required_tools = ["ruff", "jq"]
+
+# Tools that are nice to have (setup emits info if missing, does not warn)
+optional_tools = []
+
+# Security scanning tools (checked separately, optional)
+security_tools = ["gitleaks", "semgrep"]
+
+# ---------------------------------------------------------------------------
+# [hooks.post-edit-lint.linters] — Per-extension lint/format commands
+# Keys are file extensions (without dot). Each entry has:
+#   cmd      — lint check command (receives file path as argument)
+#   fmt      — format command (receives file path as argument)
+#   fallback — fallback command name if cmd is not found at the given path
+# ---------------------------------------------------------------------------
+[hooks.post-edit-lint.linters]
+[hooks.post-edit-lint.linters.py]
+cmd = ".venv/bin/ruff check"
+fmt = ".venv/bin/ruff format"
+fallback = "ruff"
+
+# Example for TypeScript:
+# [hooks.post-edit-lint.linters.ts]
+# cmd = "npx eslint"
+# fmt = "npx prettier --write"
+# fallback = "eslint"
+
+# ---------------------------------------------------------------------------
+# [hooks.task-completed.gates] — Quality gates checked before task completion
+# Keys are gate names. Each entry has:
+#   glob      — file glob pattern that triggers this gate
+#   cmd       — command to run (exit 0 = pass, non-zero = fail)
+#   timeout   — max seconds before the gate is killed (default: 90)
+# ---------------------------------------------------------------------------
+[hooks.task-completed.gates]
+[hooks.task-completed.gates.lint]
+glob = "*.py"
+cmd = ".venv/bin/ruff check --quiet"
+
+[hooks.task-completed.gates.tests]
+glob = "*.py"
+cmd = "make test-changed"
+timeout = 90
+
+# ---------------------------------------------------------------------------
+# [hooks.auto-approve] — Paths and commands auto-approved without prompting
+# ---------------------------------------------------------------------------
+[hooks.auto-approve]
+# Glob patterns for Write/Edit paths that are auto-approved (one-time, not persisted)
+write_paths = [
+    "*/app/*",
+    "*/src/*",
+    "*/lib/*",
+    "*/tests/*",
+    "*/test/*",
+    "*/docs/*",
+    "*/artifacts/*",
+    "*/scripts/*",
+    "*/.claude/*",
+    "*/CLAUDE.md",
+    "*/PROJECT_CONTEXT.md",
+    "*/Makefile",
+    "*/VERSION",
+    "*/requirements*.txt",
+    "*/package*.json",
+    "*/pyproject.toml",
+    "*/docker-compose*.yml",
+    "*/README.md",
+    "*/pytest.ini",
+    "*/Dockerfile",
+    "*/setup.sh",
+    "*/tsconfig*.json",
+]
+
+# Additional Bash commands to auto-approve (one-time)
+# These are matched as prefixes against the first word of the command
+bash_commands = []
+
+# ---------------------------------------------------------------------------
+# [hooks.subagent-context] — Context injected into subagents
+# ---------------------------------------------------------------------------
+[hooks.subagent-context]
+# Critical rules injected into every subagent's context
+critical_rules = []
+
+# Tools/capabilities available in this project (informational for subagents)
+available_tools = []
+
+# Short description of the tech stack (injected into subagent context)
+stack_info = ""
+
+# ---------------------------------------------------------------------------
+# [hooks.compact] — Pre-compact state preservation
+# ---------------------------------------------------------------------------
+[hooks.compact]
+# Directories scanned for recently modified source files
+source_dirs = ["app", "src"]
+
+# File extensions to include when scanning for recent changes
+source_extensions = ["*.py"]
+
+# Directories checked for active orchestration state (implement/solve/refine)
+state_dirs = ["artifacts"]
+
+# ---------------------------------------------------------------------------
+# [hooks.session-end] — Session cleanup thresholds
+# ---------------------------------------------------------------------------
+[hooks.session-end]
+# Max lines in agent memory files before auto-truncation
+agent_memory_max_lines = 250
+
+# Max lines in hook log before pruning
+hook_log_max_lines = 500
+
+# ---------------------------------------------------------------------------
+# [notifications] — macOS / Linux notification settings
+# ---------------------------------------------------------------------------
+[notifications]
+# Application name shown in notifications
+app_name = "Claude Code"
+
+# macOS sound name for permission prompts (use "none" for silent)
+# Common sounds: Blow, Ping, Pop, Glass, Submarine, Tink
+permission_sound = "Blow"

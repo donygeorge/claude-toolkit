@@ -10,35 +10,60 @@ cd "$PROJECT_DIR" || exit 0
 
 WARNINGS=""
 
-# TODO: read from config — required tools and versions should be configurable
-# Currently checks for a common Python + jq setup
+# ---------------------------------------------------------------------------
+# 1. Check Python version (configurable minimum)
+# ---------------------------------------------------------------------------
+REQUIRED_MAJOR=$(echo "$TOOLKIT_HOOKS_SETUP_PYTHON_MIN_VERSION" | cut -d. -f1)
+REQUIRED_MINOR=$(echo "$TOOLKIT_HOOKS_SETUP_PYTHON_MIN_VERSION" | cut -d. -f2)
 
-# Check Python 3.11+
 PYTHON_VERSION=$(python3 --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+')
 if [ -n "$PYTHON_VERSION" ]; then
   MAJOR=$(echo "$PYTHON_VERSION" | cut -d. -f1)
   MINOR=$(echo "$PYTHON_VERSION" | cut -d. -f2)
-  if [ "$MAJOR" -lt 3 ] || { [ "$MAJOR" -eq 3 ] && [ "$MINOR" -lt 11 ]; }; then
-    WARNINGS="${WARNINGS}- Python 3.11+ required, found ${PYTHON_VERSION}\n"
+  if [ "$MAJOR" -lt "$REQUIRED_MAJOR" ] || { [ "$MAJOR" -eq "$REQUIRED_MAJOR" ] && [ "$MINOR" -lt "$REQUIRED_MINOR" ]; }; then
+    WARNINGS="${WARNINGS}- Python ${TOOLKIT_HOOKS_SETUP_PYTHON_MIN_VERSION}+ required, found ${PYTHON_VERSION}\n"
   fi
 fi
 
-# Check .venv
+# ---------------------------------------------------------------------------
+# 2. Check .venv
+# ---------------------------------------------------------------------------
 if [ ! -d ".venv" ]; then
   WARNINGS="${WARNINGS}- Virtual environment not found. Run: python3 -m venv .venv && pip install -r requirements.txt\n"
 elif [ ! -f ".venv/bin/python" ]; then
   WARNINGS="${WARNINGS}- Virtual environment broken. Recreate with: python3 -m venv .venv\n"
 fi
 
-# Check required tools: ruff, jq
-for TOOL in ruff jq; do
+# ---------------------------------------------------------------------------
+# 3. Check required tools (from config)
+# ---------------------------------------------------------------------------
+toolkit_iterate_array "$TOOLKIT_HOOKS_SETUP_REQUIRED_TOOLS" | while read -r TOOL; do
+  [ -z "$TOOL" ] && continue
   if ! command -v "$TOOL" >/dev/null 2>&1 && [ ! -x ".venv/bin/$TOOL" ]; then
-    WARNINGS="${WARNINGS}- Missing tool: ${TOOL}\n"
+    # Can't modify WARNINGS from subshell, so echo directly
+    echo "WARNING: Missing required tool: ${TOOL}" >&2
   fi
 done
 
-# TODO: read from config — additional tool checks should be configurable
-# Projects can add iOS tools (axe, xcodebuild), security tools (gitleaks, semgrep), etc.
+# ---------------------------------------------------------------------------
+# 4. Check optional tools (from config, informational only)
+# ---------------------------------------------------------------------------
+toolkit_iterate_array "$TOOLKIT_HOOKS_SETUP_OPTIONAL_TOOLS" | while read -r TOOL; do
+  [ -z "$TOOL" ] && continue
+  if ! command -v "$TOOL" >/dev/null 2>&1 && [ ! -x ".venv/bin/$TOOL" ]; then
+    echo "INFO: Optional tool not found: ${TOOL}" >&2
+  fi
+done
+
+# ---------------------------------------------------------------------------
+# 5. Check security tools (from config)
+# ---------------------------------------------------------------------------
+toolkit_iterate_array "$TOOLKIT_HOOKS_SETUP_SECURITY_TOOLS" | while read -r TOOL; do
+  [ -z "$TOOL" ] && continue
+  if ! command -v "$TOOL" >/dev/null 2>&1; then
+    echo "INFO: Security tool not found: ${TOOL}" >&2
+  fi
+done
 
 if [ -n "$WARNINGS" ]; then
   echo "=== Setup Check ==="

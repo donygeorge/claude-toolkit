@@ -6,7 +6,7 @@
 source "$(dirname "$0")/_config.sh"
 
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(cd "$(dirname "$0")/../.." && pwd)}"
-PROJECT_NAME="${TOOLKIT_PROJECT_NAME:-$(basename "$PROJECT_DIR")}"
+PROJECT_NAME="$TOOLKIT_PROJECT_NAME"
 STATE_FILE="$PROJECT_DIR/.claude/compact-state.txt"
 
 if [ -f "$STATE_FILE" ]; then
@@ -21,6 +21,16 @@ else
   echo "GIT STATE ($PROJECT_NAME): branch=${BRANCH}, modified_files=${MODIFIED}"
 fi
 
-# TODO: read from config — critical rules should be injected from per-project config
+# Inject critical rules from config (always, even with state file)
+HAS_RULES=false
+toolkit_iterate_array "$TOOLKIT_HOOKS_SUBAGENT_CONTEXT_CRITICAL_RULES" | while read -r RULE; do
+  [ -z "$RULE" ] && continue
+  if [ "$HAS_RULES" = false ]; then
+    echo ""
+    echo "--- Critical Rules ---"
+    HAS_RULES=true
+  fi
+  echo "- $RULE"
+done
 
 exit 0
