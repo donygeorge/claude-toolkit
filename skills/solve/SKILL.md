@@ -1,0 +1,228 @@
+# Solve Issue Skill
+
+Autonomously work on GitHub issues: fetch details, understand context, reproduce visual issues,
+plan, implement, test, review, and commit. Supports multiple issues in a single invocation.
+
+## Core Philosophy
+
+**Fix the bug AND consider if prevention is warranted.**
+
+For each fix, ask: "Would a test or code change have caught this before shipping?"
+
+**When to add prevention**:
+
+- Logic bugs that could recur -> Unit test
+- Data flow issues -> Integration test
+- Repeated pattern across codebase -> Architectural fix
+- Crashes or data loss -> Defensive validation
+
+**When NOT to add tests**:
+
+- One-off typos or copy errors
+- Simple UI tweaks (spacing, colors)
+- Issues already covered by existing tests
+- Fixes where the test would just duplicate the implementation
+- Cases where the bug was obvious and unlikely to recur
+
+## Aliases
+
+```yaml
+aliases:
+  /solve: /solve
+
+defaults:
+  skip_review: false
+  plan_only: false
+```
+
+> **Note**: `/fix` is a separate skill for standalone bug fixes without GitHub integration. Use `/solve` for GitHub issue workflows.
+
+## Usage
+
+### Single Issue
+
+```bash
+/solve 123                    # Work on GitHub issue #123
+/solve 123 --plan-only        # Just create a plan, don't implement
+/solve 123 --skip-review      # Skip review at end (faster)
+```
+
+### Multiple Issues
+
+```bash
+/solve 123, 145               # Work on multiple issues together
+/solve 123 145                # Alternative syntax (space-separated)
+/solve 123, 145 --plan-only   # Plan both issues without implementing
+```
+
+When multiple issues are specified:
+- Issues are analyzed together for efficiency
+- Code fixes are combined where logical
+- A single commit is created with references to all issues
+- QA and review agents run once on all changes
+
+## Arguments
+
+| Argument | Description |
+|----------|-------------|
+| `<issue_numbers>` | One or more GitHub issue numbers (comma or space separated) |
+| `--plan-only` | Create plan but don't implement (for review) |
+| `--skip-review` | Skip review at end |
+
+## Execution Flow
+
+### Step 0: Ensure Server is Running (if applicable)
+
+Check if a development server is needed and running.
+
+### Step 1: Fetch Issues & Related Context
+
+```bash
+gh issue view <number> --json title,body,labels,state,comments
+```
+
+Extract from each issue:
+- Title and description
+- Labels
+- Comments (may contain logs, screenshots, reproduction steps)
+- Any structured diagnostics
+
+**Check for Related Issues**:
+
+```bash
+gh issue list --search "<key terms from title>" --state all --limit 10
+```
+
+### Step 2: Download & Analyze Attachments
+
+For any images referenced in issue body:
+1. Download images to temporary directory
+2. Validate image files before reading
+3. Analyze screenshots for visual context
+
+### Step 3: Reproduce Issues with Visual Tools
+
+**You MUST use visual tools to reproduce issues before fixing them.**
+
+#### For Web UI Issues
+
+Use Playwright MCP tools to navigate and capture state.
+
+#### For Backend-Only Issues
+
+Skip visual reproduction if purely backend logic.
+
+#### Document Reproduction Status
+
+- **If reproduced**: Note exact steps taken and continue
+- **If NOT reproduced**: Still analyze code, note uncertainty in commit
+
+### Step 4: Understand Context
+
+Based on issue labels, identify relevant code areas using Grep/Glob/Read tools.
+
+### Step 5: Create Plan
+
+Design the implementation:
+- For **bugs**: Identify root cause, minimal fix, add regression test
+- For **features**: Follow existing patterns, design with tests
+- For **crashes**: Defensive fix, error handling
+
+If `--plan-only` is passed, stop here.
+
+### Step 6: Implement
+
+Make changes following project conventions:
+- Match existing code style
+- Use appropriate logging
+- Handle errors gracefully
+- Don't over-engineer
+
+**Add tests to prevent recurrence** where appropriate.
+
+### Step 7: Test
+
+```bash
+# Run project test command
+make test
+# or: pytest, npm test, etc.
+
+# Run linter
+make lint
+```
+
+If tests fail, attempt to fix (max 3 iterations).
+
+### Step 8: Verify Fixes with Visual Tools
+
+Verify fixes using the same visual tools used in Step 3.
+
+### Step 9: QA Review
+
+Analyze the diff for correctness, security, and convention violations.
+Fix any high-severity issues found.
+
+### Step 10: Commit
+
+```bash
+git add <relevant files>
+git commit -F <commit-msg-file>
+```
+
+**Staging Policy (CRITICAL)**:
+
+Only stage files YOU modified:
+
+```bash
+# CORRECT: Stage specific files
+git add src/services/data_service.py tests/test_data.py
+
+# WRONG: Never use git add . or git add -A
+```
+
+**DO NOT PUSH** - user reviews and pushes manually.
+
+### Step 11: Comment on GitHub Issue (Optional)
+
+Add a resolution comment summarizing the fix.
+
+## Output Summary (MANDATORY)
+
+After completion, output:
+
+- **Issues addressed**: List of issue numbers and titles
+- **Reproduction status**: Whether issues were reproduced
+- **Files changed**: List of modified files
+- **Tests added/modified**: New or updated tests
+- **Recurrence prevention**: What was added to prevent similar bugs
+- **Items needing user attention**: Anything that couldn't be resolved
+- **Suggested next steps**: Push, create PR, etc.
+
+## Error Handling
+
+| Error | Action |
+| ----- | ------ |
+| Issue not found | Report error, continue with others if multiple |
+| Cannot reproduce | Analyze code anyway, note uncertainty |
+| Tests fail | Attempt fix, max 3 iterations |
+| Lint errors | Auto-fix with formatter, retry |
+| Build fails | Analyze errors, attempt fix |
+
+## Cannot Fix Scenarios
+
+If unable to fix an issue:
+
+1. **Document what was tried**
+2. **Explain the blocker**
+3. **Provide analysis** of likely root cause
+4. **Suggest next steps** for the user
+5. **Do NOT commit partial/broken fixes**
+
+## Completion Checklist (VERIFY BEFORE FINISHING)
+
+- [ ] **Tests pass**: Project test command ran successfully
+- [ ] **Lint passes**: Linter ran successfully
+- [ ] **Review completed** (unless `--skip-review`)
+- [ ] **Review findings addressed**: High-severity issues fixed
+- [ ] **Commit created**: With proper message and issue references
+- [ ] **Summary output**: Full Output Summary provided to user

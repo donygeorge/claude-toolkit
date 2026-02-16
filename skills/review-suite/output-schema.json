@@ -1,0 +1,119 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Agent Output Schema",
+  "description": "Standardized output format for all review agents",
+  "type": "object",
+  "required": ["run_id", "scope_key", "scope_slug", "agent", "started_at", "ended_at", "gate_passed", "findings"],
+  "properties": {
+    "run_id": {
+      "type": "string",
+      "description": "Unique run identifier (timestamp-based)",
+      "pattern": "^[0-9]{8}-[0-9]{6}$"
+    },
+    "scope_key": {
+      "type": "string",
+      "description": "Canonical scope identifier",
+      "examples": ["feature:my-feature", "uncommitted", "diff:HEAD~1"]
+    },
+    "scope_slug": {
+      "type": "string",
+      "description": "Filesystem-safe scope identifier",
+      "pattern": "^[a-z0-9-]+$"
+    },
+    "agent": {
+      "type": "string",
+      "enum": ["reviewer", "qa", "security", "ux", "pm", "docs", "architect", "commit-check"]
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "ended_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "timed_out": {
+      "type": "boolean",
+      "default": false
+    },
+    "infra_failed": {
+      "type": "boolean",
+      "default": false,
+      "description": "True if infrastructure failure (exit code 4)"
+    },
+    "gate_passed": {
+      "type": ["boolean", "null"],
+      "description": "true=pass, false=fail, null=inconclusive (infra failure)"
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/finding"
+      }
+    }
+  },
+  "definitions": {
+    "finding": {
+      "type": "object",
+      "required": ["severity", "type", "summary", "actionable"],
+      "properties": {
+        "severity": {
+          "type": "string",
+          "enum": ["info", "low", "med", "high", "crit"],
+          "description": "Impact-based severity"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["bug", "test-gap", "security", "ux", "docs", "product", "perf", "duplication", "code-smell", "model-drift", "architecture", "pattern", "reuse", "resiliency", "modernization", "test-quality", "dependency"]
+        },
+        "summary": {
+          "type": "string",
+          "description": "One-line description (can be 1-3 sentences for complex findings)"
+        },
+        "evidence": {
+          "type": "object",
+          "properties": {
+            "file": { "type": "string" },
+            "line": { "type": "integer" },
+            "diff_hunk": { "type": "string" },
+            "code_snippet": { "type": "string" },
+            "screenshot": { "type": "string" },
+            "log_excerpt": { "type": "string" },
+            "user_impact": { "type": "string" },
+            "cve": { "type": ["string", "null"] },
+            "test_ref": { "type": "string" }
+          }
+        },
+        "repro_steps": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "suggested_fix": {
+          "type": "string"
+        },
+        "suggested_tests": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "location": { "type": "string" }
+            }
+          }
+        },
+        "actionable": {
+          "type": "boolean",
+          "description": "True if sufficient evidence to act on"
+        },
+        "blocks_automation": {
+          "type": "boolean",
+          "description": "UX-specific: blocks existing automation tests"
+        },
+        "blocks_voiceover": {
+          "type": "boolean",
+          "description": "UX-specific: blocks screen reader navigation"
+        }
+      }
+    }
+  }
+}
