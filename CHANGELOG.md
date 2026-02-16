@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.0] - 2026-02-16
+
+### Added
+
+- 16 configurable hooks (14 extracted from production use + `_config.sh` + `notify.sh`)
+- Config system: `toolkit.toml` with TOML-to-bash cache (`toolkit-cache.env`)
+- Settings generation: three-tier merge (base + stack overlays + project overrides)
+- 9 generic agent prompts (reviewer, qa, security, ux, pm, docs, architect, commit-check, plan)
+- 9 skill templates (review-suite, implement, plan, solve, fix, refine, conventions, scope-resolver, gemini)
+- Smart-context framework for keyword-based domain context loading
+- MCP configuration templates (context7, playwright)
+- Rule templates for Python, Swift, TypeScript, pytest, Jest, SQLite, FastAPI
+- CLI with 7 subcommands: init, update, customize, validate, status, generate-settings, help
+- Manifest system for tracking managed vs customized files
+- Platform-aware notifications (macOS/Linux/CI)
+- Stack overlays: Python, iOS, TypeScript
+- Git subtree update workflow with customization preservation
+- GitHub Actions CI (shellcheck + pytest + bash integration tests)
+- 190+ tests (126 pytest + bash integration tests)
+
 ## [0.1.0] - 2026-02-15
 
 ### Added

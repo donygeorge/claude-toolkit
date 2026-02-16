@@ -97,7 +97,9 @@ test_manifest_init() {
   assert_json_valid "manifest is valid JSON" "$manifest"
 
   # Check structure
-  assert_json_value "has toolkit_version" "$manifest" '.toolkit_version' "0.1.0"
+  local expected_version
+  expected_version=$(cat "${TOOLKIT_SRC}/VERSION" | tr -d '[:space:]')
+  assert_json_value "has toolkit_version" "$manifest" '.toolkit_version' "$expected_version"
   assert_json_value "has generated_at" "$manifest" '.generated_at | length > 0' "true"
   assert_json_value "has agents object" "$manifest" '.agents | type' "object"
   assert_json_value "has skills object" "$manifest" '.skills | type' "object"
