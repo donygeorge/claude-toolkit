@@ -46,15 +46,15 @@ bash ~/projects/claude-toolkit/bootstrap.sh --name my-app --stacks python --comm
 
 Then review `.claude/toolkit.toml`, customize if needed, and commit.
 
-### Or Let Claude Do It
+### Then Let Claude Tune It
 
-Open Claude Code in your project and say:
+After bootstrap, open Claude Code in the project and say:
 
 ```
-/setup --stacks python --name my-project
+/setup
 ```
 
-Claude will detect your stack, run bootstrap, customize the config for your project, and commit.
+Claude will review your `toolkit.toml`, detect your actual test/lint commands, add project-specific rules, and regenerate settings.
 
 ### Manual Setup (Step by Step)
 
