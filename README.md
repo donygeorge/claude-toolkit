@@ -10,7 +10,7 @@ Claude Code supports [hooks](https://docs.anthropic.com/en/docs/claude-code/hook
 
 - **16 configurable hooks** covering safety, quality, and automation
 - **9 agent prompts** for code review, QA, security, architecture, and more
-- **9 skill templates** for review, planning, implementation, and bug fixing
+- **10 skill templates** for review, planning, implementation, setup, and bug fixing
 - **Config-driven**: One `toolkit.toml` file controls everything
 - **Three-tier settings**: Base defaults + stack overlays + project overrides
 - **Manifest tracking**: Know which files are managed vs customized
@@ -18,21 +18,64 @@ Claude Code supports [hooks](https://docs.anthropic.com/en/docs/claude-code/hook
 
 ## Quick Start
 
-### 1. Add the toolkit as a git subtree
+### One-Command Bootstrap (Recommended)
+
+From your project root:
+
+```bash
+bash ~/projects/claude-toolkit/bootstrap.sh --name my-project --stacks python
+```
+
+That's it. The script adds the subtree, generates config, runs init, and tells you what to commit.
+
+**Common examples:**
+
+```bash
+# Python project
+bash ~/projects/claude-toolkit/bootstrap.sh --name realta --stacks python
+
+# TypeScript project
+bash ~/projects/claude-toolkit/bootstrap.sh --name openclaw --stacks typescript
+
+# Multi-stack (Python + iOS)
+bash ~/projects/claude-toolkit/bootstrap.sh --name jarvin --stacks python,ios
+
+# Auto-commit too
+bash ~/projects/claude-toolkit/bootstrap.sh --name my-app --stacks python --commit
+```
+
+Then review `.claude/toolkit.toml`, customize if needed, and commit.
+
+### Or Let Claude Do It
+
+Open Claude Code in your project and say:
+
+```
+/setup --stacks python --name my-project
+```
+
+Claude will detect your stack, run bootstrap, customize the config for your project, and commit.
+
+### Manual Setup (Step by Step)
+
+<details>
+<summary>Click to expand manual steps</summary>
+
+#### 1. Add the toolkit as a git subtree
 
 ```bash
 git remote add claude-toolkit git@github.com:youruser/claude-toolkit.git
-git subtree add --squash --prefix=.claude/toolkit claude-toolkit v1.0.0
+git subtree add --squash --prefix=.claude/toolkit claude-toolkit main
 ```
 
-### 2. Create your configuration
+#### 2. Create your configuration
 
 ```bash
 cp .claude/toolkit/templates/toolkit.toml.example .claude/toolkit.toml
 # Edit .claude/toolkit.toml to match your project
 ```
 
-### 3. Initialize
+#### 3. Initialize
 
 ```bash
 bash .claude/toolkit/toolkit.sh init
@@ -45,12 +88,14 @@ This will:
 - Generate `settings.json` and `.mcp.json`
 - Create a manifest tracking managed files
 
-### 4. Commit
+#### 4. Commit
 
 ```bash
 git add .claude/ .mcp.json
 git commit -m "Add claude-toolkit"
 ```
+
+</details>
 
 ## CLI Commands
 
@@ -241,10 +286,11 @@ Quality gates checked before task completion.
 | `commit-check.md` | Lightweight post-commit sanity check |
 | `plan.md` | Feature planning agent prompt |
 
-### Skills (9)
+### Skills (10)
 
 | Skill | Purpose |
 |-------|---------|
+| `setup` | Bootstrap claude-toolkit in a new project |
 | `review-suite` | Multi-agent code review orchestration |
 | `implement` | Autonomous plan execution with milestone agents |
 | `plan` | Feature planning with research and review |
