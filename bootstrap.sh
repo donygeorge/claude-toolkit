@@ -219,7 +219,7 @@ cmd = \".venv/bin/ruff check --quiet\"
 
 [hooks.task-completed.gates.tests]
 glob = \"*.py\"
-cmd = \"make test-changed\"
+cmd = \"make test-changed\"  # Customize: replace with your project's test command
 timeout = 90
 "
         ;;
@@ -242,7 +242,7 @@ cmd = \"npx eslint --quiet\"
 
 [hooks.task-completed.gates.tests]
 glob = \"*.{ts,tsx}\"
-cmd = \"npm test\"
+cmd = \"npm test\"  # Customize: replace with your project's test command
 timeout = 90
 "
         ;;
@@ -256,7 +256,7 @@ fallback = \"swiftlint\"
         GATE_SECTION="${GATE_SECTION}
 [hooks.task-completed.gates.ios-build]
 glob = \"*.swift\"
-cmd = \"make ios-build\"
+cmd = \"make ios-build\"  # Customize: replace with your project's build command
 timeout = 120
 "
         ;;

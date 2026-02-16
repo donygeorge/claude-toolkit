@@ -1,17 +1,17 @@
 ---
-globs: ios/**/*.swift, Sources/**/*.swift
+globs: **/*.swift
 ---
 # Swift/iOS Rules — {{PROJECT_NAME}}
 
-- SwiftUI with iOS 16.0+ target
+- SwiftUI preferred; specify minimum iOS target in project config
 - Handle loading, error, and empty states explicitly in every view
 - Add accessibility identifiers for all interactive elements
-- HealthKit: `.appleStandTime` (not `.appleStandHour`) returns minutes
-- HealthKit: Apple Watch required for VO2 max, respiratory rate, sleep stages
-- HealthKit: always handle `nil` gracefully
-- HomeKit: use string constants like `HMCharacteristicPropertyReadable`
-- HomeKit: does NOT work in Simulator
-- Mac Catalyst: use `#if targetEnvironment(macCatalyst)` for Mac-specific code
-- Test with: `make ios-test-changed` or `make ios-build`
+- camelCase for variables/functions, PascalCase for types/protocols
+- Use `guard` for early returns; avoid force-unwrapping (`!`)
+- Prefer value types (`struct`) over reference types (`class`) where appropriate
+- Use `async/await` for concurrency (iOS 15+)
+- Test with your project's test command (e.g., `xcodebuild test`)
+
+<!-- Add project-specific Swift rules below (e.g., HealthKit, HomeKit, CoreData) -->
 
 <!-- Add project-specific Swift rules below -->

@@ -1,5 +1,5 @@
 ---
-globs: app/db/**/*.py, src/db/**/*.py, lib/db/**/*.py
+globs: **/db/**/*.py, **/database/**/*.py, **/models/**/*.py, **/migrations/**/*.py
 ---
 # Database Rules (SQLite) — {{PROJECT_NAME}}
 

@@ -19,6 +19,8 @@ if [ -d "$MEMORY_DIR" ]; then
     LINE_COUNT=$(wc -l < "$MEM_FILE" | tr -d ' ')
     if [ "$LINE_COUNT" -gt "$MAX_MEMORY_LINES" ]; then
       TAIL_LINES=$((MAX_MEMORY_LINES - 55))
+      # Guard against negative/zero TAIL_LINES when MAX_MEMORY_LINES is small
+      [ "$TAIL_LINES" -lt 10 ] && TAIL_LINES=10
       { head -5 "$MEM_FILE"; echo ""; echo "<!-- Auto-truncated from $LINE_COUNT lines -->"; echo ""; tail -"$TAIL_LINES" "$MEM_FILE"; } > "$MEM_FILE.tmp"
       mv "$MEM_FILE.tmp" "$MEM_FILE"
     fi

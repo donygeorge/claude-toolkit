@@ -168,6 +168,12 @@ manifest_customize() {
   local timestamp
   timestamp=$(_timestamp)
 
+  # Reject directory traversal attempts
+  if [[ "$path" == *..* ]]; then
+    echo "Error: Path must not contain '..' (directory traversal)" >&2
+    return 1
+  fi
+
   # Determine section (agents, skills, rules) and key
   local section=""
   local key=""

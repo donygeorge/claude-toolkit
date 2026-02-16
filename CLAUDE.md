@@ -9,7 +9,7 @@ A shareable, configurable collection of Claude Code hooks, agents, skills, and r
 **Key Capabilities**:
 - 16 configurable hooks (guards, quality gates, lifecycle, automation)
 - 9 agent prompts (reviewer, qa, security, ux, pm, docs, architect, commit-check, plan)
-- 9 skill templates (review, implement, plan, solve, fix, refine, conventions, scope-resolver, gemini)
+- 10 skill templates (review, implement, plan, solve, fix, refine, conventions, scope-resolver, gemini, setup)
 - Three-tier settings merge (base + stacks + project)
 - Manifest tracking for managed vs customized files
 - Config-driven via `toolkit.toml`
@@ -78,7 +78,8 @@ bash toolkit.sh help                      # Show usage
 │   ├── refine/                  # Iterative convergence loop
 │   ├── conventions/             # View coding conventions
 │   ├── scope-resolver/          # Feature scope resolver
-│   └── gemini/                  # Second opinion from Google
+│   ├── gemini/                  # Second opinion from Google
+│   └── setup/                   # Project onboarding orchestrator
 ├── rules/                       # Generic rules (symlinked to projects)
 │   └── git-protocol.md          # Git staging and commit rules
 ├── templates/                   # Configuration templates

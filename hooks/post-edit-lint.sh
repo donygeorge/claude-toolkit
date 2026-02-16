@@ -18,6 +18,10 @@ FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty' 2>/dev/null)
 # Only run for Write/Edit operations
 [[ "$TOOL_NAME" =~ ^(Write|Edit)$ ]] || exit 0
 [ -z "$FILE_PATH" ] && exit 0
+# Reject suspicious paths (traversal, absolute paths outside project)
+case "$FILE_PATH" in
+  *..*) exit 0 ;;
+esac
 [ -f "$FILE_PATH" ] || exit 0
 
 # Navigate to project root
@@ -60,6 +64,7 @@ resolve_cmd() {
 if [ -n "$FMT_CMD" ]; then
   RESOLVED_FMT=$(resolve_cmd "$FMT_CMD" "$FALLBACK")
   if [ -n "$RESOLVED_FMT" ]; then
+    # Word splitting is intentional: config values like ".venv/bin/ruff format" need splitting
     # shellcheck disable=SC2086
     $RESOLVED_FMT "$FILE_PATH" 2>/dev/null
   fi
@@ -69,6 +74,7 @@ fi
 if [ -n "$LINT_CMD" ]; then
   RESOLVED_LINT=$(resolve_cmd "$LINT_CMD" "$FALLBACK")
   if [ -n "$RESOLVED_LINT" ]; then
+    # Word splitting is intentional: config values like ".venv/bin/ruff check" need splitting
     # shellcheck disable=SC2086
     LINT_OUTPUT=$($RESOLVED_LINT "$FILE_PATH" 2>&1)
     LINT_EXIT=$?

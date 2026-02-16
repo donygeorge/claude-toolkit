@@ -33,7 +33,7 @@ When facing uncertainty:
 | Code looks unfamiliar | Read imports and surrounding context first |
 | Issue spans multiple files | Report once with all evidence |
 | Fix would be complex | Suggest investigation, not specific code |
-| Similar issues in multiple places | Report pattern once, not each instance |
+| Similar issues in multiple places | Report pattern once with representative file:line + total count |
 
 ## Input
 

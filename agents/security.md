@@ -161,5 +161,6 @@ Set `gate_passed: false` if:
 
 - ONLY report vulnerabilities found by tools or manual grep
 - Link each finding to specific file:line
-- If tool not installed, fail with install instructions
+- If no security tools installed, fall back to manual Grep-based scanning (Phase 2)
+- If a tool is installed but fails to run, report the tool error
 - Don't assume framework handles security - verify in code

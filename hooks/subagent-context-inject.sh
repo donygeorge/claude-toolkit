@@ -73,13 +73,12 @@ if [ -n "$MOD_FILES" ]; then
 Changed: $(echo "$MOD_FILES" | tr '\n' ', ' | sed 's/,$//')"
 fi
 
-# Inject critical rules from config
-toolkit_iterate_array "$TOOLKIT_HOOKS_SUBAGENT_CONTEXT_CRITICAL_RULES" | while read -r RULE; do
+# Inject critical rules from config (process substitution avoids subshell/temp files)
+RULES_CONTENT=""
+while read -r RULE; do
   [ -z "$RULE" ] && continue
-  echo "$RULE"
-done > /tmp/toolkit_rules_$$ 2>/dev/null
-RULES_CONTENT=$(cat /tmp/toolkit_rules_$$ 2>/dev/null)
-rm -f /tmp/toolkit_rules_$$
+  RULES_CONTENT="${RULES_CONTENT}${RULES_CONTENT:+$'\n'}${RULE}"
+done < <(toolkit_iterate_array "$TOOLKIT_HOOKS_SUBAGENT_CONTEXT_CRITICAL_RULES")
 
 if [ -n "$RULES_CONTENT" ]; then
   CONTEXT="$CONTEXT
@@ -91,18 +90,16 @@ if [ -n "$RULES_CONTENT" ]; then
   done <<< "$RULES_CONTENT"
 fi
 
-# Inject available tools
+# Inject available tools (process substitution avoids subshell/temp files)
 TOOLS_CONTENT=""
-toolkit_iterate_array "$TOOLKIT_HOOKS_SUBAGENT_CONTEXT_AVAILABLE_TOOLS" | while read -r T; do
+while read -r T; do
   [ -z "$T" ] && continue
-  echo "$T"
-done > /tmp/toolkit_tools_$$ 2>/dev/null
-TOOLS_CONTENT=$(cat /tmp/toolkit_tools_$$ 2>/dev/null)
-rm -f /tmp/toolkit_tools_$$
+  TOOLS_CONTENT="${TOOLS_CONTENT}${TOOLS_CONTENT:+,}${T}"
+done < <(toolkit_iterate_array "$TOOLKIT_HOOKS_SUBAGENT_CONTEXT_AVAILABLE_TOOLS")
 
 if [ -n "$TOOLS_CONTENT" ]; then
   CONTEXT="$CONTEXT
-Available tools: $(echo "$TOOLS_CONTENT" | tr '\n' ', ' | sed 's/,$//')"
+Available tools: $TOOLS_CONTENT"
 fi
 
 # Inject stack info

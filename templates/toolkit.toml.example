@@ -20,7 +20,7 @@ name = "my-project"
 version_file = "VERSION"
 
 # Technology stacks present in the project
-# Options: "python", "ios", "typescript", "go", "rust"
+# Options: "python", "ios", "typescript"
 stacks = ["python"]
 
 # ---------------------------------------------------------------------------

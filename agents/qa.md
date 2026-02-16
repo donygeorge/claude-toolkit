@@ -61,7 +61,7 @@ You receive a Scope Bundle with:
 - Look for: data inconsistencies, confusing text, hard-to-use UI, missing features
 - Report ALL findings - no artificial limits
 
-**Smoke mode**: Unit tests required, UI tests optional for speed.
+**Smoke mode**: Unit tests required. Skip UI tests for speed unless scope explicitly includes UI changes.
 
 ## Phase 2: Execute Tests
 

@@ -155,8 +155,9 @@ shortcuts:
 - Reserve deep mode for pre-merge or complex changes
 
 **Override behavior**:
-- `/review --model haiku` forces all agents to haiku (fast/cheap)
-- architect always uses opus regardless of override
+
+- `/review --model haiku` forces most agents to haiku (fast/cheap)
+- **Exception**: architect always uses opus regardless of override (needs deep reasoning)
 
 ## Parallel Execution
 

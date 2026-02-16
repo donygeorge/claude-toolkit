@@ -1,5 +1,5 @@
 ---
-globs: app/**/*.py, src/**/*.py, lib/**/*.py, tests/**/*.py
+globs: **/*.py
 ---
 # Python Rules — {{PROJECT_NAME}}
 

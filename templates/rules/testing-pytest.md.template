@@ -1,9 +1,9 @@
 ---
-globs: tests/**/*.py
+globs: **/test_*.py, **/tests/**/*.py, **/conftest.py
 ---
 # Testing Rules (pytest) — {{PROJECT_NAME}}
 
-- NEVER use bare `python` or `pytest` — use `make test`, `make test-changed`
+- Use the project's test runner (e.g., `make test`, `pytest`) — prefer virtual env binaries
 - Test file naming: `test_<module>.py`
 - Test function naming: `test_<behavior>`
 - Use fixtures from conftest.py for shared setup (database sessions, clients, etc.)

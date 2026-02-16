@@ -83,8 +83,9 @@ fi
 # =============================================================================
 # 6. Database files
 # =============================================================================
-# TODO: read from config — database path pattern should be configurable
-if echo "$FILE_PATH" | grep -qE '(^|/)data/.*\.(db|sqlite|sqlite3)$'; then
+# Database file protection (configurable via toolkit.toml, with safe default)
+DB_PATTERN="${TOOLKIT_HOOKS_GUARD_DATABASE_PATTERN:-'(^|/)data/.*\.(db|sqlite|sqlite3)$'}"
+if echo "$FILE_PATH" | grep -qE "$DB_PATTERN"; then
   deny "Blocked direct write to database file — use migrations or SQL commands"
 fi
 

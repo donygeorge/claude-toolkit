@@ -83,9 +83,8 @@ if echo "$COMMAND" | grep -qE '\brm\s+(-[a-zA-Z]*r[a-zA-Z]*\s+-[a-zA-Z]*f|-[a-zA
   deny "rm -rf on current directory or wildcard blocked — extremely destructive"
 fi
 
-# TODO: read from config — critical paths should be configurable per-project
-# Default critical paths cover common project structures
-CRITICAL_PATHS='(src|app|lib|\.claude|\.git|tests|data|scripts|config)(/|$|\s)'
+# Critical paths for rm -rf protection (configurable via toolkit.toml, with safe defaults)
+CRITICAL_PATHS="${TOOLKIT_HOOKS_GUARD_CRITICAL_PATHS:-'(src|app|lib|\.claude|\.git|tests|data|scripts|config)(/|$|\s)'}"
 if echo "$COMMAND" | grep -qE '\brm\s+(-[a-zA-Z]*r[a-zA-Z]*f|-[a-zA-Z]*f[a-zA-Z]*r|-[a-zA-Z]*r[a-zA-Z]*\s+-[a-zA-Z]*f|-[a-zA-Z]*f[a-zA-Z]*\s+-[a-zA-Z]*r|--recursive)\b'; then
   if echo "$COMMAND" | grep -qE "$CRITICAL_PATHS"; then
     deny "rm -rf on critical path blocked — would destroy essential project files" \
@@ -113,11 +112,15 @@ if echo "$COMMAND" | grep -qE "$DESTRUCTIVE_PATTERNS"; then
 fi
 
 # 4b. Commands inside subshells $() or backticks
-SUBSHELL_CONTENT=$(echo "$COMMAND" | grep -oE '\$\([^)]+\)' 2>/dev/null)
+# Use grep -oP for nested $() if available, fall back to simple regex
+# Also check the full command for destructive patterns within any $(...) context
+SUBSHELL_CONTENT=$(echo "$COMMAND" | grep -oE '\$\([^)]*\)' 2>/dev/null || true)
+# For nested substitutions like $(echo $(rm -rf /)), also strip $() wrappers and re-check
+INNER_CONTENT=$(echo "$COMMAND" | sed 's/\$(\([^)]*\))/\1/g' 2>/dev/null || true)
 # Intentionally matching literal backticks in command
 # shellcheck disable=SC2016
-BACKTICK_CONTENT=$(echo "$COMMAND" | grep -oE '`[^`]+`' 2>/dev/null)
-SUBSTITUTION_CONTENT="${SUBSHELL_CONTENT}${BACKTICK_CONTENT}"
+BACKTICK_CONTENT=$(echo "$COMMAND" | grep -oE '`[^`]+`' 2>/dev/null || true)
+SUBSTITUTION_CONTENT="${SUBSHELL_CONTENT}${BACKTICK_CONTENT}${INNER_CONTENT}"
 
 if [ -n "$SUBSTITUTION_CONTENT" ]; then
   if echo "$SUBSTITUTION_CONTENT" | grep -qE "$DESTRUCTIVE_PATTERNS"; then
@@ -165,10 +168,12 @@ fi
 # =============================================================================
 # 8. Block network access in review subagents (configurable agent names)
 # =============================================================================
-# TODO: read from config — subagent names should be configurable
+# Block network in review subagents (names configurable via toolkit.toml)
+REVIEW_AGENTS="${TOOLKIT_HOOKS_GUARD_REVIEW_AGENTS:-reviewer|qa|security|ux|pm|docs|architect|commit-check}"
 if [ -n "$CLAUDE_SUBAGENT_TYPE" ]; then
+  # shellcheck disable=SC2254
   case "$CLAUDE_SUBAGENT_TYPE" in
-    reviewer|qa|security|ux|pm|docs|architect|commit-check)
+    $REVIEW_AGENTS)
       if echo "$COMMAND" | grep -qE '\b(curl|wget)\b'; then
         deny "Network access blocked in review subagent ($CLAUDE_SUBAGENT_TYPE)" \
              "Review agents must not make network requests. Use cached/local data only."

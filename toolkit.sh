@@ -343,7 +343,8 @@ cmd_init() {
   echo ""
   echo "Generating configuration..."
   cmd_generate_settings_inner || {
-    _warn "Settings generation had issues (you may need to fix toolkit.toml)"
+    _error "Settings generation failed. Fix toolkit.toml before continuing."
+    return 1
   }
 
   # --- Create manifest ---
@@ -487,7 +488,8 @@ cmd_update() {
   echo ""
   echo "Regenerating settings..."
   cmd_generate_settings_inner || {
-    _warn "Settings generation had issues"
+    _error "Settings generation failed. Fix toolkit.toml before continuing."
+    return 1
   }
 
   # Update manifest version

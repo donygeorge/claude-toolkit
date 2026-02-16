@@ -37,33 +37,33 @@ fi
 # ---------------------------------------------------------------------------
 # 3. Check required tools (from config)
 # ---------------------------------------------------------------------------
-toolkit_iterate_array "$TOOLKIT_HOOKS_SETUP_REQUIRED_TOOLS" | while read -r TOOL; do
+# Use process substitution to avoid subshell (allows modifying WARNINGS)
+while read -r TOOL; do
   [ -z "$TOOL" ] && continue
   if ! command -v "$TOOL" >/dev/null 2>&1 && [ ! -x ".venv/bin/$TOOL" ]; then
-    # Can't modify WARNINGS from subshell, so echo directly
-    echo "WARNING: Missing required tool: ${TOOL}" >&2
+    WARNINGS="${WARNINGS}- Missing required tool: ${TOOL}\n"
   fi
-done
+done < <(toolkit_iterate_array "$TOOLKIT_HOOKS_SETUP_REQUIRED_TOOLS")
 
 # ---------------------------------------------------------------------------
 # 4. Check optional tools (from config, informational only)
 # ---------------------------------------------------------------------------
-toolkit_iterate_array "$TOOLKIT_HOOKS_SETUP_OPTIONAL_TOOLS" | while read -r TOOL; do
+while read -r TOOL; do
   [ -z "$TOOL" ] && continue
   if ! command -v "$TOOL" >/dev/null 2>&1 && [ ! -x ".venv/bin/$TOOL" ]; then
     echo "INFO: Optional tool not found: ${TOOL}" >&2
   fi
-done
+done < <(toolkit_iterate_array "$TOOLKIT_HOOKS_SETUP_OPTIONAL_TOOLS")
 
 # ---------------------------------------------------------------------------
 # 5. Check security tools (from config)
 # ---------------------------------------------------------------------------
-toolkit_iterate_array "$TOOLKIT_HOOKS_SETUP_SECURITY_TOOLS" | while read -r TOOL; do
+while read -r TOOL; do
   [ -z "$TOOL" ] && continue
   if ! command -v "$TOOL" >/dev/null 2>&1; then
     echo "INFO: Security tool not found: ${TOOL}" >&2
   fi
-done
+done < <(toolkit_iterate_array "$TOOLKIT_HOOKS_SETUP_SECURITY_TOOLS")
 
 if [ -n "$WARNINGS" ]; then
   echo "=== Setup Check ==="

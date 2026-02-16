@@ -22,8 +22,9 @@ else
 fi
 
 # Inject critical rules from config (always, even with state file)
+# Use process substitution to avoid subshell (HAS_RULES must persist)
 HAS_RULES=false
-toolkit_iterate_array "$TOOLKIT_HOOKS_SUBAGENT_CONTEXT_CRITICAL_RULES" | while read -r RULE; do
+while read -r RULE; do
   [ -z "$RULE" ] && continue
   if [ "$HAS_RULES" = false ]; then
     echo ""
@@ -31,6 +32,6 @@ toolkit_iterate_array "$TOOLKIT_HOOKS_SUBAGENT_CONTEXT_CRITICAL_RULES" | while r
     HAS_RULES=true
   fi
   echo "- $RULE"
-done
+done < <(toolkit_iterate_array "$TOOLKIT_HOOKS_SUBAGENT_CONTEXT_CRITICAL_RULES")
 
 exit 0

@@ -96,7 +96,7 @@ After the initial plan is created, iterate with codex for feedback:
 **Loop Rules**:
 
 - Maximum 10 iterations
-- Stop early if codex says "no major issues" or "plan looks solid"
+- Stop early if codex response starts with "SOLID:" or says "no major issues"
 - Incorporate feedback and regenerate plan each iteration
 - Track iteration count and feedback summary
 

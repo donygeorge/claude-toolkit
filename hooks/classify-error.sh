@@ -98,8 +98,8 @@ if command -v jq >/dev/null 2>&1; then
   jq -n --arg classification "$CLASSIFICATION" \
     '{hookSpecificOutput:{hookEventName:"PostToolUseFailure",additionalContext:$classification}}'
 else
-  # Escape special characters for JSON (backslashes, quotes, newlines, tabs)
-  SAFE_CLASS=$(printf '%s' "$CLASSIFICATION" | sed 's/\\/\\\\/g; s/"/\\"/g; s/	/\\t/g')
+  # Escape special characters for JSON (backslashes, quotes, tabs, newlines, carriage returns)
+  SAFE_CLASS=$(printf '%s' "$CLASSIFICATION" | tr '\n\r' '  ' | sed 's/\\/\\\\/g; s/"/\\"/g; s/	/\\t/g')
   printf '{"hookSpecificOutput":{"hookEventName":"PostToolUseFailure","additionalContext":"%s"}}\n' "$SAFE_CLASS"
 fi
 

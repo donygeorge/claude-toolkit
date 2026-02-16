@@ -1,5 +1,5 @@
 ---
-globs: src/**/*.ts, src/**/*.tsx, lib/**/*.ts, tests/**/*.ts, __tests__/**/*.ts
+globs: **/*.ts, **/*.tsx
 ---
 # TypeScript Rules — {{PROJECT_NAME}}
 

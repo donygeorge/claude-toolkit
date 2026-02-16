@@ -1,5 +1,5 @@
 ---
-globs: app/routes/**/*.py, src/routes/**/*.py, src/api/**/*.py
+globs: **/routes/**/*.py, **/api/**/*.py, **/endpoints/**/*.py
 ---
 # API Route Rules (FastAPI) — {{PROJECT_NAME}}
 
