@@ -1,3 +1,10 @@
+---
+name: gemini
+description: Second opinion from Google's Gemini model for alternative solutions or research.
+argument-hint: "<question or code to review>"
+user-invocable: true
+---
+
 # Gemini Skill
 
 Invoke Google Gemini via the Gemini CLI for second opinions, alternative solutions, or research.

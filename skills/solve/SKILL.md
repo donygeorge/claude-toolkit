@@ -1,3 +1,11 @@
+---
+name: solve
+description: GitHub issue workflow - fetch, reproduce, fix, test, and commit.
+argument-hint: "<github-issue-url-or-number>"
+user-invocable: true
+disable-model-invocation: true
+---
+
 # Solve Issue Skill
 
 Autonomously work on GitHub issues: fetch details, understand context, reproduce visual issues,

@@ -1,3 +1,11 @@
+---
+name: review
+description: Run code review agents (reviewer, qa, security, ux, pm, docs, architect).
+argument-hint: "[agent] [scope]"
+user-invocable: true
+disable-model-invocation: true
+---
+
 # Review Suite Skill
 
 Orchestrates code review agents for comprehensive analysis. Run single or multiple agents on various scopes.

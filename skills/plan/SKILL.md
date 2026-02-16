@@ -1,3 +1,11 @@
+---
+name: plan
+description: Creates detailed implementation plans with milestones, exit criteria, and architecture decisions.
+argument-hint: "<feature-name>"
+user-invocable: true
+disable-model-invocation: true
+---
+
 # Plan Skill
 
 Creates detailed implementation plans for major features with milestones, exit criteria, testing requirements, and architecture decisions. Does NOT implement - only plans.

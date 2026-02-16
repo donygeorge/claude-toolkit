@@ -1,3 +1,9 @@
+---
+name: scope-resolver
+description: Internal skill that resolves scope for review agents.
+user-invocable: false
+---
+
 # Scope Resolver Skill
 
 Resolves user intent (feature name, diff range, or "uncommitted") into a Scope Bundle for review agents.
