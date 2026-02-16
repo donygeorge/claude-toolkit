@@ -107,7 +107,7 @@ Report as `type: "model-drift"` if:
 
 ## Phase 3: Output Format
 
-Emit findings per `.claude/skills/review-suite/output-schema.json`. Required fields:
+Emit findings with these required fields:
 
 - `severity`: info, low, med, high, crit
 - `type`: bug, test-gap, security, code-smell, model-drift, etc.

@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.1] - 2026-02-16
+
+### Fixed
+
+- **Security**: Fix command injection in `toolkit.sh` `_read_toml_value` — use `sys.argv` instead of string interpolation
+- **Security**: Replace `eval` with safe array-based `find` in `pre-compact.sh`
+- **Bug**: Fix `auto-approve-safe.sh` subshell exit bug — `approve()` in piped `while` loop only exited subshell, not script. Use process substitution instead
+- **Bug**: Fix incomplete JSON escaping in `classify-error.sh` fallback path (escape backslashes, tabs)
+- Remove project-specific scripts from `ios.json` stack (was leaking personal project paths)
+- Remove bare `Bash(npx:*)` from `typescript.json` stack (conflicted with auto-approve npx block)
+- Pin MCP server versions in `base.mcp.json` instead of using `@latest`
+- Switch manifest file hashing from MD5 to SHA-256
+- Fix inconsistent `encoding="utf-8"` in `smart-context/framework.py`
+- Make security agent generic — remove specific tool install commands
+- Fix `reviewer.md` referencing non-existent output-schema.json path
+- Fix CLAUDE.md project structure to accurately reflect rules/ vs templates/rules/
+- Fix temp file cleanup in `pre-compact.sh` — use `mktemp` with cleanup trap
+
 ## [1.0.0] - 2026-02-16
 
 ### Added

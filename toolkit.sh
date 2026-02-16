@@ -80,9 +80,9 @@ _read_toml_value() {
   local key="$2"
   python3 -c "
 import tomllib, sys
-with open('$file', 'rb') as f:
+with open(sys.argv[1], 'rb') as f:
     data = tomllib.load(f)
-keys = '$key'.split('.')
+keys = sys.argv[2].split('.')
 val = data
 for k in keys:
     if isinstance(val, dict) and k in val:
@@ -94,7 +94,7 @@ if isinstance(val, list):
         print(item)
 else:
     print(val)
-" 2>/dev/null
+" "$file" "$key" 2>/dev/null
 }
 
 _read_toml_array() {

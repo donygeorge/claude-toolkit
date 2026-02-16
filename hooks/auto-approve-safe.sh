@@ -68,7 +68,8 @@ esac
 if [ "$TOOL" = "Write" ] || [ "$TOOL" = "Edit" ]; then
   if [ -n "$FILE_PATH" ]; then
     # Check against configurable write paths from toolkit.toml
-    toolkit_iterate_array "$TOOLKIT_HOOKS_AUTO_APPROVE_WRITE_PATHS" | while read -r PATTERN; do
+    # Use process substitution to avoid subshell (approve calls exit)
+    while read -r PATTERN; do
       [ -z "$PATTERN" ] && continue
       # Use bash pattern matching (case) for glob-style patterns
       # shellcheck disable=SC2254
@@ -77,7 +78,7 @@ if [ "$TOOL" = "Write" ] || [ "$TOOL" = "Edit" ]; then
           approve
           ;;
       esac
-    done
+    done < <(toolkit_iterate_array "$TOOLKIT_HOOKS_AUTO_APPROVE_WRITE_PATHS")
 
     # Hardcoded defaults (always present as safety net)
     case "$FILE_PATH" in
@@ -124,12 +125,13 @@ if [ "$TOOL" = "Bash" ] && [ -n "$COMMAND" ]; then
   esac
 
   # --- Check configurable bash commands ---
-  toolkit_iterate_array "$TOOLKIT_HOOKS_AUTO_APPROVE_BASH_COMMANDS" | while read -r APPROVED_CMD; do
+  # Use process substitution to avoid subshell (approve calls exit)
+  while read -r APPROVED_CMD; do
     [ -z "$APPROVED_CMD" ] && continue
     if [ "$CMD_FIRST" = "$APPROVED_CMD" ]; then
       approve
     fi
-  done
+  done < <(toolkit_iterate_array "$TOOLKIT_HOOKS_AUTO_APPROVE_BASH_COMMANDS")
 
   # --- One-Time Approve: Safe filesystem reads ---
   case "$CMD_FIRST" in

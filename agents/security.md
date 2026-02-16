@@ -2,7 +2,7 @@
 name: security
 description: >
   Security auditor. Scans for OWASP Top 10, secrets, dependency
-  vulnerabilities. Uses gitleaks, semgrep, pip-audit, osv-scanner.
+  vulnerabilities using available security tools.
 model: haiku
 # Tool-based scanning - haiku is sufficient and cost-effective
 ---
@@ -22,7 +22,7 @@ These tools are pre-authorized - use them without asking:
 - **Grep**: Search code patterns (use instead of bash grep)
 - **Glob**: Find files by pattern
 - **Write/Edit**: `artifacts/**` - save findings and reports (use unique filenames with timestamp/task ID for parallel runs)
-- **Bash**: `gitleaks`, `semgrep`, `pip-audit`, `osv-scanner`, `git diff/log/status/show`
+- **Bash**: Security scanning tools, `git diff/log/status/show`
 
 ## Behavioral Heuristics
 
@@ -39,12 +39,14 @@ Scope Bundle with `files`, `risk_profile`
 
 ## Phase 1: Run Security Tools
 
-Run tools from `.claude/tools/code-quality.yaml`. If missing, **fail with install instructions**:
+Run available security tools. Check which tools are installed and use them:
 
-- **gitleaks**: `brew install gitleaks` - secret detection
-- **semgrep**: `brew install semgrep` - SAST for Python/JS/etc (note: pip broken on Python 3.13+)
-- **pip-audit**: `pip install pip-audit` - Python dependency CVE audit
-- **osv-scanner**: `brew install osv-scanner` - Google OSV database for broader vulnerability coverage
+- **Secret detection**: Run a secret scanning tool (e.g., gitleaks) if available
+- **SAST scanning**: Run a static analysis tool (e.g., semgrep) if available
+- **Dependency audit**: Run a dependency vulnerability scanner if available
+- **CVE scanning**: Run an OSV/CVE database scanner if available
+
+If no security tools are installed, fall back to manual Grep-based scanning in Phase 2.
 
 ## Phase 2: Language-Specific Security Audits
 

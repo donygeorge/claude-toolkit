@@ -12,30 +12,34 @@ cd "$PROJECT_DIR" || exit 0
 PROJECT_NAME="$TOOLKIT_PROJECT_NAME"
 
 # Get source directories and extensions from config
+# Use a temp file with cleanup trap for safety
+TMPFILE_RECENT=$(mktemp /tmp/toolkit_recent.XXXXXX 2>/dev/null || echo "/tmp/toolkit_recent_$$")
+TMPFILE_STATE=$(mktemp /tmp/toolkit_state.XXXXXX 2>/dev/null || echo "/tmp/toolkit_state_$$")
+TMPFILE_RULES=$(mktemp /tmp/toolkit_rules.XXXXXX 2>/dev/null || echo "/tmp/toolkit_rules_$$")
+trap 'rm -f "$TMPFILE_RECENT" "$TMPFILE_STATE" "$TMPFILE_RULES"' EXIT
+
 RECENT_FILES=""
-toolkit_iterate_array "$TOOLKIT_HOOKS_COMPACT_SOURCE_DIRS" | while read -r DIR; do
+while read -r DIR; do
   [ -z "$DIR" ] && continue
   if [ -d "$DIR" ]; then
-    # Build a find expression from configured extensions
-    FIND_ARGS=""
+    # Build find arguments array from configured extensions
+    FIND_ARGS=()
     FIRST=true
-    toolkit_iterate_array "$TOOLKIT_HOOKS_COMPACT_SOURCE_EXTENSIONS" | while read -r EXTGLOB; do
+    while read -r EXTGLOB; do
       [ -z "$EXTGLOB" ] && continue
       if [ "$FIRST" = true ]; then
-        FIND_ARGS="-name \"$EXTGLOB\""
+        FIND_ARGS+=(-name "$EXTGLOB")
         FIRST=false
       else
-        FIND_ARGS="$FIND_ARGS -o -name \"$EXTGLOB\""
+        FIND_ARGS+=(-o -name "$EXTGLOB")
       fi
-      echo "$FIND_ARGS"
-    done | tail -1 | while read -r ARGS; do
-      [ -z "$ARGS" ] && continue
-      eval "find \"$DIR\" -type f \\( $ARGS \\) -mmin -30 2>/dev/null" | head -5
-    done
+    done < <(toolkit_iterate_array "$TOOLKIT_HOOKS_COMPACT_SOURCE_EXTENSIONS")
+    if [ ${#FIND_ARGS[@]} -gt 0 ]; then
+      find "$DIR" -type f \( "${FIND_ARGS[@]}" \) -mmin -30 2>/dev/null | head -5
+    fi
   fi
-done > /tmp/toolkit_recent_files_$$ 2>/dev/null
-RECENT_FILES=$(cat /tmp/toolkit_recent_files_$$ 2>/dev/null)
-rm -f /tmp/toolkit_recent_files_$$
+done < <(toolkit_iterate_array "$TOOLKIT_HOOKS_COMPACT_SOURCE_DIRS") > "$TMPFILE_RECENT" 2>/dev/null
+RECENT_FILES=$(cat "$TMPFILE_RECENT" 2>/dev/null)
 
 # Get uncommitted changes
 GIT_STATUS=$(git status --porcelain 2>/dev/null | head -10)
@@ -43,7 +47,7 @@ GIT_STATUS=$(git status --porcelain 2>/dev/null | head -10)
 # Check for active orchestration state (implement/solve/refine)
 ACTIVE_STATE=""
 
-toolkit_iterate_array "$TOOLKIT_HOOKS_COMPACT_STATE_DIRS" | while read -r STATE_DIR; do
+while read -r STATE_DIR; do
   [ -z "$STATE_DIR" ] && continue
   if [ -d "$STATE_DIR/execute" ]; then
     LATEST_PLAN=$(ls -t "$STATE_DIR"/execute/*/plan_state.json 2>/dev/null | head -1)
@@ -65,21 +69,19 @@ toolkit_iterate_array "$TOOLKIT_HOOKS_COMPACT_STATE_DIRS" | while read -r STATE_
       fi
     fi
   fi
-done > /tmp/toolkit_active_state_$$ 2>/dev/null
-ACTIVE_STATE=$(cat /tmp/toolkit_active_state_$$ 2>/dev/null)
-rm -f /tmp/toolkit_active_state_$$
+done < <(toolkit_iterate_array "$TOOLKIT_HOOKS_COMPACT_STATE_DIRS") > "$TMPFILE_STATE" 2>/dev/null
+ACTIVE_STATE=$(cat "$TMPFILE_STATE" 2>/dev/null)
 
 # Get current branch
 BRANCH=$(git branch --show-current 2>/dev/null)
 
 # Build critical rules from config
 CRITICAL_RULES=""
-toolkit_iterate_array "$TOOLKIT_HOOKS_SUBAGENT_CONTEXT_CRITICAL_RULES" | while read -r RULE; do
+while read -r RULE; do
   [ -z "$RULE" ] && continue
   echo "- $RULE"
-done > /tmp/toolkit_critical_rules_$$ 2>/dev/null
-CRITICAL_RULES=$(cat /tmp/toolkit_critical_rules_$$ 2>/dev/null)
-rm -f /tmp/toolkit_critical_rules_$$
+done < <(toolkit_iterate_array "$TOOLKIT_HOOKS_SUBAGENT_CONTEXT_CRITICAL_RULES") > "$TMPFILE_RULES" 2>/dev/null
+CRITICAL_RULES=$(cat "$TMPFILE_RULES" 2>/dev/null)
 
 # Generate output function (used for both stdout and state file)
 generate_output() {

@@ -214,7 +214,7 @@ def detect_active_state(cwd: str) -> List[str]:
     )
     if plan_states:
         try:
-            with open(plan_states[0]) as f:
+            with open(plan_states[0], encoding="utf-8") as f:
                 state = json.load(f)
             plan_name = state.get("plan_name", "unknown")
             current = state.get("current_milestone", "unknown")
@@ -229,7 +229,7 @@ def detect_active_state(cwd: str) -> List[str]:
     )
     if refine_states:
         try:
-            with open(refine_states[0]) as f:
+            with open(refine_states[0], encoding="utf-8") as f:
                 state = json.load(f)
             scope = state.get("scope", "unknown")
             iteration = state.get("current_iteration", "unknown")
@@ -273,7 +273,7 @@ def format_project_header(cwd: str, project_name: str = "Project") -> str:
     # Version from VERSION file
     version_path = os.path.join(cwd, "VERSION")
     try:
-        with open(version_path) as f:
+        with open(version_path, encoding="utf-8") as f:
             version = f.read().strip()
         if version:
             header_parts.append(f"Version: {version}")

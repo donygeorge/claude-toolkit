@@ -38,13 +38,13 @@ _toolkit_version() {
 }
 
 _file_hash() {
-  # Returns md5 hash of a file for change detection
+  # Returns SHA-256 hash of a file for change detection
   local file="$1"
   if [[ -f "$file" ]]; then
-    if command -v md5sum &>/dev/null; then
-      md5sum "$file" | cut -d' ' -f1
-    elif command -v md5 &>/dev/null; then
-      md5 -q "$file"
+    if command -v sha256sum &>/dev/null; then
+      sha256sum "$file" | cut -d' ' -f1
+    elif command -v shasum &>/dev/null; then
+      shasum -a 256 "$file" | cut -d' ' -f1
     else
       echo "no-hash-tool"
     fi

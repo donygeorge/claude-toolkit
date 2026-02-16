@@ -69,7 +69,7 @@ bash toolkit.sh help                      # Show usage
 │   ├── architect.md             # Deep architecture analysis
 │   ├── commit-check.md          # Lightweight post-commit check
 │   └── plan.md                  # Feature planning agent
-├── skills/                      # Skill templates (9 directories)
+├── skills/                      # Skill templates (9 directories, each has SKILL.md)
 │   ├── review-suite/            # Multi-agent code review
 │   ├── implement/               # Autonomous plan execution
 │   ├── plan/                    # Feature planning
@@ -79,18 +79,12 @@ bash toolkit.sh help                      # Show usage
 │   ├── conventions/             # View coding conventions
 │   ├── scope-resolver/          # Feature scope resolver
 │   └── gemini/                  # Second opinion from Google
-├── rules/                       # Coding convention templates (8 files)
-│   ├── python.md                # Python 3.11+ conventions
-│   ├── swift.md                 # SwiftUI/iOS patterns
-│   ├── typescript.md            # TypeScript/Node conventions
-│   ├── testing-pytest.md        # pytest patterns
-│   ├── testing-jest.md          # Jest patterns
-│   ├── api-routes-fastapi.md    # FastAPI conventions
-│   ├── database-sqlite.md       # SQLite WAL patterns
+├── rules/                       # Generic rules (symlinked to projects)
 │   └── git-protocol.md          # Git staging and commit rules
 ├── templates/                   # Configuration templates
 │   ├── settings-base.json       # Base settings for all projects
 │   ├── stacks/*.json            # Stack overlays (python, ios, typescript)
+│   ├── rules/*.md.template      # Stack-specific rule templates (7 files)
 │   ├── toolkit.toml.example     # Example config
 │   └── CLAUDE.md.template       # Project instructions template
 ├── smart-context/               # Keyword context framework

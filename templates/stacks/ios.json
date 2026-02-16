@@ -5,16 +5,12 @@
       "Bash(swift:*)",
       "Bash(codesign:*)",
       "Bash(swiftlint:*)",
-      "Bash(axe:*)",
       "Bash(xcrun simctl:*)",
       "Bash(xcrun:*)",
-      "Bash(./scripts/ios_ui.sh:*)",
-      "Bash(./scripts/ios_observe.sh:*)",
-      "Bash(make ios-build:*)",
-      "Bash(make ios-sim:*)",
-      "Bash(make ios-test-changed:*)",
-      "Bash(make ios-observe:*)",
-      "Bash(make ios-observe-quick:*)"
+      "Bash(make build:*)",
+      "Bash(make test:*)",
+      "Bash(make lint:*)",
+      "Bash(make fmt:*)"
     ]
   }
 }
