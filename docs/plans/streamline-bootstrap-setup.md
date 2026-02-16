@@ -98,13 +98,14 @@ Phase 1-8: detect → validate → present → config → CLAUDE.md → settings
 
 ### Bootstrap Prompt Design
 
-The prompt lives in the README (and optionally as a standalone file like `BOOTSTRAP_PROMPT.md`). It is a self-contained instruction block that:
+The prompt lives in the README (and as a standalone `BOOTSTRAP_PROMPT.md`). It is a **fully self-contained** instruction block — no fetching from GitHub, no external dependencies. The user copies it from the README (which they're already reading) and pastes it into Claude Code.
 
-1. Checks if `.claude/toolkit/` exists — if so, says "toolkit already installed, run /setup instead"
-2. Runs `bootstrap.sh` to add the git subtree and init
-3. Then executes the same flow as `/setup` inline (since the skill now exists but we're already mid-conversation)
+**Key design decisions**:
 
-The prompt references the toolkit GitHub URL so Claude can fetch bootstrap.sh:
+- Prompt contains the repo URL and the exact git commands inline — Claude runs them directly via Bash
+- No `WebFetch`, no `curl`, no downloading scripts — just `git remote add` + `git subtree add`
+- After the subtree is added, the `/setup` skill exists, so Claude reads and follows it for the detection/config flow
+- Handles "already installed" by checking for `.claude/toolkit/` first
 
 ```text
 Install and configure claude-toolkit for this project.
@@ -112,15 +113,17 @@ Install and configure claude-toolkit for this project.
 Toolkit repo: https://github.com/donygeorge/claude-toolkit.git
 
 Steps:
-1. If .claude/toolkit/ doesn't exist, add it:
+1. If .claude/toolkit/ already exists, skip to step 2.
+   Otherwise, install the toolkit:
    git remote add claude-toolkit https://github.com/donygeorge/claude-toolkit.git
    git fetch claude-toolkit
    git subtree add --squash --prefix=.claude/toolkit claude-toolkit main
    bash .claude/toolkit/toolkit.sh init --from-example
-2. Run /setup to detect and configure everything
+2. Read .claude/skills/setup/SKILL.md and follow it to detect stacks,
+   validate commands, generate toolkit.toml, create CLAUDE.md, and commit.
 ```
 
-This is a ~10-line prompt the user copies once. Claude handles the rest.
+This is ~10 lines. The user copies it once from the README, pastes into Claude Code, and gets a fully configured toolkit. No terminal required.
 
 ### New File: detect-project.py
 
@@ -241,10 +244,11 @@ Create a self-contained prompt that users copy-paste into Claude Code to install
 **Exit Criteria**:
 
 - [ ] `BOOTSTRAP_PROMPT.md` exists at repo root with a self-contained prompt block
-- [ ] Prompt instructs Claude to: check if `.claude/toolkit/` exists, add git subtree if not, run `toolkit.sh init --from-example`, then execute the full `/setup` flow
+- [ ] Prompt contains the git commands inline (git remote add, git fetch, git subtree add) — no WebFetch, no curl, no downloading scripts
 - [ ] Prompt includes the toolkit GitHub URL as a parameter the user can customize
-- [ ] Prompt handles the "already installed" case by directing to `/setup` instead
-- [ ] Prompt is concise (under 30 lines) — just enough for Claude to know what to do
+- [ ] Prompt tells Claude to read and follow `.claude/skills/setup/SKILL.md` after install (not re-implement the setup logic)
+- [ ] Prompt handles the "already installed" case by checking for `.claude/toolkit/` and skipping to /setup
+- [ ] Prompt is concise (under 15 lines) — just enough for Claude to know what to do
 - [ ] README.md has a "Quick Start" section that shows the prompt with copy instructions
 - [ ] Manual test: copy prompt into Claude Code in a fresh project, verify it installs toolkit and configures everything end-to-end
 
