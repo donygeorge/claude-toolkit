@@ -20,3 +20,6 @@ toolkit-cache.env
 
 # Test artifacts
 test-output/
+
+# Machine-specific Claude Code settings
+.claude/settings.local.json

@@ -1,0 +1,43 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3:*)",
+      "Bash(shellcheck:*)",
+      "Bash(bash tests/*:*)",
+      "Bash(git:*)",
+      "Bash(cat:*)",
+      "Bash(ls:*)",
+      "Bash(wc:*)",
+      "Bash(chmod:*)",
+      "Bash(diff:*)",
+      "Bash(mktemp:*)",
+      "Bash(mkdir:*)",
+      "Bash(rm:*)",
+      "Bash(cp:*)",
+      "Bash(mv:*)",
+      "Read",
+      "Glob",
+      "Grep",
+      "WebSearch",
+      "Task",
+      "Skill"
+    ],
+    "deny": [
+      "Read(~/.ssh/*)",
+      "Read(~/.aws/*)",
+      "Read(~/.gnupg/*)",
+      "Read(/etc/shadow)",
+      "Read(/etc/passwd)",
+      "Write(~/.ssh/*)",
+      "Write(~/.aws/*)",
+      "Write(~/.gnupg/*)",
+      "Write(.env)",
+      "Write(.env.*)",
+      "Edit(.env)",
+      "Edit(.env.*)"
+    ]
+  },
+  "env": {
+    "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "128000"
+  }
+}
