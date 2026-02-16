@@ -110,6 +110,14 @@ The prompt lives in the README (and as a standalone `BOOTSTRAP_PROMPT.md`). It i
 ```text
 Install and configure claude-toolkit for this project.
 
+claude-toolkit is a collection of Claude Code hooks, agents, skills, and rules
+for safe, autonomous AI-assisted development. It provides safety guards
+(blocking destructive commands, sensitive file writes), quality gates
+(auto-lint, auto-test), reusable agent prompts (reviewer, QA, security,
+architect), and skill templates (code review, implementation, planning).
+It integrates via git subtree under .claude/toolkit/ and is configured
+through .claude/toolkit.toml.
+
 Toolkit repo: https://github.com/donygeorge/claude-toolkit.git
 
 Steps:
@@ -123,7 +131,7 @@ Steps:
    validate commands, generate toolkit.toml, create CLAUDE.md, and commit.
 ```
 
-This is ~10 lines. The user copies it once from the README, pastes into Claude Code, and gets a fully configured toolkit. No terminal required.
+This is ~20 lines. The user copies it once from the README, pastes into Claude Code, and gets a fully configured toolkit. No terminal required.
 
 ### New File: detect-project.py
 
