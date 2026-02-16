@@ -8,17 +8,17 @@
 
 ## Summary
 
-Simplify the new-project onboarding flow from three disconnected stages (bootstrap.sh → /setup skill → manual fixup) to two seamless stages: a minimal `bootstrap.sh` (git subtree only) + a comprehensive `/setup` skill that auto-detects everything, validates commands actually work, and commits a fully working configuration. Also handle existing projects with partial toolkit installations by making `/setup` detect gaps and fill them.
+Simplify the new-project onboarding flow from three disconnected stages (bootstrap.sh → /setup skill → manual fixup) to a single copy-paste prompt the user gives Claude Code. This prompt handles everything: installing the toolkit subtree, running init, auto-detecting stacks and commands, validating that everything works, generating config, and committing. For projects that already have the toolkit, the `/setup` skill handles reconfiguration and repair of partial installs.
 
 ## North Star
 
-A user runs `/setup` in Claude Code and gets a fully working, validated toolkit configuration — whether the project is brand new, partially set up, or being reconfigured. Claude guides the user through any manual steps (like the git subtree add) as needed.
+A user copies one prompt into Claude Code and gets a fully working, validated toolkit configuration — from zero to done. For existing installs, `/setup` handles reconfiguration and repair.
 
 ## Principles
 
-1. **Detect over ask** — auto-detect stacks, commands, dirs, and installation state from the project instead of requiring flags
-2. **Validate over template** — only write commands to config that were proven to work
-3. **Single orchestrator** — `/setup` is the one comprehensive tool for all scenarios (new, partial, reconfigure)
+1. **One prompt from zero** — a self-contained bootstrap prompt in the README that works without any toolkit files pre-installed
+2. **Detect over ask** — auto-detect stacks, commands, dirs, and installation state from the project instead of requiring flags
+3. **Validate over template** — only write commands to config that were proven to work
 4. **Meet users where they are** — detect current state and do only what's needed, not a full re-install
 5. **Backward compatible** — old `bootstrap.sh --name foo --stacks python` still works
 
@@ -32,7 +32,7 @@ A user runs `/setup` in Claude Code and gets a fully working, validated toolkit 
 - Nothing validates that lint/test commands actually execute successfully
 - Three-stage flow requires context switching between terminal and Claude Code
 - No handling for partial installations — if skills were deleted or init was interrupted, user must know to run `toolkit.sh init --force`
-- `/setup` cannot guide users through initial bootstrap when toolkit isn't installed yet
+- **Chicken-and-egg problem**: `/setup` skill lives inside the toolkit subtree, so it can't exist before the toolkit is installed. Users need to know to run bootstrap.sh first, but there's no guidance from within Claude Code
 
 ### Existing Patterns to Reuse
 
@@ -46,49 +46,81 @@ A user runs `/setup` in Claude Code and gets a fully working, validated toolkit 
 
 ### Scenarios to Handle
 
-| Scenario | State | What /setup does |
-| ---- | ----- | ---------------- |
-| **Brand new project** | No `.claude/toolkit/` | Tells user to run bootstrap.sh, provides exact command |
-| **Post-bootstrap (fresh)** | Subtree + example toolkit.toml | Full detection → validation → config → CLAUDE.md → commit |
-| **Partial setup** | Subtree exists, some skills/agents missing | Runs `toolkit.sh init --force` to fill gaps, then full setup |
-| **Configured but stale** | Working config, but toolkit updated | Re-detects, validates, refreshes settings, fills new skills |
-| **Reconfigure** | Working config, user wants to re-detect | Full re-detection and validation from scratch |
+| Scenario | Entry Point | What happens |
+| ---- | ----------- | ------------ |
+| **Brand new project** | Bootstrap prompt (copy-paste into Claude Code) | Claude runs bootstrap.sh → init → full detection → validation → config → commit |
+| **Post-bootstrap (fresh)** | `/setup` | Full detection → validation → config → CLAUDE.md → commit |
+| **Partial setup** | `/setup` | Detects missing skills/agents, runs `toolkit.sh init --force` to fill gaps, then full setup |
+| **Configured but stale** | `/setup` | Re-detects, validates, refreshes settings, fills new skills |
+| **Reconfigure** | `/setup --reconfigure` | Full re-detection and validation from scratch |
+
+### The Chicken-and-Egg Problem
+
+The `/setup` skill lives at `.claude/skills/setup/SKILL.md` inside the toolkit subtree. If the toolkit isn't installed, the skill doesn't exist — so `/setup` can never handle the "from zero" case.
+
+**Solution**: A self-contained **bootstrap prompt** in the README that users copy-paste into Claude Code. This prompt contains all the instructions Claude needs to install the toolkit and configure it, without depending on any skill files. Once the toolkit is installed, `/setup` handles all subsequent scenarios.
 
 ## Architecture
 
-### Before (3 stages)
+### Before (3 stages, terminal-first)
 
 ```text
-bootstrap.sh (--name, --stacks required)
+bootstrap.sh (--name, --stacks required, in terminal)
   → generates toolkit.toml with hardcoded templates
   → runs toolkit.sh init
   → user opens Claude Code
 /setup skill (lightweight guide)
-  → detects stacks
-  → tweaks toolkit.toml
+  → detects stacks, tweaks toolkit.toml
 Manual review + commit
 ```
 
-### After (Claude Code-first)
+### After (Claude Code-first, two entry points)
 
 ```text
-User opens Claude Code and runs /setup
+ENTRY POINT 1: Bootstrap prompt (new projects — no toolkit installed)
+═══════════════════════════════════════════════════════════════════════
+User copies prompt from README into Claude Code
   ↓
+Claude runs: bash bootstrap.sh (from GitHub URL or local path)
+  ↓
+Claude runs: /setup (now available since toolkit is installed)
+  ↓
+Full detection → validation → config → CLAUDE.md → commit
+
+ENTRY POINT 2: /setup skill (existing projects — toolkit already installed)
+═══════════════════════════════════════════════════════════════════════
 Phase 0: Detect installation state
-  ├─ No toolkit → provide bootstrap.sh command, wait, continue
   ├─ Partial install → run toolkit.sh init --force to fill gaps
-  └─ Full install → proceed to detection
+  └─ Full install → proceed
   ↓
-Phase 1: Auto-detect project (detect-project.py)
-  ↓
-Phase 2: Validate detected commands
-  ↓
-Phase 3: Present findings, ask for confirmation
-  ↓
-Phase 4-8: Generate config → CLAUDE.md → settings → verify → commit
+Phase 1-8: detect → validate → present → config → CLAUDE.md → settings → verify → commit
 ```
 
-For users who prefer the terminal-first approach, `bootstrap.sh` still works as a minimal git-only step.
+### Bootstrap Prompt Design
+
+The prompt lives in the README (and optionally as a standalone file like `BOOTSTRAP_PROMPT.md`). It is a self-contained instruction block that:
+
+1. Checks if `.claude/toolkit/` exists — if so, says "toolkit already installed, run /setup instead"
+2. Runs `bootstrap.sh` to add the git subtree and init
+3. Then executes the same flow as `/setup` inline (since the skill now exists but we're already mid-conversation)
+
+The prompt references the toolkit GitHub URL so Claude can fetch bootstrap.sh:
+
+```text
+Install and configure claude-toolkit for this project.
+
+Toolkit repo: https://github.com/donygeorge/claude-toolkit.git
+
+Steps:
+1. If .claude/toolkit/ doesn't exist, add it:
+   git remote add claude-toolkit https://github.com/donygeorge/claude-toolkit.git
+   git fetch claude-toolkit
+   git subtree add --squash --prefix=.claude/toolkit claude-toolkit main
+   bash .claude/toolkit/toolkit.sh init --from-example
+2. Run /setup to detect and configure everything
+```
+
+This is a ~10-line prompt the user copies once. Claude handles the rest.
 
 ### New File: detect-project.py
 
@@ -173,7 +205,7 @@ Strip bootstrap.sh down to git operations only. Remove TOML generation, make fla
 
 ### M2: Rewrite /setup skill
 
-Make the setup skill a comprehensive orchestrator that handles ALL scenarios: new project, partial setup, reconfigure. This is the primary Claude Code integration point.
+Make the setup skill a comprehensive orchestrator for post-bootstrap scenarios: fresh config, partial installs, and reconfiguration. The "from zero" case is handled by the bootstrap prompt (M4), not this skill.
 
 **Files to modify**:
 
@@ -181,10 +213,10 @@ Make the setup skill a comprehensive orchestrator that handles ALL scenarios: ne
 
 **Exit Criteria**:
 
-- [ ] Phase 0 (State Detection): skill instructs to check toolkit installation state — is subtree present? Is toolkit.toml present? Are skills/agents complete?
-- [ ] Phase 0 handles "no toolkit": if `.claude/toolkit/` doesn't exist, provides user the exact `bootstrap.sh` command to run (detecting local toolkit path or using remote URL), then waits for user to run it before continuing
+- [ ] Phase 0 (State Detection): skill instructs to check toolkit state — is toolkit.toml present? Are skills/agents complete? Is config stale?
 - [ ] Phase 0 handles "partial install": if toolkit exists but skills/agents missing, runs `toolkit.sh init --force` to fill gaps before proceeding
 - [ ] Phase 0 handles "stale config": if toolkit was updated (new version), notes what's new and offers to refresh
+- [ ] Phase 0 handles "no toolkit.toml": if subtree exists but no toolkit.toml, runs `toolkit.sh init --from-example`
 - [ ] Phase 1 (Project Discovery): skill instructs to run `detect-project.py` and use output as baseline
 - [ ] Phase 2 (Command Validation): skill instructs to actually run each detected lint/test/format command and only keep validated ones
 - [ ] Phase 3 (Present Findings): skill instructs to show detected config to user and ask for confirmation before proceeding
@@ -197,7 +229,26 @@ Make the setup skill a comprehensive orchestrator that handles ALL scenarios: ne
 - [ ] YAML frontmatter preserved with correct metadata
 - [ ] `--reconfigure` flag documented for full re-detection on existing projects
 
-### M3: Update CLAUDE.md template + docs
+### M3: Create bootstrap prompt
+
+Create a self-contained prompt that users copy-paste into Claude Code to install and configure the toolkit from scratch. This solves the chicken-and-egg problem: the `/setup` skill can't exist before the toolkit is installed, but this prompt doesn't depend on any toolkit files.
+
+**Files to create/modify**:
+
+- `BOOTSTRAP_PROMPT.md` (new — the standalone prompt file)
+- `README.md` (add "Quick Start" section with the prompt)
+
+**Exit Criteria**:
+
+- [ ] `BOOTSTRAP_PROMPT.md` exists at repo root with a self-contained prompt block
+- [ ] Prompt instructs Claude to: check if `.claude/toolkit/` exists, add git subtree if not, run `toolkit.sh init --from-example`, then execute the full `/setup` flow
+- [ ] Prompt includes the toolkit GitHub URL as a parameter the user can customize
+- [ ] Prompt handles the "already installed" case by directing to `/setup` instead
+- [ ] Prompt is concise (under 30 lines) — just enough for Claude to know what to do
+- [ ] README.md has a "Quick Start" section that shows the prompt with copy instructions
+- [ ] Manual test: copy prompt into Claude Code in a fresh project, verify it installs toolkit and configures everything end-to-end
+
+### M4: Update CLAUDE.md template + docs
 
 Update the CLAUDE.md template to support detected commands and update documentation.
 
@@ -242,7 +293,7 @@ Update the CLAUDE.md template to support detected commands and update documentat
 - **Scenario A (new project)**: Create fresh Python project, run `bootstrap.sh`, run `/setup` in Claude Code — verify full auto-detect and config
 - **Scenario B (partial install)**: Delete some skills from `.claude/skills/`, run `/setup` — verify gaps detected and filled
 - **Scenario C (existing config)**: On a project with working toolkit.toml, run `/setup --reconfigure` — verify re-detection preserves user customizations
-- **Scenario D (no toolkit)**: Open Claude Code in project without toolkit, run `/setup` — verify it provides bootstrap instructions
+- **Scenario D (from zero via prompt)**: Copy bootstrap prompt into Claude Code in a project with no toolkit — verify it installs, configures, and commits everything
 - **Scenario E (backward compat)**: Run `bootstrap.sh --name foo --stacks python --commit` — verify it still works
 
 ### Shellcheck
@@ -261,7 +312,7 @@ Update the CLAUDE.md template to support detected commands and update documentat
 | Breaking change for bootstrap.sh users | Keep all flags as optional backward-compatible args |
 | detect-project.py becomes another script to maintain | Keep it simple, test thoroughly, stdlib only |
 | Partial install detection misses edge cases | toolkit.sh validate already catches most issues; detect-project.py supplements |
-| User runs /setup without toolkit installed | Phase 0 detects this and provides clear next steps instead of failing |
+| User tries /setup without toolkit installed | Skill doesn't exist; README directs them to the bootstrap prompt |
 
 ## Open Questions
 
@@ -275,9 +326,9 @@ After all milestones are complete, the implementation is successful if:
 
 ### Functional Correctness
 
-1. **New project flow works end-to-end**: `bootstrap.sh` (no flags) → `toolkit.sh init` succeeds → `/setup` in Claude Code produces fully working config
-2. **Existing project with partial setup**: `/setup` detects missing skills/agents, fills gaps via `toolkit.sh init --force`, then completes configuration
-3. **No-toolkit scenario**: `/setup` in a project without toolkit gives clear bootstrap instructions, doesn't crash or silently fail
+1. **New project via bootstrap prompt**: copy-paste prompt into Claude Code → toolkit installed → config detected and validated → committed. Zero manual steps.
+2. **New project via bootstrap.sh**: `bootstrap.sh` (no flags) → `toolkit.sh init` succeeds → `/setup` in Claude Code produces fully working config
+3. **Existing project with partial setup**: `/setup` detects missing skills/agents, fills gaps via `toolkit.sh init --force`, then completes configuration
 4. **detect-project.py** correctly identifies stacks, commands, and dirs for at least: a Python project with pyproject.toml + ruff, a TypeScript project with tsconfig.json + eslint, an iOS project with .xcodeproj
 5. **Validated commands only**: toolkit.toml generated by /setup contains only commands that were proven to execute successfully
 6. **CLAUDE.md generation**: CLAUDE.md is created from template with correct detected values when none exists, and toolkit section is appended when one already exists
