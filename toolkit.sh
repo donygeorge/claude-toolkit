@@ -831,7 +831,7 @@ cmd_validate() {
     echo ""
     echo "Checking hooks..."
     local hook_commands
-    hook_commands=$(jq -r '.. | objects | .command? // empty' "$settings_file" 2>/dev/null | sort -u || true)
+    hook_commands=$(jq -r '.hooks // {} | .. | objects | .command? // empty' "$settings_file" 2>/dev/null | sort -u || true)
     local hook_errors=0
     while IFS= read -r cmd; do
       [[ -z "$cmd" ]] && continue
