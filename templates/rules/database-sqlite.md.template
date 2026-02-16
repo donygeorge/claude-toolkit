@@ -1,0 +1,14 @@
+---
+globs: app/db/**/*.py, src/db/**/*.py, lib/db/**/*.py
+---
+# Database Rules (SQLite) — {{PROJECT_NAME}}
+
+- SQLite with WAL mode for concurrent read access
+- All new tables MUST be registered in the database initialization function
+- Missing data = `null`, NOT `0` — distinguish between "no data" and "zero value"
+- Use parameterized queries to prevent SQL injection
+- Use a context manager or connection pool for database access
+- Test database operations with in-memory SQLite
+- Always handle migration ordering: column additions before index creation
+
+<!-- Add project-specific database rules below -->

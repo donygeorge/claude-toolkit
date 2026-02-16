@@ -1,0 +1,56 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(make:*)",
+      "Read(artifacts/**)"
+    ],
+    "deny": [
+      "Edit(~/.ssh/*)",
+      "Read(.env)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/toolkit/hooks/guard-destructive.sh",
+            "timeout": 10000
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/toolkit/hooks/guard-sensitive-writes.sh",
+            "timeout": 5000
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/toolkit/hooks/setup.sh",
+            "timeout": 15000
+          }
+        ]
+      }
+    ]
+  },
+  "env": {
+    "CLAUDE_CODE_AUTOCOMPACT_PCT_OVERRIDE": "65",
+    "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "128000"
+  }
+}

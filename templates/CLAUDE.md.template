@@ -1,0 +1,64 @@
+# {{PROJECT_NAME}} Project Context
+
+> **Note to AI Assistants**: Update this file when you make significant architectural changes, add new features, or discover important implementation details.
+
+## Quick Reference
+
+**What is {{PROJECT_NAME}}?** {{PROJECT_DESCRIPTION}}
+
+**Tech Stack**: {{TECH_STACK}}
+
+**Key Commands**:
+
+```bash
+make run              # Start the application
+make test             # Run all tests
+make test-changed     # Run tests for changed files only
+make lint             # Check code quality
+make fmt              # Format code
+```
+
+## Critical Rules
+
+<!-- Add project-specific critical rules here -->
+
+1. **Example Rule**: Description of the rule and why it matters
+
+## Development Workflow
+
+### Before ANY Task
+
+1. **Read files you'll modify** - Entire file, not just the function
+2. **Check existing patterns** - Match the code style already in use
+3. **Identify ALL questions** - Ask in ONE batch upfront
+
+### During Implementation
+
+1. **Run `make test-changed`** after each logical chunk
+2. **One logical change at a time** - Verify before moving to next
+
+### Before Marking Complete
+
+1. **Self-review checklist**:
+   - [ ] `make lint` passes
+   - [ ] `make test-changed` passes
+   - [ ] Type hints on public functions
+   - [ ] No hardcoded values that should be constants
+
+## Project Structure
+
+```text
+<!-- Add your project structure here -->
+```
+
+## Common Issues
+
+| Issue | Solution |
+| ----- | -------- |
+<!-- Add common issues and solutions here -->
+
+## Environment Variables
+
+```bash
+<!-- Add required environment variables here -->
+```

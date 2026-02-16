@@ -1,0 +1,14 @@
+---
+globs: app/**/*.py, src/**/*.py, lib/**/*.py, tests/**/*.py
+---
+# Python Rules — {{PROJECT_NAME}}
+
+- Python 3.11+ required
+- NEVER use bare `python` or `pytest` — use `make test`, `make test-changed`, or `.venv/bin/python`
+- Use ruff for linting and formatting (`make lint`, `make fmt`)
+- Type hints on all public functions
+- snake_case for functions/variables, PascalCase for classes, SCREAMING_SNAKE_CASE for constants
+- Handle `None` values gracefully
+- Use `get_db()` context manager for database access (if applicable)
+
+<!-- Add project-specific Python rules below -->

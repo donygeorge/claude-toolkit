@@ -1,0 +1,116 @@
+#!/usr/bin/env python3
+"""Smart context loader for {{PROJECT_NAME}}.
+
+This is a thin wrapper that imports the toolkit's smart-context framework
+and configures it with project-specific domain files and keyword mappings.
+
+Loaded by UserPromptSubmit hook to inject relevant domain context based
+on keywords detected in the user's prompt.
+
+Usage (invoked by hooks, not directly):
+    python3 .claude/smart-context.py
+"""
+
+from __future__ import annotations
+
+import json
+import os
+import sys
+from pathlib import Path
+
+# ---------------------------------------------------------------------------
+# Configuration: map keywords to domain context files
+# ---------------------------------------------------------------------------
+
+# Directory containing domain context markdown files
+CONTEXT_DIR = Path(os.environ.get("CLAUDE_PROJECT_DIR", ".")) / "docs" / "context"
+
+# Keyword -> domain file mapping
+# Each domain file should have a header comment: <!-- keywords: kw1, kw2, kw3 -->
+DOMAIN_FILES: dict[str, str] = {
+    # "health": "health-domain.md",
+    # "database": "database-domain.md",
+    # "api": "api-domain.md",
+}
+
+# ---------------------------------------------------------------------------
+# Main logic
+# ---------------------------------------------------------------------------
+
+
+def load_domain_keywords() -> dict[str, list[str]]:
+    """Scan domain files for keyword headers and build reverse index."""
+    keyword_to_domain: dict[str, list[str]] = {}
+
+    for domain, filename in DOMAIN_FILES.items():
+        filepath = CONTEXT_DIR / filename
+        if not filepath.exists():
+            continue
+        try:
+            first_lines = filepath.read_text().split("\n", 5)[:5]
+            for line in first_lines:
+                if "<!-- keywords:" in line:
+                    kw_str = line.split("<!-- keywords:")[1].split("-->")[0]
+                    keywords = [k.strip().lower() for k in kw_str.split(",")]
+                    for kw in keywords:
+                        if kw:
+                            keyword_to_domain.setdefault(kw, []).append(domain)
+        except (OSError, IndexError):
+            continue
+
+    return keyword_to_domain
+
+
+def detect_domains(prompt: str, keyword_map: dict[str, list[str]]) -> list[str]:
+    """Detect which domains are relevant based on prompt keywords."""
+    prompt_lower = prompt.lower()
+    matched: set[str] = set()
+
+    for keyword, domains in keyword_map.items():
+        if keyword in prompt_lower:
+            matched.update(domains)
+
+    return sorted(matched)
+
+
+def main() -> int:
+    # Read prompt from stdin (passed by UserPromptSubmit hook)
+    prompt = ""
+    if not sys.stdin.isatty():
+        try:
+            hook_input = json.load(sys.stdin)
+            prompt = hook_input.get("prompt", "")
+        except (json.JSONDecodeError, KeyError):
+            pass
+
+    if not prompt:
+        return 0
+
+    keyword_map = load_domain_keywords()
+    domains = detect_domains(prompt, keyword_map)
+
+    if not domains:
+        return 0
+
+    # Load and output matching domain context
+    context_parts: list[str] = []
+    for domain in domains:
+        filename = DOMAIN_FILES.get(domain, "")
+        if not filename:
+            continue
+        filepath = CONTEXT_DIR / filename
+        if filepath.exists():
+            content = filepath.read_text().strip()
+            context_parts.append(content)
+
+    if context_parts:
+        output = {
+            "hookSpecificOutput": "\n\n---\n\n".join(context_parts),
+        }
+        print(json.dumps(output))
+
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

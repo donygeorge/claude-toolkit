@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm:*)",
+      "Bash(npx:*)",
+      "Bash(node:*)",
+      "Bash(tsc:*)",
+      "Bash(eslint:*)",
+      "Bash(prettier:*)",
+      "Bash(jest:*)",
+      "Bash(vitest:*)",
+      "Bash(make test:*)",
+      "Bash(make lint:*)",
+      "Bash(make fmt:*)",
+      "Bash(npm run:*)",
+      "Bash(npm test:*)",
+      "Bash(npx jest:*)",
+      "Bash(npx vitest:*)"
+    ]
+  }
+}

@@ -1,0 +1,16 @@
+---
+globs: app/routes/**/*.py, src/routes/**/*.py, src/api/**/*.py
+---
+# API Route Rules (FastAPI) — {{PROJECT_NAME}}
+
+- Use FastAPI dependency injection for shared resources
+- Return proper HTTP status codes (200, 201, 400, 404, 422, 500)
+- Validate inputs early, fail fast
+- Routes delegate to services — never put business logic in route handlers
+- Before completing API work, check for breaking changes:
+  - Removed/renamed response fields clients expect = BREAKING
+  - Changed field types (string to int, etc.) = BREAKING
+  - Added new optional fields = NOT breaking
+  - New endpoints = NOT breaking
+
+<!-- Add project-specific API route rules below -->

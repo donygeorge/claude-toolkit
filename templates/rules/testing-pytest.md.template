@@ -1,0 +1,15 @@
+---
+globs: tests/**/*.py
+---
+# Testing Rules (pytest) — {{PROJECT_NAME}}
+
+- NEVER use bare `python` or `pytest` — use `make test`, `make test-changed`
+- Test file naming: `test_<module>.py`
+- Test function naming: `test_<behavior>`
+- Use fixtures from conftest.py for shared setup (database sessions, clients, etc.)
+- Test edge cases and error paths, not just happy paths
+- Use in-memory SQLite for test database (if applicable)
+- Mock external services; never make real network calls in unit tests
+- Keep tests focused: one assertion per test when practical
+
+<!-- Add project-specific pytest rules below -->

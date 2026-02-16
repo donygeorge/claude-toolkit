@@ -1,0 +1,16 @@
+---
+globs: **/*.test.ts, **/*.test.tsx, **/*.spec.ts, **/*.spec.tsx, __tests__/**/*.ts
+---
+# Testing Rules (Jest/Vitest) — {{PROJECT_NAME}}
+
+- Test file naming: `<module>.test.ts` or `<module>.spec.ts`
+- Test function naming: `it('should <behavior>')`
+- Use `describe` blocks to group related tests
+- Use `beforeEach`/`afterEach` for shared setup and teardown
+- Mock external dependencies with `jest.mock()` or `vi.mock()`
+- Test edge cases and error paths, not just happy paths
+- Use `screen.getByRole` and other Testing Library queries for component tests
+- Prefer `userEvent` over `fireEvent` for simulating user interactions
+- Keep tests focused: one assertion per test when practical
+
+<!-- Add project-specific Jest/Vitest rules below -->

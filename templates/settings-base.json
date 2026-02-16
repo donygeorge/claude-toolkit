@@ -1,0 +1,350 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch",
+      "mcp__plugin_playwright_playwright__*",
+      "mcp__plugin_context7_context7__resolve-library-id",
+      "mcp__plugin_context7_context7__query-docs",
+      "mcp__codex__codex",
+      "Bash(ls:*)",
+      "Bash(find:*)",
+      "Bash(tree:*)",
+      "Bash(rg:*)",
+      "Bash(grep:*)",
+      "Bash(cat:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(wc:*)",
+      "Bash(file:*)",
+      "Bash(diff:*)",
+      "Bash(echo:*)",
+      "Bash(pwd:*)",
+      "Bash(sort:*)",
+      "Bash(uniq:*)",
+      "Bash(cut:*)",
+      "Bash(tr:*)",
+      "Bash(tee:*)",
+      "Bash(date:*)",
+      "Bash(timeout:*)",
+      "Bash(dirname:*)",
+      "Bash(basename:*)",
+      "Bash(make:*)",
+      "Bash(bash:*)",
+      "Bash(sh:*)",
+      "Bash(lsof:*)",
+      "Bash(pkill:*)",
+      "Bash(kill:*)",
+      "Bash(pgrep:*)",
+      "Bash(killall:*)",
+      "Bash(sleep:*)",
+      "Bash(chmod:*)",
+      "Bash(mkdir:*)",
+      "Bash(mv:*)",
+      "Bash(cp:*)",
+      "Bash(rm:*)",
+      "Bash(touch:*)",
+      "Bash(ln:*)",
+      "Bash(sed:*)",
+      "Bash(awk:*)",
+      "Bash(open:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git status:*)",
+      "Bash(git show:*)",
+      "Bash(gh pr:*)",
+      "Bash(gh issue view:*)",
+      "Bash(gh issue list:*)",
+      "Bash(gh issue comment:*)",
+      "Bash(gh issue create:*)",
+      "Bash(gh issue close:*)",
+      "Bash(gh pr comment:*)",
+      "Bash(gh pr review:*)",
+      "Write(artifacts/**)",
+      "Edit(artifacts/**)",
+      "Read(artifacts/**)",
+      "Read(.claude/skills/**/*)",
+      "Read(.claude/agents/**/*)"
+    ],
+    "deny": [
+      "Edit(~/.bashrc)",
+      "Edit(~/.zshrc)",
+      "Edit(~/.bash_profile)",
+      "Edit(~/.profile)",
+      "Edit(~/.ssh/*)",
+      "Edit(~/.gnupg/*)",
+      "Edit(~/.aws/*)",
+      "Edit(/etc/*)",
+      "Edit(/usr/*)",
+      "Edit(/bin/*)",
+      "Edit(/sbin/*)",
+      "Edit(/System/*)",
+      "Edit(/Library/*)",
+      "Write(~/.bashrc)",
+      "Write(~/.zshrc)",
+      "Write(~/.ssh/*)",
+      "Write(~/.aws/*)",
+      "Write(/etc/*)",
+      "Write(/usr/*)",
+      "Write(/System/*)",
+      "Write(/Library/*)",
+      "Read(~/.ssh/id_*)",
+      "Read(~/.gnupg/private-keys*)",
+      "Read(~/.aws/credentials)",
+      "Read(.env)",
+      "Read(.env.*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/toolkit/hooks/guard-destructive.sh",
+            "timeout": 10000,
+            "statusMessage": "Checking for destructive commands"
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/toolkit/hooks/guard-sensitive-writes.sh",
+            "timeout": 5000,
+            "statusMessage": "Checking write target"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/toolkit/hooks/guard-sensitive-writes.sh",
+            "timeout": 5000,
+            "statusMessage": "Checking edit target"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/toolkit/hooks/pre-compact.sh",
+            "timeout": 5000,
+            "statusMessage": "Saving context before compaction"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/toolkit/hooks/setup.sh",
+            "timeout": 15000,
+            "once": true,
+            "statusMessage": "Validating development environment..."
+          },
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/toolkit/hooks/session-start.sh",
+            "timeout": 5000,
+            "statusMessage": "Loading project context..."
+          }
+        ]
+      },
+      {
+        "matcher": "resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/toolkit/hooks/session-start.sh",
+            "timeout": 5000,
+            "statusMessage": "Loading project context..."
+          }
+        ]
+      },
+      {
+        "matcher": "clear",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/toolkit/hooks/session-start.sh",
+            "timeout": 5000,
+            "statusMessage": "Loading project context..."
+          }
+        ]
+      },
+      {
+        "matcher": "compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/toolkit/hooks/post-compact-reinject.sh",
+            "timeout": 5000,
+            "statusMessage": "Re-injecting context after compaction..."
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 $CLAUDE_PROJECT_DIR/.claude/toolkit/hooks/smart-context.py",
+            "timeout": 5000,
+            "statusMessage": "Loading domain context"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/toolkit/hooks/post-edit-lint.sh",
+            "timeout": 10000,
+            "statusMessage": "Linting written file",
+            "async": true
+          }
+        ]
+      },
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/toolkit/hooks/post-edit-lint.sh",
+            "timeout": 10000,
+            "statusMessage": "Linting edited file",
+            "async": true
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/toolkit/hooks/verify-completion.sh",
+            "timeout": 15000,
+            "statusMessage": "Checking for uncommitted changes..."
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/toolkit/hooks/session-end-cleanup.sh",
+            "timeout": 30000,
+            "statusMessage": "Cleaning up session files..."
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/toolkit/hooks/classify-error.sh",
+            "timeout": 5000,
+            "statusMessage": "Classifying error..."
+          }
+        ]
+      }
+    ],
+    "TaskCompleted": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/toolkit/hooks/task-completed-gate.sh",
+            "timeout": 120000,
+            "statusMessage": "Running quality checks..."
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/toolkit/hooks/subagent-quality-gate.sh",
+            "timeout": 15000,
+            "statusMessage": "Validating agent output..."
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/toolkit/hooks/subagent-context-inject.sh",
+            "timeout": 5000,
+            "statusMessage": "Injecting project context..."
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/toolkit/hooks/auto-approve-safe.sh",
+            "timeout": 5000,
+            "statusMessage": "Checking auto-approve..."
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "permission_prompt",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/toolkit/hooks/notify.sh permission",
+            "timeout": 5000,
+            "statusMessage": "Sending notification..."
+          }
+        ]
+      },
+      {
+        "matcher": "idle_prompt",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/toolkit/hooks/notify.sh idle",
+            "timeout": 5000,
+            "statusMessage": "Sending notification..."
+          }
+        ]
+      }
+    ]
+  },
+  "env": {
+    "CLAUDE_CODE_AUTOCOMPACT_PCT_OVERRIDE": "65",
+    "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "128000"
+  }
+}

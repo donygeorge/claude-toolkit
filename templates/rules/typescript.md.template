@@ -1,0 +1,16 @@
+---
+globs: src/**/*.ts, src/**/*.tsx, lib/**/*.ts, tests/**/*.ts, __tests__/**/*.ts
+---
+# TypeScript Rules — {{PROJECT_NAME}}
+
+- TypeScript strict mode enabled
+- Use ESLint for linting and Prettier for formatting
+- Prefer `const` over `let`; avoid `var`
+- Use explicit return types on public functions
+- camelCase for functions/variables, PascalCase for types/interfaces/components
+- Handle `null` and `undefined` explicitly; avoid non-null assertions (`!`)
+- Use `async/await` over raw Promises where possible
+- Prefer named exports over default exports
+- Keep React components small and focused (< 200 lines)
+
+<!-- Add project-specific TypeScript rules below -->

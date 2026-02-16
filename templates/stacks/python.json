@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python:*)",
+      "Bash(python3:*)",
+      "Bash(.venv/bin/*:*)",
+      "Bash(pip:*)",
+      "Bash(pip3:*)",
+      "Bash(pytest:*)",
+      "Bash(python -m pytest:*)",
+      "Bash(ruff:*)",
+      "Bash(mypy:*)",
+      "Bash(coverage:*)",
+      "Bash(flake8:*)",
+      "Bash(make test:*)",
+      "Bash(make test-changed:*)",
+      "Bash(make lint:*)",
+      "Bash(make fmt:*)"
+    ]
+  }
+}
