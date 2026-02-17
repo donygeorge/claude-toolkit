@@ -292,6 +292,7 @@ Skill templates in `.claude/skills/`. These are copied (not symlinked) so they c
 | Review Suite | `review-suite/` | Multi-agent code review orchestration |
 | Implement | `implement/` | Autonomous plan execution with milestone agents |
 | Plan | `plan/` | Feature planning with research and review |
+| Brainstorm | `brainstorm/` | Idea exploration with persona-based agent teams, deep research, and approach evaluation. Aliases: `/explore`, `/ideate`. Output: `docs/ideas/`. Flags: `--quick` (single-agent), `--depth shallow\|normal\|deep`, `--gemini` (second opinion) |
 | Solve | `solve/` | GitHub issue workflow (fetch, reproduce, fix, commit) |
 | Fix | `fix/` | Standalone bug fix without GitHub issue |
 | Refine | `refine/` | Iterative evaluate-fix-validate convergence loop |

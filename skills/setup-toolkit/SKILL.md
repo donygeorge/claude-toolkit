@@ -563,11 +563,13 @@ git status --porcelain
 git diff --stat
 ```
 
-If there are uncommitted changes (especially in `.claude/toolkit/`), warn the user:
+If there are uncommitted changes, warn the user:
 
 > There are uncommitted changes in your working tree. Updating the toolkit may cause conflicts with these changes.
 
-List the changed files. **Ask the user**: commit or stash changes first, or proceed anyway?
+List the changed files. If any uncommitted changes are inside `.claude/toolkit/`, **strongly recommend** committing or stashing before proceeding -- subtree pull requires a clean subtree directory and will fail or produce corrupt merges if the subtree has local modifications.
+
+**Ask the user**: commit or stash changes first, or proceed anyway?
 
 **Do NOT proceed until the user confirms.**
 
@@ -695,7 +697,13 @@ Replace `[version]` with the user's chosen version (e.g., `v1.3.0`), or omit for
 
 #### Step U2.2: Check if already up to date
 
-If the update command succeeds with a message like "Already up to date" and no files changed:
+After the update command completes, check whether anything actually changed:
+
+```bash
+git diff HEAD~1 --stat
+```
+
+If the update command output says "Already up to date" or if no files changed (empty diff):
 
 > The toolkit is already at the target version. No changes were made.
 
@@ -733,7 +741,13 @@ If the user chooses to abort:
 git merge --abort
 ```
 
-Inform the user the update was aborted and no changes were made.
+After aborting, verify the working tree is clean:
+
+```bash
+git status --porcelain
+```
+
+If files remain modified after the abort, inform the user and help resolve the leftover state. Otherwise, confirm the update was aborted and no changes were made.
 
 ---
 
@@ -798,7 +812,7 @@ Check that the manifest file exists and is valid:
 python3 -c "import json; json.load(open('.claude/toolkit-manifest.json'))"
 ```
 
-If missing or invalid, re-initialize:
+If missing or invalid, re-initialize. **Warning**: `init --force` resets the manifest, which clears customization tracking. If the user has customized files, note which files were customized (from Phase U0 or U4) so they can be re-customized after re-initialization.
 
 ```bash
 bash .claude/toolkit/toolkit.sh init --force
@@ -937,7 +951,9 @@ NEW_HASH=$(shasum -a 256 .claude/toolkit/<source_path> | cut -d' ' -f1)
 
 **Merge upstream changes**: Perform an intelligent merge of the user's customizations with the upstream changes. Show the merged result to the user and **ask for confirmation** before writing the file. If the merge is ambiguous, present options and let the user decide.
 
-**Revert to managed**: Replace the customized file with the toolkit source. If the file was a broken symlink, restore the symlink. Update the manifest to mark the file as "managed" again:
+**Revert to managed**: Replace the customized file with the toolkit source. First, verify the toolkit source still exists (the update may have removed the file upstream). If the source was deleted upstream, inform the user and skip this file.
+
+If the source exists, restore it:
 
 ```bash
 # For agents/rules: restore symlink

@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.11.0] - 2026-02-17
+
+### Added
+
+- **Brainstorm skill**: `/brainstorm` (alias `/explore`, `/ideate`) provides structured idea exploration with dynamic persona-based agent teams, deep internet research on latest trends (2025-2026), multi-approach evaluation with comparative matrix, and documented recommendations in `docs/ideas/` compatible with `/plan` input. First skill to use Claude Code's experimental agent team feature (TeamCreate/SendMessage). Features six distinct research personas (the-pragmatist, the-innovator, the-critic, the-user-advocate, the-architect, the-researcher) that create productive tension through different thinking styles. Supports three depth modes (shallow/normal/deep), up to 7 user questions per checkpoint via two-round AskUserQuestion pattern, optional Gemini second opinion, and Codex feedback loop. Includes persona disagreement tracking to surface real trade-offs.
+
 ## [1.10.0] - 2026-02-17
 
 ### Added
