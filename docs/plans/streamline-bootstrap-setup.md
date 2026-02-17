@@ -224,21 +224,21 @@ Make the setup skill a comprehensive orchestrator for post-bootstrap scenarios: 
 
 **Exit Criteria**:
 
-- [ ] Phase 0 (State Detection): skill instructs to check toolkit state — is toolkit.toml present? Are skills/agents complete? Is config stale?
-- [ ] Phase 0 handles "partial install": if toolkit exists but skills/agents missing, runs `toolkit.sh init --force` to fill gaps before proceeding
-- [ ] Phase 0 handles "stale config": if toolkit was updated (new version), notes what's new and offers to refresh
-- [ ] Phase 0 handles "no toolkit.toml": if subtree exists but no toolkit.toml, runs `toolkit.sh init --from-example`
-- [ ] Phase 1 (Project Discovery): skill instructs to run `detect-project.py` and use output as baseline
-- [ ] Phase 2 (Command Validation): skill instructs to actually run each detected lint/test/format command and only keep validated ones
-- [ ] Phase 3 (Present Findings): skill instructs to show detected config to user and ask for confirmation before proceeding
-- [ ] Phase 4 (Generate toolkit.toml): for fresh setup, writes new toolkit.toml from detection results. For existing config, merges new detections while preserving user customizations (ask user about conflicts)
-- [ ] Phase 5 (Generate CLAUDE.md): skill instructs to use `templates/CLAUDE.md.template` to create CLAUDE.md with detected values, or add toolkit section to existing CLAUDE.md
-- [ ] Phase 6 (Settings & Validation): skill instructs to run `toolkit.sh generate-settings` and `toolkit.sh validate`
-- [ ] Phase 7 (End-to-End Verification): skill instructs to run configured lint command on a real file and configured test command, iterate if failures
-- [ ] Phase 8 (Commit): skill instructs to stage specific files and commit
-- [ ] Skill stays GENERIC — no project-specific tool references, paths, or conventions
-- [ ] YAML frontmatter preserved with correct metadata
-- [ ] `--reconfigure` flag documented for full re-detection on existing projects
+- [x] Phase 0 (State Detection): skill instructs to check toolkit state — is toolkit.toml present? Are skills/agents complete? Is config stale?
+- [x] Phase 0 handles "partial install": if toolkit exists but skills/agents missing, runs `toolkit.sh init --force` to fill gaps before proceeding
+- [x] Phase 0 handles "stale config": if toolkit was updated (new version), notes what's new and offers to refresh
+- [x] Phase 0 handles "no toolkit.toml": if subtree exists but no toolkit.toml, runs `toolkit.sh init --from-example`
+- [x] Phase 1 (Project Discovery): skill instructs to run `detect-project.py` and use output as baseline
+- [x] Phase 2 (Command Validation): skill instructs to actually run each detected lint/test/format command and only keep validated ones
+- [x] Phase 3 (Present Findings): skill instructs to show detected config to user and ask for confirmation before proceeding
+- [x] Phase 4 (Generate toolkit.toml): for fresh setup, writes new toolkit.toml from detection results. For existing config, merges new detections while preserving user customizations (ask user about conflicts)
+- [x] Phase 5 (Generate CLAUDE.md): skill instructs to use `templates/CLAUDE.md.template` to create CLAUDE.md with detected values, or add toolkit section to existing CLAUDE.md
+- [x] Phase 6 (Settings & Validation): skill instructs to run `toolkit.sh generate-settings` and `toolkit.sh validate`
+- [x] Phase 7 (End-to-End Verification): skill instructs to run configured lint command on a real file and configured test command, iterate if failures
+- [x] Phase 8 (Commit): skill instructs to stage specific files and commit
+- [x] Skill stays GENERIC — no project-specific tool references, paths, or conventions
+- [x] YAML frontmatter preserved with correct metadata
+- [x] `--reconfigure` flag documented for full re-detection on existing projects
 
 ### M3: Create bootstrap prompt
 
