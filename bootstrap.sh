@@ -2,18 +2,20 @@
 # bootstrap.sh — One-command setup of claude-toolkit in any project
 #
 # Usage (from your project root):
+#   bash ~/projects/claude-toolkit/bootstrap.sh
 #   bash ~/projects/claude-toolkit/bootstrap.sh --name my-project --stacks python
 #   bash ~/projects/claude-toolkit/bootstrap.sh --name my-app --stacks python,ios
-#   bash ~/projects/claude-toolkit/bootstrap.sh --name my-app --stacks typescript --remote git@github.com:user/claude-toolkit.git
+#   bash ~/projects/claude-toolkit/bootstrap.sh --remote git@github.com:user/claude-toolkit.git
+#   bash ~/projects/claude-toolkit/bootstrap.sh --repair
 #
 # Or via curl (if hosted):
-#   curl -sSL https://raw.githubusercontent.com/user/claude-toolkit/main/bootstrap.sh | bash -s -- --name my-project --stacks python
+#   curl -sSL https://raw.githubusercontent.com/user/claude-toolkit/main/bootstrap.sh | bash -s -- --name my-project
 #
 # What it does:
 #   1. Adds claude-toolkit as a git subtree under .claude/toolkit/
-#   2. Generates toolkit.toml from your arguments
-#   3. Runs toolkit.sh init (symlinks agents, copies skills, generates settings)
-#   4. Shows next steps
+#   2. Runs toolkit.sh init --from-example (creates toolkit.toml from example)
+#   3. Optionally patches project.name and project.stacks in toolkit.toml
+#   4. Shows next steps (run /setup in Claude Code)
 #
 # Requirements: git, jq, python3 (3.11+), bash 4+
 
@@ -24,14 +26,13 @@ set -euo pipefail
 # ============================================================================
 
 PROJECT_NAME=""
+NAME_PROVIDED=false
 STACKS=""
 REMOTE_URL="https://github.com/donygeorge/claude-toolkit.git"
 TOOLKIT_REF="main"
-PYTHON_MIN="3.11"
-REQUIRED_TOOLS="jq"
-OPTIONAL_TOOLS=""
 COMMIT=false
 LOCAL_PATH=""
+REPAIR=false
 
 # ============================================================================
 # Parse arguments
@@ -41,39 +42,39 @@ usage() {
   cat <<'USAGE'
 Usage: bootstrap.sh [options]
 
-Required:
-  --name NAME           Project name (e.g., realta, openclaw)
+Options:
+  --name NAME           Project name (default: directory basename)
   --stacks STACKS       Comma-separated stacks: python, ios, typescript
-
-Optional:
   --remote URL          Toolkit git remote (default: github donygeorge/claude-toolkit)
   --ref REF             Git ref to pull (default: main)
   --local PATH          Use local toolkit path instead of git remote
-  --python-min VER      Minimum Python version (default: 3.11)
-  --tools TOOLS         Required tools, comma-separated (default: jq)
-  --optional-tools T    Optional tools, comma-separated
   --commit              Auto-commit after setup
+  --repair              Repair existing install (fills missing skills/agents/rules)
   --help                Show this help
 
 Examples:
-  bootstrap.sh --name realta --stacks typescript
-  bootstrap.sh --name openclaw --stacks python --tools "jq,ruff"
-  bootstrap.sh --name jarvin --stacks python,ios --commit
-  bootstrap.sh --name my-app --stacks python --local ~/projects/claude-toolkit
+  bootstrap.sh
+  bootstrap.sh --name my-project --stacks python
+  bootstrap.sh --name my-app --stacks python,ios --commit
+  bootstrap.sh --local ~/projects/claude-toolkit
+  bootstrap.sh --repair
 USAGE
 }
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --name)        PROJECT_NAME="$2"; shift 2 ;;
-    --stacks)      STACKS="$2"; shift 2 ;;
-    --remote)      REMOTE_URL="$2"; shift 2 ;;
-    --ref)         TOOLKIT_REF="$2"; shift 2 ;;
-    --local)       LOCAL_PATH="$2"; shift 2 ;;
-    --python-min)  PYTHON_MIN="$2"; shift 2 ;;
-    --tools)       REQUIRED_TOOLS="$2"; shift 2 ;;
-    --optional-tools) OPTIONAL_TOOLS="$2"; shift 2 ;;
+    --name)        [[ $# -lt 2 ]] && { echo "Error: --name requires a value"; exit 1; }
+                   PROJECT_NAME="$2"; NAME_PROVIDED=true; shift 2 ;;
+    --stacks)      [[ $# -lt 2 ]] && { echo "Error: --stacks requires a value"; exit 1; }
+                   STACKS="$2"; shift 2 ;;
+    --remote)      [[ $# -lt 2 ]] && { echo "Error: --remote requires a value"; exit 1; }
+                   REMOTE_URL="$2"; shift 2 ;;
+    --ref)         [[ $# -lt 2 ]] && { echo "Error: --ref requires a value"; exit 1; }
+                   TOOLKIT_REF="$2"; shift 2 ;;
+    --local)       [[ $# -lt 2 ]] && { echo "Error: --local requires a value"; exit 1; }
+                   LOCAL_PATH="$2"; shift 2 ;;
     --commit)      COMMIT=true; shift ;;
+    --repair)      REPAIR=true; shift ;;
     --help|-h)     usage; exit 0 ;;
     *)             echo "Unknown option: $1"; usage; exit 1 ;;
   esac
@@ -82,20 +83,6 @@ done
 # ============================================================================
 # Validate
 # ============================================================================
-
-if [[ -z "$PROJECT_NAME" ]]; then
-  echo "Error: --name is required"
-  echo ""
-  usage
-  exit 1
-fi
-
-if [[ -z "$STACKS" ]]; then
-  echo "Error: --stacks is required"
-  echo ""
-  usage
-  exit 1
-fi
 
 # Must be in a git repo
 if ! git rev-parse --is-inside-work-tree &>/dev/null; then
@@ -115,32 +102,44 @@ done
 python3 -c "
 import sys
 major, minor = sys.version_info[:2]
-req_major, req_minor = map(int, '${PYTHON_MIN}'.split('.'))
-if (major, minor) < (req_major, req_minor):
-    print(f'Error: Python {req_major}.{req_minor}+ required, found {major}.{minor}')
+if (major, minor) < (3, 11):
+    print(f'Error: Python 3.11+ required, found {major}.{minor}')
     sys.exit(1)
 " || exit 1
 
 PROJECT_DIR="$(git rev-parse --show-toplevel)"
 CLAUDE_DIR="${PROJECT_DIR}/.claude"
 
+# Default project name to directory basename if not provided
+if [[ -z "$PROJECT_NAME" ]]; then
+  PROJECT_NAME="$(basename "$PROJECT_DIR")"
+fi
+
 echo "======================================"
 echo "  claude-toolkit bootstrap"
 echo "======================================"
 echo ""
 echo "  Project:  ${PROJECT_NAME}"
-echo "  Stacks:   ${STACKS}"
+if [[ -n "$STACKS" ]]; then
+  echo "  Stacks:   ${STACKS}"
+fi
 echo "  Location: ${PROJECT_DIR}"
 echo ""
 
 # ============================================================================
-# Step 1: Add subtree
+# Step 1: Add subtree (or repair)
 # ============================================================================
 
 if [[ -d "${CLAUDE_DIR}/toolkit" ]]; then
-  echo "[skip] .claude/toolkit/ already exists"
+  if [[ "$REPAIR" == true ]]; then
+    echo "[1/3] Repairing toolkit installation..."
+    bash "${CLAUDE_DIR}/toolkit/toolkit.sh" init --force
+    echo "  Done."
+  else
+    echo "[skip] .claude/toolkit/ already exists (use --repair to fill missing files)"
+  fi
 else
-  echo "[1/4] Adding claude-toolkit subtree..."
+  echo "[1/3] Adding claude-toolkit subtree..."
 
   if [[ -n "$LOCAL_PATH" ]]; then
     # Local mode: subtree add from local path
@@ -159,185 +158,68 @@ else
 fi
 
 # ============================================================================
-# Step 2: Generate toolkit.toml
+# Step 2: Run init (creates toolkit.toml from example + agents/skills/rules)
 # ============================================================================
 
 TOML_FILE="${CLAUDE_DIR}/toolkit.toml"
+TOML_IS_NEW=false
 
 if [[ -f "$TOML_FILE" ]]; then
   echo "[skip] toolkit.toml already exists"
 else
-  echo "[2/4] Generating toolkit.toml..."
-
-  # Convert comma-separated stacks to TOML array
-  IFS=',' read -ra STACK_ARRAY <<< "$STACKS"
-  STACKS_TOML=""
-  for i in "${!STACK_ARRAY[@]}"; do
-    stack="${STACK_ARRAY[$i]}"
-    stack="$(echo "$stack" | tr -d ' ')"  # trim whitespace
-    if [[ $i -gt 0 ]]; then
-      STACKS_TOML="${STACKS_TOML}, "
-    fi
-    STACKS_TOML="${STACKS_TOML}\"${stack}\""
-  done
-
-  # Convert comma-separated tools to TOML arrays
-  _to_toml_array() {
-    local input="$1"
-    [[ -z "$input" ]] && echo "[]" && return
-    local result=""
-    IFS=',' read -ra arr <<< "$input"
-    for i in "${!arr[@]}"; do
-      local item="$(echo "${arr[$i]}" | tr -d ' ')"
-      if [[ $i -gt 0 ]]; then result="${result}, "; fi
-      result="${result}\"${item}\""
-    done
-    echo "[${result}]"
-  }
-
-  REQUIRED_TOML=$(_to_toml_array "$REQUIRED_TOOLS")
-  OPTIONAL_TOML=$(_to_toml_array "$OPTIONAL_TOOLS")
-
-  # Determine linter config based on stacks
-  LINTER_SECTION=""
-  GATE_SECTION=""
-
-  for stack in "${STACK_ARRAY[@]}"; do
-    stack="$(echo "$stack" | tr -d ' ')"
-    case "$stack" in
-      python)
-        LINTER_SECTION="${LINTER_SECTION}
-[hooks.post-edit-lint.linters.py]
-cmd = \".venv/bin/ruff check\"
-fmt = \".venv/bin/ruff format\"
-fallback = \"ruff\"
-"
-        GATE_SECTION="${GATE_SECTION}
-[hooks.task-completed.gates.lint]
-glob = \"*.py\"
-cmd = \".venv/bin/ruff check --quiet\"
-
-[hooks.task-completed.gates.tests]
-glob = \"*.py\"
-cmd = \"make test-changed\"  # Customize: replace with your project's test command
-timeout = 90
-"
-        ;;
-      typescript)
-        LINTER_SECTION="${LINTER_SECTION}
-[hooks.post-edit-lint.linters.ts]
-cmd = \"npx eslint\"
-fmt = \"npx prettier --write\"
-fallback = \"eslint\"
-
-[hooks.post-edit-lint.linters.tsx]
-cmd = \"npx eslint\"
-fmt = \"npx prettier --write\"
-fallback = \"eslint\"
-"
-        GATE_SECTION="${GATE_SECTION}
-[hooks.task-completed.gates.lint]
-glob = \"*.{ts,tsx}\"
-cmd = \"npx eslint --quiet\"
-
-[hooks.task-completed.gates.tests]
-glob = \"*.{ts,tsx}\"
-cmd = \"npm test\"  # Customize: replace with your project's test command
-timeout = 90
-"
-        ;;
-      ios)
-        LINTER_SECTION="${LINTER_SECTION}
-[hooks.post-edit-lint.linters.swift]
-cmd = \"swiftlint lint --quiet\"
-fmt = \"swiftlint lint --fix --quiet\"
-fallback = \"swiftlint\"
-"
-        GATE_SECTION="${GATE_SECTION}
-[hooks.task-completed.gates.ios-build]
-glob = \"*.swift\"
-cmd = \"make ios-build\"  # Customize: replace with your project's build command
-timeout = 120
-"
-        ;;
-    esac
-  done
-
-  # Determine version file
-  VERSION_FILE="VERSION"
-  if [[ -f "${PROJECT_DIR}/package.json" ]]; then
-    VERSION_FILE="package.json"
-  elif [[ -f "${PROJECT_DIR}/VERSION" ]]; then
-    VERSION_FILE="VERSION"
-  elif [[ -f "${PROJECT_DIR}/pyproject.toml" ]]; then
-    VERSION_FILE="pyproject.toml"
-  fi
-
-  # Write toolkit.toml
-  cat > "$TOML_FILE" <<TOML
-# Claude Toolkit Configuration for ${PROJECT_NAME}
-# Generated by bootstrap.sh — customize as needed.
-# Docs: https://github.com/donygeorge/claude-toolkit#configuration-reference
-
-[toolkit]
-remote_url = "${REMOTE_URL}"
-
-[project]
-name = "${PROJECT_NAME}"
-version_file = "${VERSION_FILE}"
-stacks = [${STACKS_TOML}]
-
-[hooks.setup]
-python_min_version = "${PYTHON_MIN}"
-required_tools = ${REQUIRED_TOML}
-optional_tools = ${OPTIONAL_TOML}
-security_tools = ["gitleaks", "semgrep"]
-
-[hooks.post-edit-lint.linters]
-${LINTER_SECTION}
-[hooks.task-completed.gates]
-${GATE_SECTION}
-[hooks.auto-approve]
-write_paths = [
-    "*/app/*", "*/src/*", "*/lib/*", "*/tests/*", "*/test/*",
-    "*/docs/*", "*/artifacts/*", "*/scripts/*", "*/.claude/*",
-    "*/CLAUDE.md", "*/Makefile", "*/VERSION", "*/README.md",
-    "*/requirements*.txt", "*/package*.json", "*/pyproject.toml",
-    "*/docker-compose*.yml", "*/Dockerfile", "*/tsconfig*.json",
-]
-bash_commands = []
-
-[hooks.subagent-context]
-critical_rules = []
-available_tools = []
-stack_info = ""
-
-[hooks.compact]
-source_dirs = ["app", "src"]
-source_extensions = ["*.py", "*.ts", "*.tsx", "*.swift"]
-state_dirs = ["artifacts"]
-
-[hooks.session-end]
-agent_memory_max_lines = 250
-hook_log_max_lines = 500
-
-[notifications]
-app_name = "Claude Code"
-permission_sound = "Blow"
-TOML
-
-  echo "  Created .claude/toolkit.toml"
+  echo "[2/3] Running toolkit init..."
+  bash "${CLAUDE_DIR}/toolkit/toolkit.sh" init --from-example
+  TOML_IS_NEW=true
 fi
 
 # ============================================================================
-# Step 3: Run init
+# Step 2b: Patch toolkit.toml if --name or --stacks provided
 # ============================================================================
 
-echo "[3/4] Running toolkit init..."
-bash "${CLAUDE_DIR}/toolkit/toolkit.sh" init
+NEEDS_REGEN=false
+
+if [[ -f "$TOML_FILE" ]]; then
+  # Patch project.name:
+  #   - Always patch if TOML was just created (replace example "my-project" with actual name)
+  #   - Only patch existing TOML if --name was explicitly provided
+  if [[ "$TOML_IS_NEW" == true ]] || [[ "$NAME_PROVIDED" == true ]]; then
+    python3 -c "
+import re, sys
+toml_file = sys.argv[1]
+name = sys.argv[2]
+content = open(toml_file).read()
+content = re.sub(r'name\s*=\s*\"[^\"]*\"', 'name = \"' + name + '\"', content, count=1)
+open(toml_file, 'w').write(content)
+" "$TOML_FILE" "$PROJECT_NAME"
+    echo "  Patched project.name = \"${PROJECT_NAME}\""
+    NEEDS_REGEN=true
+  fi
+
+  # Patch project.stacks if --stacks was provided
+  if [[ -n "$STACKS" ]]; then
+    python3 -c "
+import re, sys
+toml_file = sys.argv[1]
+stacks_str = sys.argv[2]
+stacks = [s.strip() for s in stacks_str.split(',')]
+toml_array = '[' + ', '.join('\"' + s + '\"' for s in stacks) + ']'
+content = open(toml_file).read()
+content = re.sub(r'stacks\s*=\s*\[[^\]]*\]', 'stacks = ' + toml_array, content, count=1)
+open(toml_file, 'w').write(content)
+" "$TOML_FILE" "$STACKS"
+    echo "  Patched project.stacks = [${STACKS}]"
+    NEEDS_REGEN=true
+  fi
+
+  # Regenerate settings after patching
+  if [[ "$NEEDS_REGEN" == true ]]; then
+    echo "  Regenerating settings..."
+    bash "${CLAUDE_DIR}/toolkit/toolkit.sh" generate-settings
+  fi
+fi
 
 # ============================================================================
-# Step 4: Summary
+# Step 3: Summary
 # ============================================================================
 
 echo ""
@@ -349,28 +231,42 @@ echo "Created:"
 echo "  .claude/toolkit/          Toolkit subtree"
 echo "  .claude/toolkit.toml      Your configuration"
 echo "  .claude/settings.json     Generated settings"
-echo "  .claude/agents/           9 agent prompts"
-echo "  .claude/skills/           9 skill templates"
+echo "  .claude/agents/           Agent prompts"
+echo "  .claude/skills/           Skill templates"
 echo "  .claude/rules/            Coding conventions"
 echo "  .mcp.json                 MCP server config"
 echo ""
 
 if [[ "$COMMIT" == true ]]; then
   echo "Committing..."
-  git -C "$PROJECT_DIR" add .claude/ .mcp.json
-  git -C "$PROJECT_DIR" commit -m "Add claude-toolkit
+  git -C "$PROJECT_DIR" add .claude/
+  if [[ -f "${PROJECT_DIR}/.mcp.json" ]]; then
+    git -C "$PROJECT_DIR" add .mcp.json
+  fi
+  COMMIT_MSG="Add claude-toolkit
 
-Bootstrapped with: --name ${PROJECT_NAME} --stacks ${STACKS}
-Toolkit version: $(cat "${CLAUDE_DIR}/toolkit/VERSION" 2>/dev/null || echo "unknown")"
+Bootstrapped with: bootstrap.sh"
+  if [[ -n "$STACKS" ]]; then
+    COMMIT_MSG="${COMMIT_MSG} --stacks ${STACKS}"
+  fi
+  TOOLKIT_VERSION="$(cat "${CLAUDE_DIR}/toolkit/VERSION" 2>/dev/null || echo "unknown")"
+  COMMIT_MSG="${COMMIT_MSG}
+Toolkit version: ${TOOLKIT_VERSION}"
+  # Write commit message to temp file to avoid guard hook issues
+  COMMIT_MSG_FILE="$(mktemp)"
+  printf '%s' "$COMMIT_MSG" > "$COMMIT_MSG_FILE"
+  git -C "$PROJECT_DIR" commit -F "$COMMIT_MSG_FILE"
+  rm -f "$COMMIT_MSG_FILE"
   echo "  Committed."
 else
   echo "Next steps:"
-  echo "  1. Review and customize .claude/toolkit.toml"
-  echo "  2. (Optional) Create .claude/settings-project.json for project overrides"
-  echo "  3. (Optional) Create CLAUDE.md with project-specific instructions"
-  echo "  4. Commit: git add .claude/ .mcp.json && git commit -m 'Add claude-toolkit'"
+  echo "  1. Open Claude Code in this project"
+  echo "  2. Run: /setup"
+  echo "     This will auto-detect your stacks, validate lint/test commands,"
+  echo "     configure toolkit.toml, generate CLAUDE.md, and commit."
   echo ""
-  echo "Or have Claude do it:"
-  echo "  Open Claude Code in this project and say:"
-  echo '  "Set up the claude-toolkit — review toolkit.toml and customize for this project"'
+  echo "  Or manually:"
+  echo "  1. Edit .claude/toolkit.toml to match your project"
+  echo "  2. Run: bash .claude/toolkit/toolkit.sh generate-settings"
+  echo "  3. Commit: git add .claude/ .mcp.json && git commit -m 'Add claude-toolkit'"
 fi

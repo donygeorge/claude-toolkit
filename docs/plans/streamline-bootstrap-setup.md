@@ -202,17 +202,17 @@ Strip bootstrap.sh down to git operations only. Remove TOML generation, make fla
 
 **Exit Criteria**:
 
-- [ ] `--name` flag is optional (defaults to directory basename)
-- [ ] `--stacks` flag is optional (not used for TOML generation)
-- [ ] Entire TOML generation section removed (old lines 165-330): no `_to_toml_array`, no stack-specific linter/gate templates
-- [ ] Runs `toolkit.sh init --from-example` instead of generating custom TOML
-- [ ] If `--name` provided, patches `project.name` in toolkit.toml after init
-- [ ] If `--stacks` provided, patches `project.stacks` in toolkit.toml after init
-- [ ] `--remote`, `--ref`, `--local`, `--commit` flags still work unchanged
-- [ ] New `--repair` flag: if toolkit subtree already exists, runs `toolkit.sh init --force` to fill missing skills/agents/rules
-- [ ] "Next steps" message tells user to run `/setup` in Claude Code with exact instructions
-- [ ] Passes `shellcheck -x -S warning bootstrap.sh`
-- [ ] Backward compatible: `bootstrap.sh --name foo --stacks python --commit` still works (just doesn't generate linter/gate config)
+- [x] `--name` flag is optional (defaults to directory basename)
+- [x] `--stacks` flag is optional (not used for TOML generation)
+- [x] Entire TOML generation section removed (old lines 165-330): no `_to_toml_array`, no stack-specific linter/gate templates
+- [x] Runs `toolkit.sh init --from-example` instead of generating custom TOML
+- [x] If `--name` provided, patches `project.name` in toolkit.toml after init
+- [x] If `--stacks` provided, patches `project.stacks` in toolkit.toml after init
+- [x] `--remote`, `--ref`, `--local`, `--commit` flags still work unchanged
+- [x] New `--repair` flag: if toolkit subtree already exists, runs `toolkit.sh init --force` to fill missing skills/agents/rules
+- [x] "Next steps" message tells user to run `/setup` in Claude Code with exact instructions
+- [x] Passes `shellcheck -x -S warning bootstrap.sh`
+- [x] Backward compatible: `bootstrap.sh --name foo --stacks python --commit` still works (just doesn't generate linter/gate config)
 
 ### M2: Rewrite /setup skill
 
