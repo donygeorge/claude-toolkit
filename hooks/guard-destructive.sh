@@ -12,6 +12,7 @@ source "$(dirname "$0")/_config.sh"
 source "$(dirname "$0")/../lib/hook-utils.sh"
 
 hook_read_input
+hook_debug "tool=$HOOK_TOOL command=$HOOK_COMMAND"
 
 # Only guard Bash tool
 if [ "$HOOK_TOOL" != "Bash" ]; then exit 0; fi

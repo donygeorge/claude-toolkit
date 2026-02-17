@@ -1032,6 +1032,50 @@ Update claude-toolkit from [old_version] to [new_version]
 
 ---
 
+## Update Rollback
+
+If the update causes problems after completion, use these recovery steps.
+
+### Rollback a Completed Update
+
+```text
+1. Find the merge commit from the update:
+   git log --oneline -5
+   # Look for "Update claude-toolkit to <version>" commit(s)
+
+2. Revert the update commit(s) in reverse order (newest first):
+   git revert <post-update-commit> --no-edit   # if Phase U5 created one
+   git revert <subtree-merge-commit> --no-edit  # the subtree pull commit
+
+3. Regenerate settings from the reverted toolkit source:
+   bash .claude/toolkit/toolkit.sh generate-settings
+
+4. Refresh symlinks:
+   bash .claude/toolkit/toolkit.sh init --force
+
+5. Verify the rollback:
+   bash .claude/toolkit/toolkit.sh validate
+```
+
+### Rollback During Update (Before Commit)
+
+If validation fails in Phase U3 and the user wants to abort after the subtree pull:
+
+```text
+1. If the subtree merge commit was created:
+   git revert HEAD --no-edit
+
+2. Regenerate settings:
+   bash .claude/toolkit/toolkit.sh generate-settings
+
+3. Verify:
+   bash .claude/toolkit/toolkit.sh validate
+```
+
+**NEVER use `git reset --hard`** — always use `git revert` to preserve history. Only the user can authorize destructive git operations.
+
+---
+
 ## Update Error Handling
 
 | Error | Recovery |
@@ -1265,31 +1309,42 @@ If the user chooses to adapt, show the proposed adaptation and **ask the user to
 
 **Wait for the user's decision on each diverged file.**
 
-#### Step C2.3: Apply changes to toolkit source
+#### Step C2.3: Preview and apply changes to toolkit source
 
-For each approved file (with divergence resolved), apply the changes to the toolkit source files:
+**IMPORTANT**: Show the user what will change BEFORE modifying any files.
+
+For each approved file (with divergence resolved), generate a preview diff showing what would change in the toolkit source:
+
+```bash
+# For each file, generate a preview diff WITHOUT applying yet
+diff -u .claude/toolkit/<source_path> .claude/<installed_path>
+```
+
+Present the combined preview to the user:
+
+> **Proposed changes to toolkit source** (not yet applied):
+>
+> ```diff
+> [preview diff of all changes that will be applied]
+> ```
+>
+> Does this look correct? Reply "yes" to apply these changes, or note any adjustments.
+
+**Wait for user confirmation before applying.**
+
+After the user confirms, apply the changes to the toolkit source files:
 
 ```bash
 # Copy the approved changes to .claude/toolkit/<source_path>
 ```
 
-After applying all changes, show the final prepared changes. Note: `.claude/toolkit` is a subtree, not a separate repository -- always run git commands from the project root:
+Verify the changes were applied correctly. Note: `.claude/toolkit` is a subtree, not a separate repository -- always run git commands from the project root:
 
 ```bash
 git diff -- .claude/toolkit/
 ```
 
-> **Prepared changes for contribution**:
->
-> ```diff
-> [full diff of all changes applied to toolkit source]
-> ```
->
-> Please review these changes. Are they ready for validation?
-
-If the diff is empty, the changes may not have been applied correctly. Investigate before proceeding.
-
-**Wait for user confirmation before proceeding to validation.**
+If the diff is empty after applying, the changes may not have been applied correctly. Investigate before proceeding.
 
 ---
 
@@ -1487,13 +1542,20 @@ Present the PR title and summary:
 
 #### Step C4.6: Clean up local toolkit changes
 
-The changes applied to `.claude/toolkit/` in Step C2.3 were needed for validation and patch generation. Now that the patch has been created, revert these local changes to avoid divergence from the upstream subtree:
+The changes applied to `.claude/toolkit/` in Step C2.3 were needed for validation and patch generation. Now that the patch has been created, revert these local changes to avoid divergence from the upstream subtree.
+
+**IMPORTANT**: Only revert the specific files that were part of the contribution, not ALL `.claude/toolkit/` changes (the user may have other in-progress work):
 
 ```bash
-git checkout -- .claude/toolkit/
+# Revert ONLY the contributed files
+git checkout -- .claude/toolkit/<source_path_1>
+git checkout -- .claude/toolkit/<source_path_2>
+# ... one per contributed file
 ```
 
-If the user explicitly wants to keep the local changes (e.g., while waiting for the PR to be merged), **ask first** before reverting.
+Do NOT use `git checkout -- .claude/toolkit/` as this discards ALL local changes, including unrelated work.
+
+**Ask the user first** before reverting — they may want to keep the local changes (e.g., while waiting for the PR to be merged).
 
 ---
 

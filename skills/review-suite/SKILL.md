@@ -39,6 +39,7 @@ shortcuts:
 /review all my-feature     # all 7 agents on feature:my-feature
 /review thorough           # preset:thorough on uncommitted
 /review architect          # deep architecture analysis (run infrequently)
+/review commit-check       # fast post-commit sanity check on last commit
 ```
 
 ### Full Slash Command
@@ -67,6 +68,7 @@ shortcuts:
 | Preset | Agents | Mode |
 | ------ | ------ | ---- |
 | `default` | reviewer | smoke |
+| `quick` | commit-check | smoke |
 | `thorough` | reviewer, qa, security | thorough |
 | `ux-docs` | ux, docs | smoke |
 | `pre-merge` | all | thorough |
@@ -205,11 +207,25 @@ Agents that use overlapping tools should not run simultaneously:
 | Mobile simulator | qa, ux | Run sequentially |
 | Security scanners | security, reviewer | Can run in parallel |
 
+### Commit-Check Execution
+
+When running the `commit-check` agent (via `/review commit-check` or preset `quick`):
+
+1. **Scope**: Always uses the last commit (`diff:HEAD~1..HEAD`), ignoring the `--scope` argument
+2. **Model**: Always haiku (fast background check)
+3. **Timeout**: 60 seconds (hard limit for background checks)
+4. **Output**: Status-based (`ok`/`warning`/`alert`) rather than severity-based findings
+5. **Gate**: Advisory only — never blocks. `alert` status is highlighted to user, `warning` logged, `ok` silent
+
+This agent is designed for fast post-commit sanity checks. For thorough review, use the `reviewer` agent.
+
+### Timeout Handling
+
 If agent times out:
 
 - Mark `timed_out: true`
 - Report partial findings with `severity: med`
-- Do NOT count as gate pass
+- Do NOT count as gate pass — timed-out agents are treated as inconclusive
 
 ## Infrastructure Failures
 
@@ -233,6 +249,7 @@ If tooling fails (exit code 4):
 | docs, documentation | docs |
 | pm, product | pm |
 | architect, architecture | architect |
+| commit-check, sanity, quick | commit-check |
 | all, full, everything | all |
 
 ### Scope Keywords
@@ -247,6 +264,64 @@ Scope resolution uses the scope-resolver skill with your project's `features.jso
 | (none), changes, my changes | uncommitted |
 | last commit | diff:HEAD~1 |
 | this branch | diffs:main..HEAD |
+
+## Review Packet Schema
+
+The `review_packet.json` artifact uses this structure:
+
+```json
+{
+  "run_id": "20260131_142530",
+  "scope": "feature:my-feature",
+  "commit_hash": "abc1234",
+  "agents_run": ["reviewer", "qa", "security"],
+  "duration_ms": 45000,
+  "summary": {
+    "total_findings": 5,
+    "by_severity": { "critical": 0, "high": 1, "medium": 3, "low": 1, "info": 0 },
+    "gate_status": {
+      "reviewer": "pass",
+      "qa": "pass",
+      "security": "fail"
+    }
+  },
+  "findings": [
+    {
+      "id": "f-001",
+      "agent": "security",
+      "severity": "high",
+      "type": "vulnerability",
+      "summary": "SQL injection via unsanitized user input",
+      "evidence": {
+        "file": "src/db/queries.py",
+        "line": 42,
+        "snippet": "cursor.execute(f\"SELECT * FROM users WHERE id={user_id}\")"
+      },
+      "actionable": true,
+      "gate_failing": true,
+      "suggestion": "Use parameterized queries: cursor.execute('SELECT * FROM users WHERE id=?', (user_id,))"
+    }
+  ],
+  "timed_out_agents": [],
+  "infra_failed_agents": []
+}
+```
+
+**Finding fields**:
+
+| Field | Required | Description |
+| ----- | -------- | ----------- |
+| `id` | yes | Unique finding ID within the packet (e.g., `f-001`) |
+| `agent` | yes | Which agent produced this finding |
+| `severity` | yes | `critical`, `high`, `medium`, `low`, or `info` |
+| `type` | yes | `bug`, `vulnerability`, `quality`, `a11y`, `docs`, `architecture`, `product` |
+| `summary` | yes | One-line description of the issue |
+| `evidence` | yes for high/crit | File path, line number, and code snippet |
+| `actionable` | yes | `true` if the finding has a clear fix; `false` for informational |
+| `gate_failing` | yes | `true` if this finding causes the agent's gate to fail |
+| `suggestion` | no | Recommended fix |
+
+**Evidence downgrade rule**: Findings with `severity: high` or `critical` that lack `evidence` are automatically downgraded to `medium` with `actionable: false`.
 
 ## Output
 

@@ -21,6 +21,7 @@ source "$(dirname "$0")/../lib/hook-utils.sh"
 command -v jq >/dev/null 2>&1 || exit 0
 
 hook_read_input
+hook_debug "tool=$HOOK_TOOL command=$HOOK_COMMAND file=$HOOK_FILE_PATH"
 
 [ -z "$HOOK_TOOL" ] && exit 0
 

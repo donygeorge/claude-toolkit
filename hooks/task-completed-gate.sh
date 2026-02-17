@@ -9,9 +9,22 @@ set -u
 
 # shellcheck source=_config.sh
 source "$(dirname "$0")/_config.sh"
+# shellcheck source=../lib/hook-utils.sh
+source "$(dirname "$0")/../lib/hook-utils.sh"
 
 # Consume stdin (required by hook protocol, not used here)
 cat > /dev/null
+
+# --- Gate bypass support ---
+# Set TOOLKIT_SKIP_GATES=all to bypass all gates, or TOOLKIT_SKIP_GATES=lint,tests
+# to skip specific gates. Useful for debugging false positives.
+if [ -n "${TOOLKIT_SKIP_GATES:-}" ]; then
+  if [ "$TOOLKIT_SKIP_GATES" = "all" ]; then
+    hook_info "All gates bypassed via TOOLKIT_SKIP_GATES=all"
+    exit 0
+  fi
+  hook_debug "Selective gate bypass active: TOOLKIT_SKIP_GATES=$TOOLKIT_SKIP_GATES"
+fi
 
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(cd "$(dirname "$0")/../.." && pwd)}"
 cd "$PROJECT_DIR" || exit 0
@@ -59,7 +72,10 @@ files_match_glob() {
 }
 
 # --- Lint gate ---
-if [ -n "$TOOLKIT_HOOKS_TASK_COMPLETED_GATES_LINT_CMD" ]; then
+# Check if lint gate is bypassed
+if echo ",${TOOLKIT_SKIP_GATES:-}," | grep -q ",lint,"; then
+  hook_info "Lint gate bypassed via TOOLKIT_SKIP_GATES"
+elif [ -n "$TOOLKIT_HOOKS_TASK_COMPLETED_GATES_LINT_CMD" ]; then
   LINT_GLOB="$TOOLKIT_HOOKS_TASK_COMPLETED_GATES_LINT_GLOB"
   LINT_CMD="$TOOLKIT_HOOKS_TASK_COMPLETED_GATES_LINT_CMD"
 
@@ -98,7 +114,10 @@ if [ -n "$TOOLKIT_HOOKS_TASK_COMPLETED_GATES_LINT_CMD" ]; then
 fi
 
 # --- Tests gate ---
-if [ -n "$TOOLKIT_HOOKS_TASK_COMPLETED_GATES_TESTS_CMD" ]; then
+# Check if tests gate is bypassed
+if echo ",${TOOLKIT_SKIP_GATES:-}," | grep -q ",tests,"; then
+  hook_info "Tests gate bypassed via TOOLKIT_SKIP_GATES"
+elif [ -n "$TOOLKIT_HOOKS_TASK_COMPLETED_GATES_TESTS_CMD" ]; then
   TESTS_GLOB="$TOOLKIT_HOOKS_TASK_COMPLETED_GATES_TESTS_GLOB"
   TESTS_CMD="$TOOLKIT_HOOKS_TASK_COMPLETED_GATES_TESTS_CMD"
   TESTS_TIMEOUT="${TOOLKIT_HOOKS_TASK_COMPLETED_GATES_TESTS_TIMEOUT:-90}"

@@ -299,10 +299,12 @@ Before moving to next phase, validate previous phase completed.
 | Failure | Recovery |
 | --------- | ---------- |
 | Codex unavailable | Warn, continue with extra self-review |
-| Build fails | Save error, skip tests, flag for user |
+| Build fails | Save error to state, block milestone, ask user for guidance |
 | Test flaky | Retry 3x, flag as potential flake |
 | QA agent timeout | Log warning, continue |
 | UX agent timeout | Log warning, continue |
+
+> **Note**: Build failures MUST NOT skip the test phase. A build that fails means tests cannot run reliably. Block the milestone and surface the error to the user rather than proceeding with unknown state.
 
 ---
 
@@ -316,3 +318,35 @@ Before moving to next phase, validate previous phase completed.
 | Tests fail after retries | Save state, ask user for guidance |
 | Codex unavailable | Skip codex, note in result |
 | Milestone agent fails | Save partial state, ask user to retry or skip |
+
+---
+
+## Rollback
+
+If a milestone produces broken code and was already committed, use these recovery steps:
+
+### Rollback Last Milestone
+
+```text
+1. Identify the commit: read plan_state.json for the milestone's commit hash
+2. Verify it's the most recent commit: git log --oneline -3
+3. Revert the commit (creates a new revert commit, preserves history):
+   git revert <commit_hash> --no-edit
+4. Update plan_state.json: set milestone status to "reverted"
+5. Inform user and ask how to proceed (retry, skip, or stop)
+```
+
+### Rollback Multiple Milestones
+
+If several milestones need to be undone (e.g., M2 broke something introduced in M1):
+
+```text
+1. Find the commit BEFORE the first bad milestone in plan_state.json
+2. Revert commits in reverse order (newest first):
+   git revert <M2_hash> --no-edit
+   git revert <M1_hash> --no-edit
+3. Update plan_state.json for each reverted milestone
+4. Ask user: restart from M1 with a different approach, or stop?
+```
+
+**NEVER use `git reset --hard`** — always use `git revert` to preserve history and avoid data loss. Only the user can authorize destructive git operations.

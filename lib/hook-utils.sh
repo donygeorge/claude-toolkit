@@ -120,3 +120,12 @@ _atomic_write() {
 hook_warn()  { echo "[toolkit:$(basename "$0" .sh)] WARN: $*" >&2; }
 hook_error() { echo "[toolkit:$(basename "$0" .sh)] ERROR: $*" >&2; }
 hook_info()  { echo "[toolkit:$(basename "$0" .sh)] $*" >&2; }
+
+# --- Debug logging ---
+# Only outputs when TOOLKIT_HOOK_DEBUG=true. Shows hook name, input, and decisions.
+# Usage: hook_debug "processing input" "$HOOK_INPUT"
+hook_debug() {
+  if [ "${TOOLKIT_HOOK_DEBUG:-false}" = "true" ]; then
+    echo "[toolkit:$(basename "$0" .sh)] DEBUG: $*" >&2
+  fi
+}
