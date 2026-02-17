@@ -302,6 +302,37 @@ Skill templates in `.claude/skills/`. These are copied (not symlinked) so they c
 | Verify | `verify/` | Post-implementation verification with deep and quick modes. Deep mode includes edge case scanning and clean-room agent review; quick mode checks spec compliance (tests, lint, exit criteria) |
 | Gemini | `gemini/` | Second opinion from Google's model |
 
+### Skill Defaults
+
+Key tunable defaults per skill. Override in `toolkit.toml` under `[skills.<name>]`. Run `bash toolkit.sh customize skills/<name>/SKILL.md` to take full ownership of a skill file.
+
+| Skill | Key | Default | Description |
+| ----- | --- | ------- | ----------- |
+| brainstorm | `depth` | `"normal"` | Depth mode: `"shallow"`, `"normal"`, or `"deep"` |
+| brainstorm | `output_dir` | `"docs/ideas"` | Directory for idea documents |
+| brainstorm | `codex_iterations` | `5` | Max codex review iterations |
+| brainstorm | `personas` | `4` | Max personas in normal mode (6 in deep) |
+| brainstorm | `gemini_enabled` | `false` | Include Gemini second-opinion persona |
+| brainstorm | `auto_plan` | `false` | Auto-spawn `/plan` after brainstorm |
+| implement | `codex_iterations` | `3` | Max codex review iterations per milestone |
+| implement | `qa_mode` | `"smoke"` | QA mode after each milestone: `"smoke"` or `"deep"` |
+| refine | `max_iterations` | `8` | Max evaluate-fix-validate iterations |
+| refine | `convergence_threshold` | `2` | Max new findings per iteration before plateau |
+| refine | `deferred_drop_after` | `2` | Drop findings deferred N consecutive times |
+| plan | `output_dir` | `"docs/plans"` | Directory for plan documents |
+| plan | `feedback_iterations` | `10` | Max codex feedback iterations |
+| plan | `auto_implement` | `false` | Auto-spawn `/implement` after plan finalization |
+| fix | `scan_cap` | `20` | Max similar-pattern matches to collect |
+| fix | `max_fix_attempts` | `3` | Fix attempts before escalating to user |
+| solve | `skip_review` | `false` | Skip QA review at end |
+| solve | `plan_only` | `false` | Create plan without implementing |
+| solve | `max_fix_attempts` | `3` | Fix attempts before escalating to user |
+| review-suite | `agents` | `"reviewer"` | Default agent(s) to run |
+| review-suite | `scope` | `"uncommitted"` | Default review scope |
+| review-suite | `max_parallel_agents` | `3` | Max agents running in parallel |
+| review-suite | `smoke_timeout` | `600` | Smoke mode timeout in seconds |
+| review-suite | `deep_timeout` | `3600` | Deep mode timeout in seconds |
+
 ---
 
 ## Stacks Reference

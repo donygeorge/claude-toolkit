@@ -26,6 +26,8 @@ defaults:
   codex_iterations: 5
 ```
 
+> **Customization**: Override defaults in `toolkit.toml` under `[skills.brainstorm]`. Run `bash toolkit.sh customize skills/brainstorm/SKILL.md` to take full ownership of this skill.
+
 ## Usage
 
 ### Slash Commands

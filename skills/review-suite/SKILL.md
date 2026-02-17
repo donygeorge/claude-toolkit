@@ -26,6 +26,8 @@ shortcuts:
   all: --agents all
 ```
 
+> **Customization**: Override defaults in `toolkit.toml` under `[skills.review-suite]`. Run `bash toolkit.sh customize skills/review-suite/SKILL.md` to take full ownership of this skill.
+
 ## Usage
 
 ### Short Slash Commands

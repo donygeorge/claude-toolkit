@@ -23,6 +23,8 @@ defaults:
   feedback_iterations: 10
 ```
 
+> **Customization**: Override defaults in `toolkit.toml` under `[skills.plan]`. Run `bash toolkit.sh customize skills/plan/SKILL.md` to take full ownership of this skill.
+
 ## Usage
 
 ### Slash Commands

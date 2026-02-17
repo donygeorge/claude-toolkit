@@ -35,6 +35,8 @@ defaults:
   deferred_drop_after: 2
 ```
 
+> **Customization**: Override defaults in `toolkit.toml` under `[skills.refine]`. Run `bash toolkit.sh customize skills/refine/SKILL.md` to take full ownership of this skill.
+
 ## Usage
 
 ```bash

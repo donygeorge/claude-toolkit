@@ -168,3 +168,47 @@ app_name = "Claude Code"
 # macOS sound name for permission prompts (use "none" for silent)
 # Common sounds: Blow, Ping, Pop, Glass, Submarine, Tink
 permission_sound = "Blow"
+
+# ---------------------------------------------------------------------------
+# Skill Defaults
+# ---------------------------------------------------------------------------
+# Uncomment and modify to override skill defaults.
+# Run `bash toolkit.sh customize skills/<skill>/SKILL.md` to take ownership.
+
+# [skills.brainstorm]
+# depth = "normal"                # Default depth: "shallow", "normal", or "deep"
+# output_dir = "docs/ideas"       # Directory for idea documents
+# codex_iterations = 5            # Max codex review iterations
+# personas = 4                    # Max personas in normal mode (6 in deep)
+# gemini_enabled = false          # Include Gemini second-opinion persona
+# auto_plan = false               # Auto-spawn /plan after brainstorm completes
+
+# [skills.implement]
+# codex_iterations = 3            # Max codex review iterations per milestone
+# qa_mode = "smoke"               # QA mode after each milestone: "smoke" or "deep"
+
+# [skills.refine]
+# max_iterations = 8              # Max evaluate-fix-validate iterations
+# convergence_threshold = 2       # Max new findings per iteration before plateau
+# deferred_drop_after = 2         # Drop findings deferred N consecutive times
+
+# [skills.plan]
+# output_dir = "docs/plans"       # Directory for plan documents
+# feedback_iterations = 10        # Max codex feedback iterations
+# auto_implement = false          # Auto-spawn /implement after plan finalization
+
+# [skills.fix]
+# scan_cap = 20                   # Max similar-pattern matches to collect
+# max_fix_attempts = 3            # Fix attempts before escalating to user
+
+# [skills.solve]
+# skip_review = false             # Skip QA review at end
+# plan_only = false               # Create plan without implementing
+# max_fix_attempts = 3            # Fix attempts before escalating to user
+
+# [skills.review-suite]
+# agents = "reviewer"             # Default agent(s): "reviewer", "all", or comma-separated
+# scope = "uncommitted"           # Default scope: "uncommitted", "diff:HEAD~1", etc.
+# max_parallel_agents = 3         # Max agents running in parallel
+# smoke_timeout = 600             # Smoke mode timeout in seconds (10 min)
+# deep_timeout = 3600             # Deep mode timeout in seconds (60 min)

@@ -71,6 +71,8 @@ defaults:
   qa_mode: smoke
 ```
 
+> **Customization**: Override defaults in `toolkit.toml` under `[skills.implement]`. Run `bash toolkit.sh customize skills/implement/SKILL.md` to take full ownership of this skill.
+
 ## Usage
 
 ### Slash Commands

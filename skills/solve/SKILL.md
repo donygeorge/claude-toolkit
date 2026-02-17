@@ -42,6 +42,8 @@ defaults:
   plan_only: false
 ```
 
+> **Customization**: Override defaults in `toolkit.toml` under `[skills.solve]`. Run `bash toolkit.sh customize skills/solve/SKILL.md` to take full ownership of this skill.
+
 > **Note**: `/fix` is a separate skill for standalone bug fixes without GitHub integration. Use `/solve` for GitHub issue workflows.
 
 ## Usage

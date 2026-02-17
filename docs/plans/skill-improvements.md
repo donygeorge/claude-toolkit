@@ -216,10 +216,10 @@ Document all tunable skill defaults in `toolkit.toml.example`, add customization
 
 **Exit Criteria**:
 
-- [ ] `toolkit.toml.example` has commented `[skills.*]` sections for brainstorm, implement, refine, review-suite, plan, fix, solve
-- [ ] Each section documents key defaults with inline comments
-- [ ] All 7 major skills have a one-line customization note referencing `toolkit.sh customize`
-- [ ] docs/reference.md has "Skill Defaults" subsection with table of key defaults per skill
+- [x] `toolkit.toml.example` has commented `[skills.*]` sections for brainstorm, implement, refine, review-suite, plan, fix, solve
+- [x] Each section documents key defaults with inline comments
+- [x] All 7 major skills have a one-line customization note referencing `toolkit.sh customize`
+- [x] docs/reference.md has "Skill Defaults" subsection with table of key defaults per skill
 
 ### M7: Add Skill Test Infrastructure and Update CHANGELOG
 
