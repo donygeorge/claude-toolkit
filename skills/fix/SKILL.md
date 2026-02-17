@@ -1,6 +1,6 @@
 ---
 name: fix
-description: Root-cause, fix, validate, scan for similar patterns, test, and commit a bug.
+description: Use when a bug needs fixing but there is no GitHub issue to track it.
 argument-hint: '"description of the bug" or paste an error/stack trace'
 user-invocable: true
 disable-model-invocation: true

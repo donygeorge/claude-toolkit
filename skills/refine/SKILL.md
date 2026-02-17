@@ -1,6 +1,6 @@
 ---
 name: refine
-description: Iterative evaluate-fix-validate convergence loop for code quality improvement.
+description: Use when existing code needs iterative quality improvement.
 argument-hint: '"scope or description" [--resume] [--max-iterations N]'
 user-invocable: true
 disable-model-invocation: true

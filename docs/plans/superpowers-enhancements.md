@@ -297,10 +297,10 @@ Address the superpowers finding that skill descriptions that summarize workflows
 
 **Exit Criteria**:
 
-- [ ] All 8 skill descriptions updated to state triggering conditions only
-- [ ] No description summarizes the workflow or lists steps
-- [ ] Descriptions are concise (under 80 characters preferred)
-- [ ] YAML frontmatter remains valid after edits
+- [x] All 8 skill descriptions updated to state triggering conditions only
+- [x] No description summarizes the workflow or lists steps
+- [x] Descriptions are concise (under 80 characters preferred)
+- [x] YAML frontmatter remains valid after edits
 
 ---
 

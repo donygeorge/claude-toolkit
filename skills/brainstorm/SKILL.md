@@ -1,6 +1,6 @@
 ---
 name: brainstorm
-description: Deep research and idea exploration with dynamic agent teams. Evaluates approaches, researches trends, and produces idea docs for /plan.
+description: Use when exploring a new idea, technology choice, or design problem before planning.
 argument-hint: '"topic" [--quick] [--depth shallow|normal|deep] [--gemini]'
 user-invocable: true
 disable-model-invocation: true

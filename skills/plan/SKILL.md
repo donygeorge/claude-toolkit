@@ -1,6 +1,6 @@
 ---
 name: plan
-description: Creates detailed implementation plans with milestones, exit criteria, and architecture decisions. Saves to docs/plans/ for use with /implement.
+description: Use when a feature or change needs a detailed implementation plan before building.
 argument-hint: "<feature-name>"
 user-invocable: true
 disable-model-invocation: true

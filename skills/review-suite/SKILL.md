@@ -1,6 +1,6 @@
 ---
 name: review
-description: Run code review agents (reviewer, qa, security, ux, pm, docs, architect).
+description: Use when code changes need review before merging or completing.
 argument-hint: "[agent] [scope]"
 user-invocable: true
 disable-model-invocation: true

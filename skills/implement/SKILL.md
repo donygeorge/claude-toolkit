@@ -1,6 +1,6 @@
 ---
 name: implement
-description: Executes implementation plans autonomously with multi-milestone support, testing, and reviews.
+description: Use when you have an approved plan file and are ready to build.
 argument-hint: "<plan-file> [milestone] [--continue]"
 user-invocable: true
 disable-model-invocation: true

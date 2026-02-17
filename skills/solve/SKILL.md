@@ -1,6 +1,6 @@
 ---
 name: solve
-description: GitHub issue workflow - fetch, reproduce, fix, test, and commit.
+description: Use when working on one or more GitHub issues.
 argument-hint: "<github-issue-url-or-number>"
 user-invocable: true
 disable-model-invocation: true

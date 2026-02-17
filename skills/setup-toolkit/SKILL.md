@@ -1,6 +1,6 @@
 ---
 name: setup-toolkit
-description: Detect project stacks and commands, validate config, generate toolkit.toml and CLAUDE.md. Handles fresh setup, partial installs, and reconfiguration.
+description: Use when setting up, updating, or contributing back to the toolkit.
 argument-hint: "[--reconfigure] [--update [version]] [--contribute]"
 user-invocable: true
 disable-model-invocation: true
