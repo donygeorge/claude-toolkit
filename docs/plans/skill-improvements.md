@@ -113,10 +113,10 @@ The `/verify` skill exists but is missing from all project documentation. Add it
 
 **Exit Criteria**:
 
-- [ ] README.md references 13 skill templates
-- [ ] CLAUDE.md lists verify in the skills list and project structure
-- [ ] docs/reference.md skills table includes verify with description and directory
-- [ ] Grep for "12 skill" or "11 skill" in README.md, CLAUDE.md, docs/reference.md returns zero matches
+- [x] README.md references 13 skill templates
+- [x] CLAUDE.md lists verify in the skills list and project structure
+- [x] docs/reference.md skills table includes verify with description and directory
+- [x] Grep for "12 skill" or "11 skill" in README.md, CLAUDE.md, docs/reference.md returns zero matches
 
 ### M2: Improve Skill Documentation (brainstorm, implement, refine, plan, fix, commit)
 

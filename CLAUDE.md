@@ -10,7 +10,7 @@ A shareable, configurable collection of Claude Code hooks, agents, skills, and r
 
 - 16 configurable hooks (guards, quality gates, lifecycle, automation)
 - 9 agent prompts (reviewer, qa, security, ux, pm, docs, architect, commit-check, plan)
-- 12 skill templates (review, implement, plan, brainstorm, solve, fix, refine, conventions, scope-resolver, gemini, setup, commit)
+- 13 skill templates (review, implement, plan, brainstorm, solve, fix, refine, verify, conventions, scope-resolver, gemini, setup, commit)
 - Three-tier settings merge (base + stacks + project)
 - Manifest tracking for managed vs customized files
 - Config-driven via `toolkit.toml`
@@ -75,7 +75,7 @@ bash toolkit.sh help                      # Show usage
 │   ├── architect.md             # Deep architecture analysis
 │   ├── commit-check.md          # Lightweight post-commit check
 │   └── plan.md                  # Feature planning agent
-├── skills/                      # Skill templates (12 directories, each has SKILL.md)
+├── skills/                      # Skill templates (13 directories, each has SKILL.md)
 │   ├── review-suite/            # Multi-agent code review
 │   ├── implement/               # Autonomous plan execution
 │   ├── plan/                    # Feature planning
@@ -87,6 +87,7 @@ bash toolkit.sh help                      # Show usage
 │   ├── scope-resolver/          # Feature scope resolver
 │   ├── gemini/                  # Second opinion from Google
 │   ├── setup-toolkit/           # Project onboarding orchestrator
+│   ├── verify/                  # Post-implementation verification (deep + quick modes)
 │   └── commit/                  # Auto-commit session changes
 ├── rules/                       # Generic rules (symlinked to projects)
 │   └── git-protocol.md          # Git staging and commit rules

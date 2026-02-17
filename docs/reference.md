@@ -299,6 +299,7 @@ Skill templates in `.claude/skills/`. These are copied (not symlinked) so they c
 | Conventions | `conventions/` | View coding conventions for a domain |
 | Scope Resolver | `scope-resolver/` | Resolve feature scopes for review targeting |
 | Commit | `commit/` | Commit uncommitted session changes with auto-generated message |
+| Verify | `verify/` | Post-implementation verification with deep and quick modes. Deep mode includes edge case scanning and clean-room agent review; quick mode checks spec compliance (tests, lint, exit criteria) |
 | Gemini | `gemini/` | Second opinion from Google's model |
 
 ---

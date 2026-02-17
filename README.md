@@ -10,7 +10,7 @@ Claude Code supports [hooks](https://docs.anthropic.com/en/docs/claude-code/hook
 
 - **16 configurable hooks** covering safety, quality, and automation
 - **9 agent prompts** for code review, QA, security, architecture, and more
-- **11 skill templates** for review, planning, implementation, setup, and bug fixing
+- **13 skill templates** for review, planning, implementation, verification, setup, and bug fixing
 - **Config-driven**: One `toolkit.toml` file controls everything
 - **Three-tier settings**: Base defaults + stack overlays + project overrides
 - **Manifest tracking**: Know which files are managed vs customized
