@@ -905,13 +905,13 @@ Make smart-context a standalone module that can be used or replaced independentl
 
 ### Exit Criteria
 
-- [ ] New stacks can be added by dropping a JSON file in `templates/stacks/`
-- [ ] Custom hooks directory `.claude/hooks-custom/` supported
-- [ ] Agent prompts have version metadata
-- [ ] Test fixtures consolidated
-- [ ] smart-context has clean module boundary
-- [ ] All tests pass
-- [ ] `CHANGELOG.md` updated for all changes
+- [x] New stacks can be added by dropping a JSON file in `templates/stacks/`
+- [x] Custom hooks directory `.claude/hooks-custom/` supported
+- [x] Agent prompts have version metadata
+- [x] Test fixtures consolidated
+- [x] smart-context has clean module boundary
+- [x] All tests pass
+- [x] `CHANGELOG.md` updated for all changes
 
 ---
 

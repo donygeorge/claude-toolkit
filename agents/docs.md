@@ -1,5 +1,7 @@
 ---
 name: docs
+version: "1.0.0"
+toolkit_min_version: "1.0.0"
 description: >
   Documentation validator. Checks code-doc sync, README accuracy,
   and project context freshness.

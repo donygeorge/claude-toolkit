@@ -1,4 +1,9 @@
 {
+  "_meta": {
+    "name": "python",
+    "description": "Python stack: ruff linting, pytest testing, mypy type checking",
+    "required_tools": ["python3", "ruff", "pytest"]
+  },
   "permissions": {
     "allow": [
       "Bash(python:*)",

@@ -29,6 +29,7 @@ def _load_module():
 mod = _load_module()
 deep_merge = mod.deep_merge
 merge_layers = mod.merge_layers
+strip_meta = mod.strip_meta
 validate_auto_approve = mod.validate_auto_approve
 validate_allow_deny_conflicts = mod.validate_allow_deny_conflicts
 validate_merged = mod.validate_merged
@@ -893,6 +894,72 @@ class TestRealTemplates:
             result = merge_layers(base, stacks)
             errors = validate_merged(result)
             assert errors == [], f"Validation errors: {errors}"
+
+
+# ===================================================================
+# Stack _meta stripping (7.1)
+# ===================================================================
+
+
+class TestStackMetaStripping:
+    def test_strip_meta_removes_meta_key(self):
+        """strip_meta should remove _meta key from dict."""
+        data = {
+            "_meta": {"name": "python", "description": "Python stack"},
+            "permissions": {"allow": ["Bash(python3:*)"]},
+        }
+        result = strip_meta(data)
+        assert "_meta" not in result
+        assert "permissions" in result
+
+    def test_strip_meta_preserves_other_keys(self):
+        """strip_meta should preserve all non-_meta keys."""
+        data = {
+            "_meta": {"name": "test"},
+            "permissions": {"allow": ["a"]},
+            "hooks": {"PreToolUse": []},
+            "env": {"VAR": "val"},
+        }
+        result = strip_meta(data)
+        assert set(result.keys()) == {"permissions", "hooks", "env"}
+
+    def test_strip_meta_no_meta_key(self):
+        """strip_meta on dict without _meta should return same keys."""
+        data = {"permissions": {"allow": ["a"]}}
+        result = strip_meta(data)
+        assert result == data
+
+    def test_merge_layers_strips_meta_from_stacks(self):
+        """merge_layers should strip _meta from stack overlays."""
+        base = {"permissions": {"allow": ["base"]}}
+        stack = {
+            "_meta": {"name": "python", "description": "Python"},
+            "permissions": {"allow": ["python"]},
+        }
+        result = merge_layers(base, [stack])
+        assert "_meta" not in result
+        assert "base" in result["permissions"]["allow"]
+        assert "python" in result["permissions"]["allow"]
+
+    def test_real_stacks_have_meta(self):
+        """All real stack JSON files should have _meta key."""
+        stacks_dir = ROOT / "templates" / "stacks"
+        if stacks_dir.exists():
+            for f in stacks_dir.glob("*.json"):
+                data = load_json(f)
+                assert "_meta" in data, f"{f.name} missing _meta key"
+                assert "name" in data["_meta"], f"{f.name} _meta missing name"
+                assert "description" in data["_meta"], f"{f.name} _meta missing description"
+
+    def test_real_stacks_meta_stripped_in_merge(self):
+        """Real stacks should have _meta stripped during merge."""
+        base_path = ROOT / "templates" / "settings-base.json"
+        stacks_dir = ROOT / "templates" / "stacks"
+        if base_path.exists() and stacks_dir.exists():
+            base = load_json(base_path)
+            stacks = [load_json(f) for f in sorted(stacks_dir.glob("*.json"))]
+            result = merge_layers(base, stacks)
+            assert "_meta" not in result
 
 
 # ===================================================================

@@ -146,42 +146,78 @@ Skills are workflow templates in `skills/<name>/` triggered by slash commands in
 
 ## Adding a New Stack
 
-Stacks represent technology profiles (e.g., `python`, `ios`, `typescript`). Adding one requires two pieces.
+Stacks represent technology profiles (e.g., `python`, `ios`, `typescript`). The stack system is self-describing -- adding a new stack requires only dropping a JSON file.
+
+### Stack File Format
+
+Each stack JSON file in `templates/stacks/` has this structure:
+
+```json
+{
+  "_meta": {
+    "name": "my-stack",
+    "description": "Short description of the stack and its tools",
+    "required_tools": ["tool1", "tool2"]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(tool1:*)",
+      "Bash(tool2:*)"
+    ]
+  }
+}
+```
+
+The `_meta` key is **required** for documentation but is **stripped during merge** -- it never appears in the generated `settings.json`. Fields:
+
+- `name`: Human-readable stack name (should match the filename without `.json`)
+- `description`: One-line description shown by `toolkit.sh status`
+- `required_tools`: List of CLI tools the stack expects to be installed
 
 ### Steps
 
-1. Create a settings overlay at `templates/stacks/my-stack.json`:
-
-   ```json
-   {
-     "hooks": [
-       {
-         "event": "PreToolUse",
-         "hooks": [
-           {
-             "type": "command",
-             "command": "bash .claude/toolkit/hooks/my-stack-hook.sh"
-           }
-         ]
-       }
-     ],
-     "permissions": {
-       "deny": ["pattern-specific-to-stack"]
-     }
-   }
-   ```
-
-   This JSON is merged with the base settings when the stack is active.
+1. Create a settings overlay at `templates/stacks/my-stack.json` following the format above. The `permissions` and `hooks` sections are merged with the base settings when the stack is active.
 
 2. Optionally create rule templates at `templates/rules/my-stack.md.template`:
 
    These are copied to `.claude/rules/` during `init` when the stack is configured.
 
-3. Register the stack in `generate-settings.py` if any special merge logic is needed (usually not -- the three-tier merge handles it automatically).
+3. No registration needed in `generate-settings.py` -- the three-tier merge handles it automatically. The `_meta` key is stripped before merging.
 
 4. Add tests in `tests/test_generate_settings.py` to verify the merge produces correct output with the new stack.
 
 5. Update `docs/reference.md` with the new stack and any rule templates it provides.
+
+## Custom Hooks
+
+Projects can add custom hooks alongside toolkit hooks by placing scripts in `.claude/hooks-custom/`. This directory is:
+
+- **Not managed by the toolkit** -- files here are never overwritten by `toolkit.sh update`
+- **Sourced by `_config.sh`** -- the `TOOLKIT_CUSTOM_HOOKS_DIR` variable points to this directory
+- **Referenced in project settings** -- add custom hook entries in your `.claude/settings-project.json`
+
+Example project settings overlay (`.claude/settings-project.json`):
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks-custom/my-guard.sh",
+            "timeout": 5000
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+Custom hook scripts should follow the same conventions as toolkit hooks (source `_config.sh`, use `hook-utils.sh`, pass `shellcheck`).
 
 ## Testing Requirements
 

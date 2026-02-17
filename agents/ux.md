@@ -1,5 +1,7 @@
 ---
 name: ux
+version: "1.0.0"
+toolkit_min_version: "1.0.0"
 description: >
   UX researcher. Audits accessibility (WCAG 2.1 AA), usability,
   and screen reader support. Can use Playwright for web testing.

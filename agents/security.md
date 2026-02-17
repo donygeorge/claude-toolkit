@@ -1,5 +1,7 @@
 ---
 name: security
+version: "1.0.0"
+toolkit_min_version: "1.0.0"
 description: >
   Security auditor. Scans for OWASP Top 10, secrets, dependency
   vulnerabilities using available security tools.

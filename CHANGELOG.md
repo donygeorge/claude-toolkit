@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.8.0] - 2026-02-16
+
+### Added
+
+- **Self-describing stacks**: Stack JSON files now include `_meta` key with `name`, `description`, and `required_tools`; `_meta` is stripped during settings merge so it never appears in generated `settings.json`; `toolkit.sh status` auto-discovers and displays available stacks with descriptions
+- **Custom hook directory**: Projects can now place custom hooks in `.claude/hooks-custom/`; `TOOLKIT_CUSTOM_HOOKS_DIR` variable exported by `_config.sh` for reference in project settings
+- **Config caching optimization**: `_config.sh` now tracks cache file mtime via `_TOOLKIT_CONFIG_LOADED` env var; subsequent hook invocations skip re-sourcing if the cache file hasn't changed
+- **Agent version metadata**: All 9 agent prompts now include `version` and `toolkit_min_version` in YAML frontmatter for version tracking
+- **Smart-context CLI**: `smart-context/framework.py` now supports `--help`, `--version`, and CLI arguments (`--context-dir`, `--context-suffix`, `--max-dynamic-size`, `--max-always-size`, `--project-name`) for standalone usage without `_config.sh` dependency
+- **6 new tests**: `_meta` stripping tests (strip_meta unit tests, merge integration, real stack validation)
+
+### Changed
+
+- **CONTRIBUTING.md**: Updated with self-describing stack file format documentation and custom hooks directory guide
+- **TOML staleness warning**: Now runs even when config is cached (previously skipped when `_TOOLKIT_CONFIG_LOADED` matched)
+
 ## [1.7.0] - 2026-02-16
 
 ### Added

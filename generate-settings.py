@@ -381,6 +381,11 @@ def load_json(path: Path) -> dict:
         return json.load(f)
 
 
+def strip_meta(data: dict) -> dict:
+    """Remove _meta keys from a settings dict (used in stack overlays)."""
+    return {k: v for k, v in data.items() if k != "_meta"}
+
+
 def merge_layers(
     base: dict,
     stacks: list[dict],
@@ -389,7 +394,7 @@ def merge_layers(
     """Merge base + stack overlays + project overlay."""
     result = _deep_copy(base)
     for stack in stacks:
-        result = deep_merge(result, stack)
+        result = deep_merge(result, strip_meta(stack))
     if project:
         result = deep_merge(result, project)
     return result

@@ -1,5 +1,7 @@
 ---
 name: qa
+version: "1.0.0"
+toolkit_min_version: "1.0.0"
 description: >
   QA specialist. Runs automated tests, web UI tests (Playwright),
   and platform-specific tests. Supports smoke (fast) and deep (thorough) modes.

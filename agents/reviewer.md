@@ -1,5 +1,7 @@
 ---
 name: reviewer
+version: "1.0.0"
+toolkit_min_version: "1.0.0"
 description: >
   Adversarial code reviewer. Finds bugs, logic errors, edge cases,
   and flags missing tests. Use for thorough pre-merge review.

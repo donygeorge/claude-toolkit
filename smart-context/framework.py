@@ -2,17 +2,29 @@
 """
 Smart Context Framework for Claude Code UserPromptSubmit hooks.
 
-Provides reusable components for building project-specific smart-context hooks:
+A standalone module that provides reusable components for building
+project-specific smart-context hooks:
 1. File caching with TTL to reduce I/O overhead
 2. Keyword matching for domain context files
 3. Size-capping (token budget) for dynamic context
 4. Skill command detection for slash commands
 5. Active state detection for plan/refine workflows
 
-Usage:
+This module has no dependencies on _config.sh or toolkit-cache.env.
+All configuration is accepted via function arguments or CLI flags.
+
+Usage as library:
     Build your project's smart-context.py by importing from this framework
     and configuring project-specific settings. See README.md for details.
+
+Usage as CLI:
+    python3 smart-context/framework.py --help
+    python3 smart-context/framework.py --version
+    echo '{"prompt":"test","cwd":"/path"}' | python3 smart-context/framework.py \\
+        --context-dir docs/context --project-name "My Project"
 """
+
+__version__ = "1.0.0"
 
 import glob
 import json
@@ -397,3 +409,69 @@ def run_hook(
         print(f"\n{header}\n{state_lines}")
 
     sys.exit(0)
+
+
+# ============================================================================
+# CLI Entry Point
+# ============================================================================
+
+
+def main() -> int:
+    """CLI entry point for standalone smart-context usage.
+
+    Accepts configuration via CLI arguments instead of environment variables.
+    Reads JSON from stdin (Claude Code hook protocol) and outputs context to stdout.
+    """
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description="Smart Context Framework for Claude Code hooks",
+        epilog="Reads JSON from stdin with 'prompt' and 'cwd' fields. "
+        "Outputs matched context to stdout.",
+    )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"smart-context {__version__}",
+    )
+    parser.add_argument(
+        "--context-dir",
+        default="docs/context",
+        help="Relative path to context directory (default: docs/context)",
+    )
+    parser.add_argument(
+        "--context-suffix",
+        default="-domain.md",
+        help="Suffix for context files (default: -domain.md)",
+    )
+    parser.add_argument(
+        "--max-dynamic-size",
+        type=int,
+        default=6 * 1024,
+        help="Max bytes for keyword-matched context (default: 6144)",
+    )
+    parser.add_argument(
+        "--max-always-size",
+        type=int,
+        default=2 * 1024,
+        help="Max bytes for always-include context (default: 2048)",
+    )
+    parser.add_argument(
+        "--project-name",
+        default="Project",
+        help="Project name for header display (default: Project)",
+    )
+    args = parser.parse_args()
+
+    run_hook(
+        context_dir_name=args.context_dir,
+        context_file_suffix=args.context_suffix,
+        max_dynamic_context_size=args.max_dynamic_size,
+        max_always_include_size=args.max_always_size,
+        project_name=args.project_name,
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -1,5 +1,7 @@
 ---
 name: plan
+version: "1.0.0"
+toolkit_min_version: "1.0.0"
 description: >
   Feature planner. Creates detailed implementation plans with milestones, exit criteria,
   testing requirements, and architecture decisions. Does NOT implement - only plans.

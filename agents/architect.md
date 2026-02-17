@@ -1,5 +1,7 @@
 ---
 name: architect
+version: "1.0.0"
+toolkit_min_version: "1.0.0"
 description: >
   Code architect. Deep analysis of codebase architecture, patterns, code reuse,
   resiliency, modern tooling opportunities. Run infrequently for strategic insights.

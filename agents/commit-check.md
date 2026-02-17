@@ -1,5 +1,7 @@
 ---
 name: commit-check
+version: "1.0.0"
+toolkit_min_version: "1.0.0"
 description: >
   Lightweight post-commit sanity check. Runs automatically after commits
   to catch obvious issues. Fast, focused, runs in background.

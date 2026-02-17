@@ -16,13 +16,33 @@ TOOLKIT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CACHE_FILE="${CLAUDE_PROJECT_DIR:-.}/.claude/toolkit-cache.env"
 TOML_FILE="${CLAUDE_PROJECT_DIR:-.}/.claude/toolkit.toml"
 
-if [ -f "$CACHE_FILE" ]; then
+# Config caching optimization: skip re-sourcing if already loaded and cache
+# file mtime hasn't changed. Uses _TOOLKIT_CONFIG_LOADED to track state.
+_should_reload_config=true
+if [ -n "${_TOOLKIT_CONFIG_LOADED:-}" ] && [ -f "$CACHE_FILE" ]; then
+  _current_mtime=""
+  if command -v stat >/dev/null 2>&1; then
+    # macOS stat uses -f, Linux stat uses -c
+    _current_mtime=$(stat -f '%m' "$CACHE_FILE" 2>/dev/null || stat -c '%Y' "$CACHE_FILE" 2>/dev/null || true)
+  fi
+  if [ -n "$_current_mtime" ] && [ "$_current_mtime" = "$_TOOLKIT_CONFIG_LOADED" ]; then
+    _should_reload_config=false
+  fi
+fi
+
+if [ "$_should_reload_config" = true ] && [ -f "$CACHE_FILE" ]; then
   # shellcheck source=/dev/null
   source "$CACHE_FILE"
-  # Warn if TOML is newer than cache (user edited config but hasn't regenerated)
-  if [ -f "$TOML_FILE" ] && [ "$TOML_FILE" -nt "$CACHE_FILE" ]; then
-    echo "[toolkit:_config] WARN: toolkit.toml is newer than toolkit-cache.env. Run: python3 generate-config-cache.py --toml .claude/toolkit.toml --output .claude/toolkit-cache.env" >&2
+  # Record mtime so subsequent hook invocations can skip re-sourcing
+  if command -v stat >/dev/null 2>&1; then
+    _TOOLKIT_CONFIG_LOADED=$(stat -f '%m' "$CACHE_FILE" 2>/dev/null || stat -c '%Y' "$CACHE_FILE" 2>/dev/null || true)
+    export _TOOLKIT_CONFIG_LOADED
   fi
+fi
+
+# Warn if TOML is newer than cache (always check, even with cached config)
+if [ -f "$TOML_FILE" ] && [ -f "$CACHE_FILE" ] && [ "$TOML_FILE" -nt "$CACHE_FILE" ]; then
+  echo "[toolkit:_config] WARN: toolkit.toml is newer than toolkit-cache.env. Run: python3 generate-config-cache.py --toml .claude/toolkit.toml --output .claude/toolkit-cache.env" >&2
 fi
 
 # ---------------------------------------------------------------------------
@@ -76,6 +96,10 @@ TOOLKIT_HOOKS_SESSION_END_HOOK_LOG_MAX_LINES="${TOOLKIT_HOOKS_SESSION_END_HOOK_L
 # Notifications
 TOOLKIT_NOTIFICATIONS_APP_NAME="${TOOLKIT_NOTIFICATIONS_APP_NAME:-Claude Code}"
 TOOLKIT_NOTIFICATIONS_PERMISSION_SOUND="${TOOLKIT_NOTIFICATIONS_PERMISSION_SOUND:-Blow}"
+
+# Custom hooks directory
+export TOOLKIT_CUSTOM_HOOKS_DIR
+TOOLKIT_CUSTOM_HOOKS_DIR="${CLAUDE_PROJECT_DIR:-.}/.claude/hooks-custom"
 
 # ---------------------------------------------------------------------------
 # Helper: iterate a JSON array stored in an env var

@@ -1,4 +1,9 @@
 {
+  "_meta": {
+    "name": "typescript",
+    "description": "TypeScript stack: npm/node tooling, ESLint, Prettier, Jest/Vitest testing",
+    "required_tools": ["node", "npm", "tsc"]
+  },
   "permissions": {
     "allow": [
       "Bash(npm:*)",

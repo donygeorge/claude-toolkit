@@ -12,7 +12,7 @@ cmd_status() {
   # Toolkit version
   local version="unknown"
   if [[ -f "${TOOLKIT_DIR}/VERSION" ]]; then
-    version=$(cat "${TOOLKIT_DIR}/VERSION" | tr -d '[:space:]')
+    version=$(tr -d '[:space:]' < "${TOOLKIT_DIR}/VERSION")
   fi
   echo "  Toolkit version: ${version}"
 
@@ -28,6 +28,32 @@ cmd_status() {
     echo "  Project name: ${project_name}"
   else
     echo "  Project name: (no toolkit.toml)"
+  fi
+
+  # Available stacks (auto-discovered from templates/stacks/)
+  echo ""
+  echo "  Available stacks:"
+  local stacks_dir="${TOOLKIT_DIR}/templates/stacks"
+  local has_stacks=false
+  if [[ -d "$stacks_dir" ]]; then
+    for stack_file in "${stacks_dir}"/*.json; do
+      [[ -f "$stack_file" ]] || continue
+      has_stacks=true
+      local stack_name
+      stack_name=$(basename "$stack_file" .json)
+      local stack_desc=""
+      if command -v jq &>/dev/null; then
+        stack_desc=$(jq -r '._meta.description // ""' "$stack_file" 2>/dev/null || true)
+      fi
+      if [[ -n "$stack_desc" ]]; then
+        echo "    ${stack_name}: ${stack_desc}"
+      else
+        echo "    ${stack_name}"
+      fi
+    done
+  fi
+  if [[ "$has_stacks" != true ]]; then
+    echo "    (none found)"
   fi
 
   # Check config staleness

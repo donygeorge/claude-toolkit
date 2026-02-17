@@ -1,5 +1,7 @@
 ---
 name: pm
+version: "1.0.0"
+toolkit_min_version: "1.0.0"
 description: >
   Product manager perspective. Analyzes feature completeness,
   user workflow friction, and proposes feature registry updates.

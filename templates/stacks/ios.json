@@ -1,4 +1,9 @@
 {
+  "_meta": {
+    "name": "ios",
+    "description": "iOS/Swift stack: Xcode build, SwiftLint, simulator testing",
+    "required_tools": ["xcodebuild", "swift", "swiftlint"]
+  },
   "permissions": {
     "allow": [
       "Bash(xcodebuild:*)",
