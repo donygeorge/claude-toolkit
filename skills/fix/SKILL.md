@@ -25,17 +25,44 @@ Systematic bug fix workflow: root-cause, fix, validate, scan for similar issues,
 
 ## Workflow
 
-### Step 1: Root Cause Analysis
+### Step 1: Systematic Debugging (4 Phases)
+
+#### Phase 1: Root Cause Investigation
 
 1. **Read the error/bug description carefully** -- extract the symptom, affected file(s), and reproduction steps
-2. **Locate the code** -- use Grep/Glob to find the relevant source files. Read entire files, not just snippets
-3. **Trace the bug** -- follow the execution path from entry point to failure. Check:
+2. **Reproduce the bug** -- confirm you can trigger the failure before attempting any fix
+3. **Check recent changes** -- run `git log` on affected files to see what changed recently
+4. **Locate the code** -- use Grep/Glob to find the relevant source files. Read entire files, not just snippets
+5. **Trace the bug** -- follow the execution path from entry point to failure. Check:
    - The function/method where the error occurs
    - Its callers (how did we get here?)
    - Its data inputs (what state triggers this?)
-4. **Identify root cause** -- distinguish between the symptom and the actual bug
+6. **Gather evidence** -- collect logs, error messages, stack traces, and relevant state
+7. **Identify root cause** -- distinguish between the symptom and the actual bug
 
-### Step 2: Implement the Fix
+> **Phase Gate**: You CANNOT propose ANY fix until the root cause is identified. If you cannot identify the root cause, gather more evidence. Do not guess.
+
+#### Phase 2: Pattern Analysis
+
+1. **Find working examples** -- search the codebase for similar code that works correctly
+2. **Compare working vs broken** -- identify the specific difference between the working example and the broken code
+3. **Check for systemic issues** -- look for similar patterns elsewhere that may have the same bug (these will be fixed in Step 5)
+
+#### Phase 3: Hypothesis Testing
+
+1. **Single hypothesis at a time** -- form one clear hypothesis about the fix, make the minimal change to test it
+2. **Verify the hypothesis** -- run tests or manually confirm the fix addresses the root cause
+3. **Track attempts** -- keep count of fix attempts
+
+> **3-Fix Escalation Rule**: After 3 failed fix attempts, STOP. Do not attempt fix #4. Instead:
+>
+> 1. **Question the architecture**: "Is the approach fundamentally wrong?"
+> 2. **Present findings**: Show the user evidence from all 3 attempts -- what was tried, what happened, why it failed
+> 3. **Ask the user**: Request guidance on how to proceed before continuing
+>
+> This prevents the spiral of increasingly desperate changes that make the problem worse.
+
+#### Phase 4: Implement the Fix
 
 1. **Read the full file** before editing -- understand surrounding context
 2. **Make minimal, targeted changes** -- fix the bug without refactoring unrelated code
@@ -104,6 +131,20 @@ After completing all steps, provide:
 - **Files changed**: <list>
 - **Commit**: <hash>
 ```
+
+## Rationalization Prevention
+
+Catch yourself when you think any of these:
+
+| Rationalization | Response |
+| ------- | -------- |
+| "Quick fix for now, investigate later" | Investigate NOW. Quick fixes become permanent. |
+| "Just try changing X and see if it works" | That's guessing, not debugging. Identify root cause first. |
+| "I don't fully understand but this might work" | If you don't understand, you can't verify the fix. |
+| "One more fix attempt" (when already tried 2+) | After 3 failed fixes, question the architecture. |
+| "The fix works in my test, ship it" | Run the FULL test suite. Edge cases exist. |
+| "This is probably unrelated" | Verify it's unrelated. Assumptions hide root causes. |
+| "Let me just revert and try something else" | Document what failed and WHY before reverting. |
 
 ## Rules
 

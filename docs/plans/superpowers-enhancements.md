@@ -177,13 +177,13 @@ Add the same structured debugging approach to Step 5 (Create Plan) and Step 6 (I
 
 **Exit Criteria**:
 
-- [ ] `/fix` has 4-phase structured debugging process
-- [ ] Phase gates: cannot propose fix until root cause identified
-- [ ] 3-fix escalation rule in both `/fix` and `/solve`
-- [ ] Rationalization prevention table in `/fix` (5+ entries)
-- [ ] `/solve` references systematic debugging for bug-type issues
-- [ ] Both skills maintain existing functionality (no removals)
-- [ ] Generic content only
+- [x] `/fix` has 4-phase structured debugging process
+- [x] Phase gates: cannot propose fix until root cause identified
+- [x] 3-fix escalation rule in both `/fix` and `/solve`
+- [x] Rationalization prevention table in `/fix` (5+ entries)
+- [x] `/solve` references systematic debugging for bug-type issues
+- [x] Both skills maintain existing functionality (no removals)
+- [x] Generic content only
 
 ---
 

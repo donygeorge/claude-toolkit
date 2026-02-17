@@ -136,9 +136,9 @@ Based on issue labels, identify relevant code areas using Grep/Glob/Read tools.
 
 Design the implementation:
 
-- For **bugs**: Identify root cause, minimal fix, add regression test
+- For **bugs**: Follow systematic debugging phases -- investigate root cause, analyze patterns in working code, form a hypothesis, then plan the minimal fix. Do NOT plan a fix until the root cause is identified.
 - For **features**: Follow existing patterns, design with tests
-- For **crashes**: Defensive fix, error handling
+- For **crashes**: Defensive fix, error handling. Trace the crash path to find root cause before fixing.
 
 If `--plan-only` is passed, stop here.
 
@@ -150,6 +150,8 @@ Make changes following project conventions:
 - Use appropriate logging
 - Handle errors gracefully
 - Don't over-engineer
+
+**For bugs**: Follow the systematic debugging phases (investigate root cause, analyze patterns, test hypothesis, then implement). Do NOT jump to a fix. Identify the root cause first, find working examples of similar code, and form a single clear hypothesis before making changes.
 
 **Add tests to prevent recurrence** where appropriate.
 
@@ -164,6 +166,14 @@ Make changes following project conventions:
 ```
 
 If tests fail, attempt to fix (max 3 iterations).
+
+> **3-Fix Escalation Rule**: If tests still fail after 3 fix attempts, STOP. Do not attempt fix #4. Instead:
+>
+> 1. **Question the approach**: "Is the architecture or fix strategy fundamentally wrong?"
+> 2. **Present findings**: Show the user what was tried in each attempt and why it failed
+> 3. **Ask the user**: Request guidance before continuing
+>
+> This prevents increasingly desperate changes that compound the problem.
 
 ### Step 8: Verify Fixes with Visual Tools
 
