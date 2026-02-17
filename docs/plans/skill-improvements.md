@@ -160,10 +160,10 @@ Add explicit version file checking after all milestones complete, and a note in 
 
 **Exit Criteria**:
 
-- [ ] implement/SKILL.md has a "Step 2e: Version File Check" section between Step 2d and Step 3
-- [ ] Step 2e checks for VERSION file and CHANGELOG.md, asks user before updating
-- [ ] Step 2e references `project.version_file` from toolkit.toml
-- [ ] milestone-template.md Phase 9 notes that VERSION/CHANGELOG updates happen in Plan Executor Step 2e
+- [x] implement/SKILL.md has a "Step 2e: Version File Check" section between Step 2d and Step 3
+- [x] Step 2e checks for VERSION file and CHANGELOG.md, asks user before updating
+- [x] Step 2e references `project.version_file` from toolkit.toml
+- [x] milestone-template.md Phase 9 notes that VERSION/CHANGELOG updates happen in Plan Executor Step 2e
 
 ### M4: Add Skill Workflow Map to README
 

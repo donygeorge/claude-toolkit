@@ -262,6 +262,49 @@ Run up to 3 rounds of holistic review on the full diff, focusing on cross-milest
 
 If any milestone touched UI/API/services, run QA agent in deep mode.
 
+#### Step 2e: Version File Check
+
+After all milestones complete and pass verification, check whether version files need updating. **Do NOT update versions automatically -- always ask the user first.**
+
+```text
+1. DETERMINE version file path:
+   - If `project.version_file` is set in toolkit.toml, use that path
+   - Otherwise, check for a VERSION file in the project root
+   - If neither exists, skip version update (inform user)
+
+2. CHECK for CHANGELOG.md:
+   - Look in project root for CHANGELOG.md (or CHANGELOG)
+   - If not found, ask user if they want one created
+
+3. SUGGEST version bump:
+   - Read current version from the version file
+   - Analyze milestone scope to suggest bump level:
+     - patch: bug fixes, documentation, minor improvements
+     - minor: new features, non-breaking enhancements
+     - major: breaking changes, architectural overhauls
+   - Present suggestion to user with rationale
+
+4. ASK user before updating:
+   - "Plan completed all N milestones. Suggest version bump: X.Y.Z → A.B.C (minor).
+     Update VERSION and CHANGELOG.md? [y/n/custom version]"
+   - If user approves: update version file and prepend CHANGELOG entry
+   - If user provides custom version: use that instead
+   - If user declines: skip version update entirely
+
+5. IF updating CHANGELOG.md:
+   - Prepend a new version section at the top (below any header)
+   - Summarize all milestones completed in this plan
+   - Group changes by type: Added, Changed, Fixed, Improved
+   - Include the date
+
+6. COMMIT version changes separately:
+   - Stage only version-related files (VERSION, CHANGELOG.md)
+   - Use commit message: "Bump version to X.Y.Z"
+   - This keeps version bumps separate from feature commits
+```
+
+> **Note**: Individual milestone orchestrators do NOT update VERSION or CHANGELOG.md. All version management is centralized here in the Plan Executor to avoid conflicts across milestones.
+
 #### Step 3: Session Summary
 
 Report milestones completed, commits created, reviews passed, tests added.

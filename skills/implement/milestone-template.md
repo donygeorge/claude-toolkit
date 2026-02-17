@@ -278,6 +278,8 @@ Update documentation to reflect changes made:
 - Update project README if applicable
 - Update plan file: mark exit criteria as `[x]` for this milestone
 
+> **Do NOT update VERSION or CHANGELOG.md here.** Version file and changelog updates are deferred to the Plan Executor's Step 2e (Version File Check), which runs after all milestones complete. This prevents conflicting version updates across milestones and ensures a single, coherent version bump for the entire plan.
+
 Update state.json: `phases_completed` += "documentation"
 
 ### Phase 10: Exit Criteria Verification
