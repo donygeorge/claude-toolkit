@@ -18,45 +18,39 @@ Claude Code supports [hooks](https://docs.anthropic.com/en/docs/claude-code/hook
 
 ## Quick Start
 
-### One-Command Bootstrap (Recommended)
+### Claude Code Prompt (Recommended)
 
-From your project root:
+Copy the prompt below and paste it into Claude Code in your project. Claude will install the toolkit, detect your project's stacks and commands, and configure everything.
+
+```text
+Install and configure claude-toolkit for this project. claude-toolkit provides
+Claude Code hooks, agents, skills, and rules for safe, autonomous AI-assisted
+development. It integrates via git subtree under .claude/toolkit/.
+
+Toolkit repo: https://github.com/donygeorge/claude-toolkit.git
+
+1. If .claude/toolkit/ already exists, skip to step 2. Otherwise install:
+   git remote add claude-toolkit https://github.com/donygeorge/claude-toolkit.git || true
+   git fetch claude-toolkit
+   git subtree add --squash --prefix=.claude/toolkit claude-toolkit main
+   bash .claude/toolkit/toolkit.sh init --from-example
+2. Read and follow .claude/skills/setup/SKILL.md (the /setup skill) to detect
+   stacks, validate commands, generate toolkit.toml, create CLAUDE.md, and commit.
+```
+
+If you use a fork, replace the GitHub URL above. See [BOOTSTRAP_PROMPT.md](BOOTSTRAP_PROMPT.md) for the standalone version.
+
+### Shell Bootstrap (Alternative)
+
+If you prefer a shell script, run from your project root:
 
 ```bash
-bash ~/projects/claude-toolkit/bootstrap.sh --name my-project --stacks python
+bash /path/to/claude-toolkit/bootstrap.sh --name my-project --stacks python
 ```
 
-That's it. The script adds the subtree, generates config, runs init, and tells you what to commit.
+Then open Claude Code and run `/setup` to auto-detect and validate your configuration.
 
-**Common examples:**
-
-```bash
-# Python project
-bash ~/projects/claude-toolkit/bootstrap.sh --name realta --stacks python
-
-# TypeScript project
-bash ~/projects/claude-toolkit/bootstrap.sh --name openclaw --stacks typescript
-
-# Multi-stack (Python + iOS)
-bash ~/projects/claude-toolkit/bootstrap.sh --name jarvin --stacks python,ios
-
-# Auto-commit too
-bash ~/projects/claude-toolkit/bootstrap.sh --name my-app --stacks python --commit
-```
-
-Then review `.claude/toolkit.toml`, customize if needed, and commit.
-
-### Then Let Claude Tune It
-
-After bootstrap, open Claude Code in the project and say:
-
-```
-/setup
-```
-
-Claude will review your `toolkit.toml`, detect your actual test/lint commands, add project-specific rules, and regenerate settings.
-
-### Manual Setup (Step by Step)
+### Manual Setup
 
 <details>
 <summary>Click to expand manual steps</summary>
@@ -64,34 +58,26 @@ Claude will review your `toolkit.toml`, detect your actual test/lint commands, a
 #### 1. Add the toolkit as a git subtree
 
 ```bash
-git remote add claude-toolkit git@github.com:youruser/claude-toolkit.git
+git remote add claude-toolkit https://github.com/donygeorge/claude-toolkit.git
+git fetch claude-toolkit
 git subtree add --squash --prefix=.claude/toolkit claude-toolkit main
 ```
 
 #### 2. Create your configuration
 
 ```bash
-cp .claude/toolkit/templates/toolkit.toml.example .claude/toolkit.toml
+bash .claude/toolkit/toolkit.sh init --from-example
 # Edit .claude/toolkit.toml to match your project
 ```
 
-#### 3. Initialize
+#### 3. Run /setup in Claude Code
 
-```bash
-bash .claude/toolkit/toolkit.sh init
-```
-
-This will:
-- Symlink agents and rules into `.claude/`
-- Copy skill templates into `.claude/skills/`
-- Create agent memory directories
-- Generate `settings.json` and `.mcp.json`
-- Create a manifest tracking managed files
+Open Claude Code in your project and run `/setup`. Claude will detect your stacks, validate commands, and generate the full configuration.
 
 #### 4. Commit
 
 ```bash
-git add .claude/ .mcp.json
+git add .claude/ .mcp.json CLAUDE.md
 git commit -m "Add claude-toolkit"
 ```
 

@@ -251,13 +251,13 @@ Create a self-contained prompt that users copy-paste into Claude Code to install
 
 **Exit Criteria**:
 
-- [ ] `BOOTSTRAP_PROMPT.md` exists at repo root with a self-contained prompt block
-- [ ] Prompt contains the git commands inline (git remote add, git fetch, git subtree add) — no WebFetch, no curl, no downloading scripts
-- [ ] Prompt includes the toolkit GitHub URL as a parameter the user can customize
-- [ ] Prompt tells Claude to read and follow `.claude/skills/setup/SKILL.md` after install (not re-implement the setup logic)
-- [ ] Prompt handles the "already installed" case by checking for `.claude/toolkit/` and skipping to /setup
-- [ ] Prompt is concise (under 15 lines) — just enough for Claude to know what to do
-- [ ] README.md has a "Quick Start" section that shows the prompt with copy instructions
+- [x] `BOOTSTRAP_PROMPT.md` exists at repo root with a self-contained prompt block
+- [x] Prompt contains the git commands inline (git remote add, git fetch, git subtree add) — no WebFetch, no curl, no downloading scripts
+- [x] Prompt includes the toolkit GitHub URL as a parameter the user can customize
+- [x] Prompt tells Claude to read and follow `.claude/skills/setup/SKILL.md` after install (not re-implement the setup logic)
+- [x] Prompt handles the "already installed" case by checking for `.claude/toolkit/` and skipping to /setup
+- [x] Prompt is concise (under 15 lines) — just enough for Claude to know what to do
+- [x] README.md has a "Quick Start" section that shows the prompt with copy instructions
 - [ ] Manual test: copy prompt into Claude Code in a fresh project, verify it installs toolkit and configures everything end-to-end
 
 ### M4: Update CLAUDE.md template + docs
