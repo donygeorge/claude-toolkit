@@ -69,6 +69,20 @@ Systematic bug fix workflow: root-cause, fix, validate, scan for similar issues,
 3. **Match existing code style** -- follow patterns already in the file
 4. **Handle edge cases** the bug reveals
 
+**Test-first for non-trivial bugs** (logic errors, edge cases, race conditions):
+
+1. Write a test that REPRODUCES the bug (test should FAIL)
+2. Confirm the test fails for the right reason
+3. Implement the fix
+4. Run the test -- confirm it now PASSES
+5. Run the full test suite
+
+Skip the reproducing test for:
+
+- Typo fixes, import corrections, config changes
+- Bugs that are obvious and unlikely to recur
+- Cases where the test would just duplicate the implementation
+
 ### Step 3: Validate the Fix
 
 1. **Run tests**:

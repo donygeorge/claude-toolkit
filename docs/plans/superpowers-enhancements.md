@@ -242,11 +242,11 @@ Skip the reproducing test for:
 
 **Exit Criteria**:
 
-- [ ] Milestone template Phase 4 includes test-first guidance sub-section
-- [ ] Guidance has a clear "Do NOT write tests for" list to prevent over-engineering
-- [ ] `/fix` Phase 4 has test-first guidance for non-trivial bugs with skip list
-- [ ] Neither addition uses aggressive enforcement language
-- [ ] Generic content only
+- [x] Milestone template Phase 4 includes test-first guidance sub-section
+- [x] Guidance has a clear "Do NOT write tests for" list to prevent over-engineering
+- [x] `/fix` Phase 4 has test-first guidance for non-trivial bugs with skip list
+- [x] Neither addition uses aggressive enforcement language
+- [x] Generic content only
 
 ---
 

@@ -74,6 +74,28 @@ Execute layers in dependency order. Common layer order:
 
 Only implement layers that the milestone requires. Skip layers with no changes.
 
+#### Test-First Guidance (within each layer)
+
+When implementing non-trivial logic, prefer writing tests first:
+
+1. Write a failing test that describes the expected behavior
+2. Run the test -- confirm it FAILS (red)
+3. Write the minimum code to make it pass (green)
+4. Run all tests -- confirm they pass
+5. Refactor if needed, keeping tests green
+
+Do NOT write tests for:
+
+- Configuration file changes
+- Database migrations (test the result, not the migration itself)
+- UI layout-only changes (visual verification instead)
+- Wiring/glue code that just connects tested components
+- Simple one-line changes or obvious fixes
+- Boilerplate, scaffolding, or setup code
+- Changes to files that have no existing test coverage (unless adding coverage is part of the plan)
+
+The goal is preventing regressions in complex logic, not achieving 100% coverage.
+
 ```text
 FOR each layer:
   IF milestone requires this layer:
