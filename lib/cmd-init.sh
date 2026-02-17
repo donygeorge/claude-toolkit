@@ -288,12 +288,32 @@ cmd_init() {
     case "$1" in
       --force) force=true; shift ;;
       --from-example) from_example=true; shift ;;
+      --dry-run) DRY_RUN=true; export DRY_RUN; shift ;;
       *) _error "Unknown option: $1"; return 1 ;;
     esac
   done
 
   _require_jq || return 1
   _require_python3 || return 1
+
+  if _is_dry_run; then
+    echo "Dry-run: showing what 'init' would do in ${PROJECT_DIR}..."
+    echo ""
+    _dry_run_msg "Would create directory: ${CLAUDE_DIR}"
+    _init_toml_dry_run "$from_example"
+    _init_agents_dry_run "$force"
+    _init_skills_dry_run "$force"
+    _init_rules_dry_run "$force"
+    _init_rule_templates_dry_run "$force"
+    _init_agent_memory_dry_run
+    _init_git_remote_dry_run
+    _dry_run_msg "Would generate toolkit-cache.env"
+    _dry_run_msg "Would generate settings.json"
+    _dry_run_msg "Would create toolkit-manifest.json"
+    echo ""
+    echo "No files were modified (dry-run mode)."
+    return 0
+  fi
 
   echo "Initializing claude-toolkit in ${PROJECT_DIR}..."
   echo ""
@@ -320,4 +340,107 @@ cmd_init() {
   echo "  1. Edit .claude/toolkit.toml to match your project"
   echo "  2. Run: $0 generate-settings"
   echo "  3. Commit the .claude/ directory"
+}
+
+# ============================================================================
+# Dry-run helpers for init
+# ============================================================================
+
+_init_toml_dry_run() {
+  local from_example="$1"
+  local toml_file="${CLAUDE_DIR}/toolkit.toml"
+  if [[ ! -f "$toml_file" ]]; then
+    if [[ "$from_example" == true ]]; then
+      _dry_run_msg "Would create toolkit.toml from example template"
+    else
+      _dry_run_msg "Would require toolkit.toml (not found)"
+    fi
+  else
+    _dry_run_msg "toolkit.toml already exists (no change)"
+  fi
+}
+
+_init_agents_dry_run() {
+  local force="$1"
+  for agent_file in "${TOOLKIT_DIR}"/agents/*.md; do
+    [[ -f "$agent_file" ]] || continue
+    local agent_name
+    agent_name=$(basename "$agent_file")
+    local target="${CLAUDE_DIR}/agents/${agent_name}"
+    if [[ -e "$target" ]] && [[ "$force" != true ]]; then
+      _dry_run_msg "Would skip agents/${agent_name} (already exists)"
+    else
+      _dry_run_msg "Would symlink agents/${agent_name}"
+    fi
+  done
+}
+
+_init_skills_dry_run() {
+  local force="$1"
+  for skill_dir in "${TOOLKIT_DIR}"/skills/*/; do
+    [[ -d "$skill_dir" ]] || continue
+    local skill_name
+    skill_name=$(basename "$skill_dir")
+    local target_dir="${CLAUDE_DIR}/skills/${skill_name}"
+    if [[ -d "$target_dir" ]] && [[ "$force" != true ]]; then
+      _dry_run_msg "Would skip skills/${skill_name} (already exists)"
+    else
+      local count=0
+      for f in "$skill_dir"*; do
+        [[ -f "$f" ]] && count=$((count + 1))
+      done
+      _dry_run_msg "Would copy skills/${skill_name} (${count} files)"
+    fi
+  done
+}
+
+_init_rules_dry_run() {
+  local force="$1"
+  for rule_file in "${TOOLKIT_DIR}"/rules/*.md; do
+    [[ -f "$rule_file" ]] || continue
+    local rule_name
+    rule_name=$(basename "$rule_file")
+    local target="${CLAUDE_DIR}/rules/${rule_name}"
+    if [[ -e "$target" ]] && [[ "$force" != true ]]; then
+      _dry_run_msg "Would skip rules/${rule_name} (already exists)"
+    else
+      _dry_run_msg "Would symlink rules/${rule_name}"
+    fi
+  done
+}
+
+_init_rule_templates_dry_run() {
+  local force="$1"
+  local toml_file="${CLAUDE_DIR}/toolkit.toml"
+  if [[ ! -f "$toml_file" ]]; then
+    return 0
+  fi
+  local stacks=""
+  stacks=$(_read_toml_array "$toml_file" "project.stacks" 2>/dev/null || true)
+  if [[ -n "$stacks" ]]; then
+    _dry_run_msg "Would apply rule templates for stacks: $(echo "$stacks" | tr '\n' ', ')"
+  fi
+}
+
+_init_agent_memory_dry_run() {
+  for agent_file in "${TOOLKIT_DIR}"/agents/*.md; do
+    [[ -f "$agent_file" ]] || continue
+    local agent_name
+    agent_name=$(basename "$agent_file" .md)
+    local memory_file="${CLAUDE_DIR}/agent-memory/${agent_name}/MEMORY.md"
+    if [[ ! -f "$memory_file" ]]; then
+      _dry_run_msg "Would create agent-memory/${agent_name}/MEMORY.md"
+    fi
+  done
+}
+
+_init_git_remote_dry_run() {
+  local toml_file="${CLAUDE_DIR}/toolkit.toml"
+  if [[ -f "$toml_file" ]]; then
+    local remote_url
+    remote_url=$(_read_toml_value "$toml_file" "toolkit.remote_url" 2>/dev/null || true)
+    if [[ -n "$remote_url" ]]; then
+      _dry_run_msg "Would set up git remote 'claude-toolkit' -> ${remote_url}"
+    fi
+  fi
 }

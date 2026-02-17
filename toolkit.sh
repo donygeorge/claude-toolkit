@@ -109,13 +109,35 @@ source "${TOOLKIT_DIR}/lib/cmd-customize.sh"
 source "${TOOLKIT_DIR}/lib/cmd-status.sh"
 # shellcheck source=lib/cmd-validate.sh
 source "${TOOLKIT_DIR}/lib/cmd-validate.sh"
+# shellcheck source=lib/cmd-doctor.sh
+source "${TOOLKIT_DIR}/lib/cmd-doctor.sh"
 # shellcheck source=lib/cmd-help.sh
 source "${TOOLKIT_DIR}/lib/cmd-help.sh"
+
+# --- Dry-run mode ---
+DRY_RUN=false
+export DRY_RUN
+
+_is_dry_run() {
+  [[ "$DRY_RUN" == true ]]
+}
+
+_dry_run_msg() {
+  echo "  [dry-run] $*"
+}
 
 # --- Main dispatch ---
 main() {
   local cmd="${1:-help}"
   shift || true
+
+  # Parse global flags before subcommand
+  while [[ "${cmd:-}" == --* ]]; do
+    case "$cmd" in
+      --dry-run) DRY_RUN=true; export DRY_RUN; cmd="${1:-help}"; shift || true ;;
+      *) break ;;
+    esac
+  done
 
   case "$cmd" in
     init)               cmd_init "$@" ;;
@@ -124,6 +146,7 @@ main() {
     status)             cmd_status ;;
     validate)           cmd_validate ;;
     generate-settings)  cmd_generate_settings ;;
+    doctor)             cmd_doctor ;;
     help|--help|-h)     cmd_help ;;
     *)
       _error "Unknown command: $cmd"

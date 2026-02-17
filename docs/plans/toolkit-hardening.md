@@ -717,13 +717,13 @@ The current array dedup (lines 238-247) correctly deduplicates. Verify edge case
 
 ### Exit Criteria
 
-- [ ] Settings merge warns on unknown keys
-- [ ] Manifest operations recover from corruption
-- [ ] `toolkit.sh init --dry-run` shows what would change without mutating
-- [ ] `toolkit.sh doctor` exists and checks tool versions, hook health, config freshness
-- [ ] Update shows diff and runs shellcheck on pulled code
-- [ ] New edge case tests for array merge
-- [ ] All tests pass
+- [x] Settings merge warns on unknown keys
+- [x] Manifest operations recover from corruption
+- [x] `toolkit.sh init --dry-run` shows what would change without mutating
+- [x] `toolkit.sh doctor` exists and checks tool versions, hook health, config freshness
+- [x] Update shows diff and runs shellcheck on pulled code
+- [x] New edge case tests for array merge
+- [x] All tests pass
 
 ---
 

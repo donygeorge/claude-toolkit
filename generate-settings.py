@@ -70,6 +70,111 @@ _INTERPRETER_EXEC_PATTERNS = [
 _PIPE_TO_SHELL = re.compile(r"\|\s*(sh|bash|python|python3)\b")
 
 
+# ---------------------------------------------------------------------------
+# Settings schema validation
+# ---------------------------------------------------------------------------
+
+KNOWN_TOP_LEVEL_KEYS = {"hooks", "permissions", "env", "preferences", "mcpServers", "mcp"}
+
+HOOKS_KNOWN_EVENT_TYPES = {
+    "PreToolUse",
+    "PostToolUse",
+    "PostToolUseFailure",
+    "SessionStart",
+    "SessionEnd",
+    "Notification",
+    "Stop",
+    "PreCompact",
+    "PostCompact",
+    "UserPromptSubmit",
+    "TaskCompleted",
+    "PermissionRequest",
+    "SubagentStart",
+    "SubagentStop",
+}
+
+HOOK_ENTRY_KNOWN_FIELDS = {
+    "matcher",
+    "hooks",
+    "event",
+    "type",
+    "command",
+    "timeout",
+    "description",
+}
+
+PERMISSIONS_KNOWN_FIELDS = {"allow", "deny"}
+
+
+def validate_settings_schema(merged: dict) -> list[str]:
+    """Validate merged settings match expected Claude Code schema.
+
+    Returns a list of warning strings (not errors) so typos are caught
+    without blocking generation.
+    """
+    warnings: list[str] = []
+
+    # Check for unknown top-level keys
+    for key in merged:
+        if key not in KNOWN_TOP_LEVEL_KEYS:
+            warnings.append(f"Unknown top-level key: '{key}' (possible typo)")
+
+    # Validate hooks structure
+    hooks = merged.get("hooks")
+    if hooks is not None:
+        if not isinstance(hooks, dict):
+            warnings.append("'hooks' should be a dict, got " + type(hooks).__name__)
+        else:
+            for event_name, entries in hooks.items():
+                if event_name == "auto-approve":
+                    continue  # auto-approve has its own structure
+                if event_name not in HOOKS_KNOWN_EVENT_TYPES:
+                    warnings.append(
+                        f"Unknown hook event type: '{event_name}' (known: {', '.join(sorted(HOOKS_KNOWN_EVENT_TYPES))})"
+                    )
+                if isinstance(entries, list):
+                    for entry in entries:
+                        if isinstance(entry, dict):
+                            for field in entry:
+                                if field not in HOOK_ENTRY_KNOWN_FIELDS:
+                                    warnings.append(
+                                        f"Unknown field '{field}' in hook entry for event '{event_name}'"
+                                    )
+                            # Validate hook entry has required 'hooks' array
+                            if "hooks" in entry and not isinstance(
+                                entry["hooks"], list
+                            ):
+                                warnings.append(
+                                    f"Hook entry 'hooks' field should be a list in event '{event_name}'"
+                                )
+
+    # Validate permissions structure
+    perms = merged.get("permissions")
+    if perms is not None:
+        if not isinstance(perms, dict):
+            warnings.append(
+                "'permissions' should be a dict, got " + type(perms).__name__
+            )
+        else:
+            for key in perms:
+                if key not in PERMISSIONS_KNOWN_FIELDS:
+                    warnings.append(f"Unknown permissions field: '{key}'")
+            for field in ("allow", "deny"):
+                val = perms.get(field)
+                if val is not None and not isinstance(val, list):
+                    warnings.append(
+                        f"'permissions.{field}' should be a list, got "
+                        + type(val).__name__
+                    )
+
+    # Validate env is a dict
+    env = merged.get("env")
+    if env is not None and not isinstance(env, dict):
+        warnings.append("'env' should be a dict, got " + type(env).__name__)
+
+    return warnings
+
+
 def validate_auto_approve(commands: list) -> list[str]:
     """Validate auto-approve bash_commands entries.  Returns error strings."""
     errors: list[str] = []
@@ -374,6 +479,13 @@ def main() -> int:
 
     # Merge
     merged = merge_layers(base, stacks, project)
+
+    # Schema validation (warnings only — don't block generation)
+    schema_warnings = validate_settings_schema(merged)
+    if schema_warnings:
+        print("Schema warnings:", file=sys.stderr)
+        for w in schema_warnings:
+            print(f"  - {w}", file=sys.stderr)
 
     # Validate (always runs, not just with --validate)
     errors = validate_merged(merged)

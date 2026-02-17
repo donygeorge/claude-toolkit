@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.6.0] - 2026-02-16
+
+### Added
+
+- **Settings schema validation**: `validate_settings_schema()` in `generate-settings.py` warns on unknown top-level keys, unknown hook event types, unknown hook entry fields, and structural issues (e.g., `permissions.allow` not being a list). Warnings are printed to stderr but do not block generation.
+- **Manifest corruption recovery**: `_validate_manifest()` in `lib/manifest.sh` detects corrupted (non-JSON) manifests, backs them up, and triggers automatic regeneration via `manifest_init`. Called at the start of every manifest operation (`manifest_customize`, `manifest_update_skill`, `manifest_check_drift`).
+- **Dry-run mode**: `--dry-run` flag for `init` and `generate-settings` commands shows what would be created/modified without mutating any files. Works both as a subcommand flag (`init --dry-run`) and global flag (`--dry-run init`).
+- **Doctor command**: `toolkit.sh doctor` provides comprehensive health checks beyond `validate` — checks tool versions (bash, jq, python3, git), Python 3.11+ for tomllib, config cache freshness, settings.json parity (compares against what `generate-settings` would produce), symlink health, manifest integrity, hook executability, hook health (runs sample inputs through guard-destructive and auto-approve), and optional tools.
+- **Update integrity verification**: `cmd-update.sh` now runs `shellcheck` on pulled code after `git subtree pull` and shows a `git diff --stat` of changes.
+- **26 new tests**: 16 schema validation tests, 11 array merge edge case tests, 8 manifest corruption recovery tests, 9 CLI tests (dry-run, doctor)
+
+### Changed
+
+- **Help output**: Updated to show `doctor` command and `--dry-run` global flag
+
 ## [1.5.0] - 2026-02-16
 
 ### Changed

@@ -295,6 +295,95 @@ test_manifest_update_skill_skips_customized() {
 }
 
 # ============================================================================
+# Test: manifest_customize recovers from corrupted manifest
+# ============================================================================
+
+test_manifest_corruption_recovery() {
+  echo ""
+  echo "=== Test: manifest corruption recovery ==="
+
+  TMPDIR=$(mktemp -d)
+  local project_dir="${TMPDIR}/project"
+  mkdir -p "$project_dir"
+
+  export TOOLKIT_ROOT="$TOOLKIT_SRC"
+  source "${TOOLKIT_SRC}/lib/manifest.sh"
+
+  # Create a valid manifest first
+  manifest_init "$project_dir" >/dev/null 2>&1
+  local manifest="${project_dir}/toolkit-manifest.json"
+
+  assert_file_exists "manifest created" "$manifest"
+  assert_json_valid "manifest is valid before corruption" "$manifest"
+
+  # Corrupt the manifest
+  echo "not valid json {{{" > "$manifest"
+
+  # _validate_manifest should detect corruption
+  local result=0
+  _validate_manifest "$manifest" 2>/dev/null || result=$?
+  assert_eq "_validate_manifest returns 1 for corrupted file" "1" "$result"
+
+  # Check backup was created
+  local backup_found=false
+  for f in "${manifest}.corrupted."*; do
+    if [[ -f "$f" ]]; then
+      backup_found=true
+      break
+    fi
+  done
+  if [[ "$backup_found" == true ]]; then
+    echo "  PASS: corrupted manifest backup created"
+    PASS=$((PASS + 1))
+  else
+    echo "  FAIL: no backup of corrupted manifest"
+    FAIL=$((FAIL + 1))
+  fi
+
+  # manifest_customize should recover from corruption
+  manifest_customize "agents/reviewer.md" "$project_dir" >/dev/null 2>&1
+  assert_json_valid "manifest recovered after corruption" "$manifest"
+  assert_json_value "agent status is customized after recovery" "$manifest" '.agents["reviewer.md"].status' "customized"
+}
+
+# ============================================================================
+# Test: _validate_manifest with missing file
+# ============================================================================
+
+test_validate_manifest_missing() {
+  echo ""
+  echo "=== Test: _validate_manifest with missing file ==="
+
+  TMPDIR=$(mktemp -d)
+  export TOOLKIT_ROOT="$TOOLKIT_SRC"
+  source "${TOOLKIT_SRC}/lib/manifest.sh"
+
+  local result=0
+  _validate_manifest "${TMPDIR}/nonexistent.json" 2>/dev/null || result=$?
+  assert_eq "_validate_manifest returns 1 for missing file" "1" "$result"
+}
+
+# ============================================================================
+# Test: _validate_manifest with valid file
+# ============================================================================
+
+test_validate_manifest_valid() {
+  echo ""
+  echo "=== Test: _validate_manifest with valid file ==="
+
+  TMPDIR=$(mktemp -d)
+  local valid_json="${TMPDIR}/valid.json"
+  echo '{"key": "value"}' > "$valid_json"
+
+  export TOOLKIT_ROOT="$TOOLKIT_SRC"
+  source "${TOOLKIT_SRC}/lib/manifest.sh"
+
+  local result=0
+  _validate_manifest "$valid_json" 2>/dev/null || result=$?
+  assert_eq "_validate_manifest returns 0 for valid file" "0" "$result"
+}
+
+# ============================================================================
 # Run all tests
 # ============================================================================
 
@@ -306,6 +395,9 @@ test_manifest_customize
 test_manifest_customize_invalid_path
 test_manifest_check_drift
 test_manifest_update_skill_skips_customized
+test_manifest_corruption_recovery
+test_validate_manifest_missing
+test_validate_manifest_valid
 
 echo ""
 echo "==============================="

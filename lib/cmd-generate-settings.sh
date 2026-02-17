@@ -84,6 +84,19 @@ cmd_generate_settings_inner() {
 }
 
 cmd_generate_settings() {
+  if _is_dry_run; then
+    echo "Dry-run: showing what 'generate-settings' would do..."
+    echo ""
+    _dry_run_msg "Would regenerate toolkit-cache.env"
+    _dry_run_msg "Would regenerate settings.json"
+    local mcp_base="${TOOLKIT_DIR}/mcp/base.mcp.json"
+    if [[ -f "$mcp_base" ]]; then
+      _dry_run_msg "Would regenerate .mcp.json"
+    fi
+    echo ""
+    echo "No files were modified (dry-run mode)."
+    return 0
+  fi
   echo "Regenerating settings..."
   echo ""
   cmd_generate_settings_inner

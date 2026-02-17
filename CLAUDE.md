@@ -31,9 +31,11 @@ shellcheck -x -S warning hooks/*.sh lib/*.sh toolkit.sh
 
 # CLI (when testing locally)
 bash toolkit.sh init                      # Initialize toolkit in a project
+bash toolkit.sh init --dry-run            # Show what init would do without mutating
 bash toolkit.sh update                    # Update from remote via git subtree
 bash toolkit.sh status                    # Show version, config, customizations
 bash toolkit.sh validate                  # Health check (symlinks, settings, hooks)
+bash toolkit.sh doctor                    # Comprehensive health check (tools, config, hooks)
 bash toolkit.sh generate-settings         # Regenerate settings.json + .mcp.json
 bash toolkit.sh customize <file>          # Take ownership of managed file
 bash toolkit.sh help                      # Show usage
@@ -99,6 +101,7 @@ bash toolkit.sh help                      # Show usage
 │   ├── cmd-customize.sh         # Customize subcommand
 │   ├── cmd-status.sh            # Status subcommand
 │   ├── cmd-validate.sh          # Validate subcommand
+│   ├── cmd-doctor.sh            # Doctor subcommand (comprehensive health check)
 │   ├── cmd-generate-settings.sh # Generate-settings subcommand
 │   └── cmd-help.sh              # Help subcommand
 ├── mcp/                         # MCP templates

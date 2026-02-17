@@ -32,6 +32,7 @@ merge_layers = mod.merge_layers
 validate_auto_approve = mod.validate_auto_approve
 validate_allow_deny_conflicts = mod.validate_allow_deny_conflicts
 validate_merged = mod.validate_merged
+validate_settings_schema = mod.validate_settings_schema
 to_json = mod.to_json
 load_json = mod.load_json
 
@@ -892,3 +893,264 @@ class TestRealTemplates:
             result = merge_layers(base, stacks)
             errors = validate_merged(result)
             assert errors == [], f"Validation errors: {errors}"
+
+
+# ===================================================================
+# Settings schema validation (5.1)
+# ===================================================================
+
+
+class TestSettingsSchemaValidation:
+    def test_no_warnings_for_valid_settings(self):
+        """Valid settings should produce no warnings."""
+        merged = {
+            "hooks": {
+                "PreToolUse": [
+                    {"matcher": "Bash", "hooks": [{"command": "guard.sh"}]}
+                ]
+            },
+            "permissions": {"allow": ["Bash(ls:*)"], "deny": ["Edit(~/.ssh/*)"]},
+            "env": {"VAR": "value"},
+        }
+        warnings = validate_settings_schema(merged)
+        assert warnings == []
+
+    def test_unknown_top_level_key(self):
+        """Unknown top-level key should produce a warning."""
+        merged = {
+            "hooks": {},
+            "permissions": {},
+            "unknown_key": "value",
+        }
+        warnings = validate_settings_schema(merged)
+        assert len(warnings) == 1
+        assert "Unknown top-level key" in warnings[0]
+        assert "unknown_key" in warnings[0]
+
+    def test_multiple_unknown_top_level_keys(self):
+        """Multiple unknown keys should each produce a warning."""
+        merged = {"typo1": 1, "typo2": 2}
+        warnings = validate_settings_schema(merged)
+        assert len(warnings) == 2
+
+    def test_known_keys_accepted(self):
+        """All known top-level keys are accepted."""
+        merged = {
+            "hooks": {},
+            "permissions": {},
+            "env": {},
+            "preferences": {},
+            "mcpServers": {},
+        }
+        warnings = validate_settings_schema(merged)
+        assert warnings == []
+
+    def test_unknown_hook_event_type(self):
+        """Unknown hook event type should produce a warning."""
+        merged = {
+            "hooks": {
+                "PreToolUse": [],
+                "NotARealEvent": [],
+            }
+        }
+        warnings = validate_settings_schema(merged)
+        assert len(warnings) == 1
+        assert "Unknown hook event type" in warnings[0]
+        assert "NotARealEvent" in warnings[0]
+
+    def test_auto_approve_not_flagged_as_unknown_event(self):
+        """auto-approve is a special hooks key, not an event type."""
+        merged = {
+            "hooks": {
+                "auto-approve": {"bash_commands": ["ls"]},
+            }
+        }
+        warnings = validate_settings_schema(merged)
+        assert warnings == []
+
+    def test_unknown_hook_entry_field(self):
+        """Unknown field in a hook entry should produce a warning."""
+        merged = {
+            "hooks": {
+                "PreToolUse": [
+                    {
+                        "matcher": "Bash",
+                        "hooks": [{"command": "guard.sh"}],
+                        "not_a_real_field": True,
+                    }
+                ]
+            }
+        }
+        warnings = validate_settings_schema(merged)
+        assert len(warnings) == 1
+        assert "Unknown field" in warnings[0]
+
+    def test_hooks_field_not_list_warns(self):
+        """Hook entry 'hooks' field should be a list."""
+        merged = {
+            "hooks": {
+                "PreToolUse": [
+                    {"matcher": "Bash", "hooks": "not-a-list"}
+                ]
+            }
+        }
+        warnings = validate_settings_schema(merged)
+        assert any("should be a list" in w for w in warnings)
+
+    def test_permissions_unknown_field(self):
+        """Unknown permissions field should produce a warning."""
+        merged = {
+            "permissions": {
+                "allow": [],
+                "deny": [],
+                "unknown": [],
+            }
+        }
+        warnings = validate_settings_schema(merged)
+        assert len(warnings) == 1
+        assert "Unknown permissions field" in warnings[0]
+
+    def test_permissions_allow_not_list(self):
+        """permissions.allow should be a list."""
+        merged = {"permissions": {"allow": "not-a-list"}}
+        warnings = validate_settings_schema(merged)
+        assert any("should be a list" in w for w in warnings)
+
+    def test_env_not_dict(self):
+        """env should be a dict."""
+        merged = {"env": ["not", "a", "dict"]}
+        warnings = validate_settings_schema(merged)
+        assert len(warnings) == 1
+        assert "should be a dict" in warnings[0]
+
+    def test_hooks_not_dict(self):
+        """hooks should be a dict."""
+        merged = {"hooks": "not-a-dict"}
+        warnings = validate_settings_schema(merged)
+        assert len(warnings) == 1
+        assert "should be a dict" in warnings[0]
+
+    def test_permissions_not_dict(self):
+        """permissions should be a dict."""
+        merged = {"permissions": "not-a-dict"}
+        warnings = validate_settings_schema(merged)
+        assert len(warnings) == 1
+        assert "should be a dict" in warnings[0]
+
+    def test_real_base_settings_no_warnings(self):
+        """The real settings-base.json should have no schema warnings."""
+        base_path = ROOT / "templates" / "settings-base.json"
+        if base_path.exists():
+            base = load_json(base_path)
+            warnings = validate_settings_schema(base)
+            assert warnings == [], f"Schema warnings: {warnings}"
+
+    def test_cli_prints_schema_warnings(self, tmp_path):
+        """Schema warnings should be printed to stderr when running CLI."""
+        bad_settings = tmp_path / "bad-base.json"
+        bad_settings.write_text(json.dumps({
+            "hooks": {},
+            "permissions": {},
+            "unknown_key": "value",
+        }))
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(SCRIPT),
+                "--base",
+                str(bad_settings),
+            ],
+            capture_output=True,
+            text=True,
+        )
+        assert result.returncode == 0  # Warnings don't block generation
+        assert "Schema warnings" in result.stderr
+        assert "unknown_key" in result.stderr
+
+
+# ===================================================================
+# Array merge edge cases (5.6)
+# ===================================================================
+
+
+class TestArrayMergeEdgeCases:
+    def test_both_empty_arrays(self):
+        """Merging two empty arrays should produce empty array."""
+        base = {"items": []}
+        overlay = {"items": []}
+        result = deep_merge(base, overlay)
+        assert result["items"] == []
+
+    def test_bool_dedup(self):
+        """Boolean values should be deduplicated correctly."""
+        base = {"flags": [True, False]}
+        overlay = {"flags": [True, False, True]}
+        result = deep_merge(base, overlay)
+        assert result["flags"] == [True, False]
+
+    def test_int_dedup(self):
+        """Integer values should be deduplicated correctly."""
+        base = {"nums": [1, 2, 3]}
+        overlay = {"nums": [2, 3, 4]}
+        result = deep_merge(base, overlay)
+        assert result["nums"] == [1, 2, 3, 4]
+
+    def test_mixed_int_string_no_false_dedup(self):
+        """String '1' and int 1 should NOT be deduplicated (different repr)."""
+        base = {"items": [1, "1"]}
+        overlay = {"items": []}
+        result = deep_merge(base, overlay)
+        assert len(result["items"]) == 2
+        assert 1 in result["items"]
+        assert "1" in result["items"]
+
+    def test_mixed_int_string_dedup_preserves_both(self):
+        """String '1' and int 1 in separate arrays should both be kept."""
+        base = {"items": [1]}
+        overlay = {"items": ["1"]}
+        result = deep_merge(base, overlay)
+        assert len(result["items"]) == 2
+
+    def test_bool_int_distinction(self):
+        """True (bool) and 1 (int) have different repr, both kept."""
+        base = {"items": [True]}
+        overlay = {"items": [1]}
+        result = deep_merge(base, overlay)
+        # repr(True) == 'True', repr(1) == '1', so they are distinct
+        assert len(result["items"]) == 2
+
+    def test_float_dedup(self):
+        """Float values should be deduplicated."""
+        base = {"nums": [1.0, 2.5]}
+        overlay = {"nums": [2.5, 3.0]}
+        result = deep_merge(base, overlay)
+        assert result["nums"] == [1.0, 2.5, 3.0]
+
+    def test_large_array_dedup(self):
+        """Large arrays should deduplicate correctly."""
+        base = {"items": [f"item-{i}" for i in range(100)]}
+        overlay = {"items": [f"item-{i}" for i in range(50, 150)]}
+        result = deep_merge(base, overlay)
+        assert len(result["items"]) == 150
+
+    def test_empty_string_in_array(self):
+        """Empty strings should be handled correctly."""
+        base = {"items": ["", "a"]}
+        overlay = {"items": ["", "b"]}
+        result = deep_merge(base, overlay)
+        assert result["items"] == ["", "a", "b"]
+
+    def test_object_array_with_empty_base(self):
+        """Object array merge with empty base should just return overlay."""
+        base = {"hooks": []}
+        overlay = {"hooks": [{"matcher": "Bash", "hooks": [{"cmd": "x"}]}]}
+        result = deep_merge(base, overlay)
+        assert len(result["hooks"]) == 1
+        assert result["hooks"][0]["matcher"] == "Bash"
+
+    def test_primitive_array_ordering_stable(self):
+        """Order should be: base items first, then new overlay items."""
+        base = {"items": ["c", "a", "b"]}
+        overlay = {"items": ["d", "a", "e"]}
+        result = deep_merge(base, overlay)
+        assert result["items"] == ["c", "a", "b", "d", "e"]

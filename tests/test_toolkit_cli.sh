@@ -518,6 +518,141 @@ test_mcp_json() {
 }
 
 # ============================================================================
+# Test: init --dry-run shows plan without mutating
+# ============================================================================
+
+test_init_dry_run() {
+  echo ""
+  echo "=== Test: init --dry-run ==="
+
+  local project_dir
+  project_dir=$(setup_test_project)
+  local toolkit_sh="${project_dir}/.claude/toolkit/toolkit.sh"
+
+  # Create toolkit.toml first (dry-run needs to read it)
+  cp "${project_dir}/.claude/toolkit/templates/toolkit.toml.example" "${project_dir}/.claude/toolkit.toml"
+
+  # Run init with --dry-run
+  local output
+  output=$(bash "$toolkit_sh" init --dry-run 2>&1)
+
+  # Should say "dry-run"
+  if echo "$output" | grep -qi "dry-run"; then
+    echo "  PASS: dry-run output mentions dry-run"
+    PASS=$((PASS + 1))
+  else
+    echo "  FAIL: dry-run output doesn't mention dry-run"
+    echo "    Output: $(echo "$output" | head -5)"
+    FAIL=$((FAIL + 1))
+  fi
+
+  # Should mention what would be done
+  if echo "$output" | grep -q "Would"; then
+    echo "  PASS: dry-run shows what would happen"
+    PASS=$((PASS + 1))
+  else
+    echo "  FAIL: dry-run output doesn't show plans"
+    FAIL=$((FAIL + 1))
+  fi
+
+  # Should NOT have created agents directory
+  assert_file_not_exists "agents not created in dry-run" "${project_dir}/.claude/agents/reviewer.md"
+
+  # Should NOT have created settings.json
+  assert_file_not_exists "settings.json not created in dry-run" "${project_dir}/.claude/settings.json"
+
+  # Should NOT have created manifest
+  assert_file_not_exists "manifest not created in dry-run" "${project_dir}/.claude/toolkit-manifest.json"
+}
+
+# ============================================================================
+# Test: init --dry-run via global flag
+# ============================================================================
+
+test_init_dry_run_global_flag() {
+  echo ""
+  echo "=== Test: init --dry-run (global flag) ==="
+
+  local project_dir
+  project_dir=$(setup_test_project)
+  local toolkit_sh="${project_dir}/.claude/toolkit/toolkit.sh"
+
+  # Create toolkit.toml first
+  cp "${project_dir}/.claude/toolkit/templates/toolkit.toml.example" "${project_dir}/.claude/toolkit.toml"
+
+  # Run with --dry-run as global flag (before subcommand)
+  local output
+  output=$(bash "$toolkit_sh" --dry-run init 2>&1)
+
+  if echo "$output" | grep -qi "dry-run"; then
+    echo "  PASS: global --dry-run flag works"
+    PASS=$((PASS + 1))
+  else
+    echo "  FAIL: global --dry-run flag not recognized"
+    echo "    Output: $(echo "$output" | head -5)"
+    FAIL=$((FAIL + 1))
+  fi
+
+  # Should NOT have mutated
+  assert_file_not_exists "no mutation with global dry-run" "${project_dir}/.claude/settings.json"
+}
+
+# ============================================================================
+# Test: generate-settings --dry-run
+# ============================================================================
+
+test_generate_settings_dry_run() {
+  echo ""
+  echo "=== Test: generate-settings --dry-run ==="
+
+  local project_dir
+  project_dir=$(setup_test_project)
+  local toolkit_sh="${project_dir}/.claude/toolkit/toolkit.sh"
+
+  # Init normally first
+  (cd "$project_dir" && bash "$toolkit_sh" init --from-example) >/dev/null 2>&1
+
+  # Remove generated files
+  rm -f "${project_dir}/.claude/settings.json"
+  rm -f "${project_dir}/.claude/toolkit-cache.env"
+
+  # Run generate-settings with --dry-run
+  local output
+  output=$(bash "$toolkit_sh" --dry-run generate-settings 2>&1)
+
+  if echo "$output" | grep -qi "dry-run"; then
+    echo "  PASS: generate-settings dry-run output correct"
+    PASS=$((PASS + 1))
+  else
+    echo "  FAIL: generate-settings dry-run missing indicator"
+    FAIL=$((FAIL + 1))
+  fi
+
+  # Files should NOT be regenerated
+  assert_file_not_exists "settings.json not regenerated in dry-run" "${project_dir}/.claude/settings.json"
+}
+
+# ============================================================================
+# Test: doctor command exists
+# ============================================================================
+
+test_doctor() {
+  echo ""
+  echo "=== Test: doctor ==="
+
+  local project_dir
+  project_dir=$(setup_test_project)
+  local toolkit_sh="${project_dir}/.claude/toolkit/toolkit.sh"
+
+  # Init first
+  (cd "$project_dir" && bash "$toolkit_sh" init --from-example) >/dev/null 2>&1
+
+  # Doctor should run and succeed
+  assert_exit_code "doctor exits 0 after init" 0 bash "$toolkit_sh" doctor
+  assert_output_contains "doctor shows health check" "health check" bash "$toolkit_sh" doctor
+}
+
+# ============================================================================
 # Run all tests
 # ============================================================================
 
@@ -537,6 +672,10 @@ test_customize_skill
 test_help
 test_unknown_command
 test_mcp_json
+test_init_dry_run
+test_init_dry_run_global_flag
+test_generate_settings_dry_run
+test_doctor
 
 echo ""
 echo "==============================="

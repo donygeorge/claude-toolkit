@@ -67,6 +67,33 @@ _file_hash() {
 }
 
 # ============================================================================
+# _validate_manifest — Check manifest integrity, recover if corrupted
+# ============================================================================
+
+_validate_manifest() {
+  # Validates that the manifest file exists and is valid JSON.
+  # If corrupted, backs up the corrupted file and returns 1 so the caller
+  # can regenerate via manifest_init.
+  local manifest_path="$1"
+
+  if [[ ! -f "$manifest_path" ]]; then
+    return 1
+  fi
+
+  if ! jq empty "$manifest_path" 2>/dev/null; then
+    echo "Warning: Manifest is corrupted. Backing up and regenerating..." >&2
+    # Backup the corrupted file with timestamp
+    local backup_path
+    backup_path="${manifest_path}.corrupted.$(date +%s)"
+    cp "$manifest_path" "$backup_path"
+    echo "  Corrupted manifest saved to: $backup_path" >&2
+    return 1
+  fi
+
+  return 0
+}
+
+# ============================================================================
 # manifest_init
 # ============================================================================
 
@@ -178,6 +205,12 @@ manifest_customize() {
     return 1
   fi
 
+  # Validate manifest integrity; regenerate if corrupted
+  if ! _validate_manifest "$manifest_path"; then
+    echo "Regenerating corrupted manifest..." >&2
+    manifest_init "$project_dir" >/dev/null 2>&1
+  fi
+
   local timestamp
   timestamp=$(_timestamp)
 
@@ -233,6 +266,12 @@ manifest_update_skill() {
     return 1
   fi
 
+  # Validate manifest integrity; regenerate if corrupted
+  if ! _validate_manifest "$manifest_path"; then
+    echo "Regenerating corrupted manifest..." >&2
+    manifest_init "$project_dir" >/dev/null 2>&1
+  fi
+
   local toolkit_skill_dir="${TOOLKIT_ROOT}/skills/${skill_name}"
   local project_skill_dir="${project_dir}/.claude/skills/${skill_name}"
 
@@ -285,6 +324,12 @@ manifest_check_drift() {
   if [[ ! -f "$manifest_path" ]]; then
     echo "Error: Manifest not found. Run manifest_init first." >&2
     return 1
+  fi
+
+  # Validate manifest integrity; regenerate if corrupted
+  if ! _validate_manifest "$manifest_path"; then
+    echo "Regenerating corrupted manifest..." >&2
+    manifest_init "$project_dir" >/dev/null 2>&1
   fi
 
   local drift_count=0

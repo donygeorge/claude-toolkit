@@ -148,6 +148,24 @@ cmd_update() {
     _atomic_write "$MANIFEST_PATH" "$updated_manifest"
   fi
 
+  # Verify pulled code integrity
+  echo ""
+  echo "Verifying toolkit integrity..."
+  if command -v shellcheck &>/dev/null; then
+    if shellcheck -x -S warning "${TOOLKIT_DIR}"/hooks/*.sh "${TOOLKIT_DIR}"/lib/*.sh "${TOOLKIT_DIR}"/toolkit.sh 2>/dev/null; then
+      _ok "All scripts pass shellcheck"
+    else
+      _warn "Updated toolkit has shellcheck warnings. Review before using."
+    fi
+  else
+    _info "shellcheck not installed — skipping integrity verification"
+  fi
+
+  # Show what changed
+  echo ""
+  echo "Changes in this update:"
+  git -C "$PROJECT_DIR" diff --stat HEAD~1 -- .claude/toolkit/ 2>/dev/null || _info "Could not determine changes"
+
   # Refresh symlinks
   echo ""
   echo "Refreshing symlinks..."
