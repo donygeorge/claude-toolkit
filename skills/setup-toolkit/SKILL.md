@@ -41,7 +41,7 @@ Orchestrate post-bootstrap project configuration. Auto-detect stacks and command
 
 ## Execution Flow
 
-> **Routing**: If `--update` was passed, skip the setup phases below and jump directly to the [Update Flow](#update-flow) section. If `--contribute` was passed, skip the setup phases below and jump directly to the [Contribute Flow](#contribute-flow) section.
+> **Routing**: If more than one of `--update`, `--contribute`, or `--reconfigure` are passed together, stop immediately and inform the user: "Only one mode flag can be used at a time. Please run `/setup-toolkit` with a single flag." If `--update` was passed, skip the setup phases below and jump directly to the [Update Flow](#update-flow) section. If `--contribute` was passed, skip the setup phases below and jump directly to the [Contribute Flow](#contribute-flow) section.
 
 Execute these phases in order. Do NOT skip phases.
 
@@ -749,13 +749,13 @@ shellcheck -x -S warning .claude/toolkit/hooks/*.sh .claude/toolkit/lib/*.sh .cl
 
 If issues are found: these are in toolkit code and should not be modified locally. Note them and report to the user.
 
-#### Check 2: Toolkit validate
+#### Check 2: Toolkit validate (includes symlink health)
 
 ```bash
 bash .claude/toolkit/toolkit.sh validate
 ```
 
-If issues are found: attempt auto-fix (init --force, chmod +x). Retry up to 3 times.
+Review the full output, paying special attention to the symlink section. If broken symlinks exist, run `bash .claude/toolkit/toolkit.sh init --force`. If other issues are found, attempt auto-fix (init --force, chmod +x). Retry up to 3 times.
 
 #### Check 3: Generate settings
 
@@ -776,11 +776,13 @@ If invalid: regenerate settings (Check 3). If still invalid, **ask the user**.
 
 #### Check 5: Symlink health
 
+Verify symlinks point to valid targets (this is a quick direct check, complementing the broader Check 2):
+
 ```bash
-bash .claude/toolkit/toolkit.sh validate
+ls -la .claude/agents/ .claude/rules/
 ```
 
-Specifically check the symlink section of the output. If broken symlinks exist:
+For each symlink, verify it resolves to a file that exists. If any symlink is broken:
 
 ```bash
 bash .claude/toolkit/toolkit.sh init --force
@@ -940,8 +942,8 @@ NEW_HASH=$(shasum -a 256 .claude/toolkit/<source_path> | cut -d' ' -f1)
 ```bash
 # For agents/rules: restore symlink
 ln -sf ../toolkit/agents/[file] .claude/agents/[file]
-# For skills: copy from toolkit source
-cp .claude/toolkit/skills/[skill]/[file] .claude/skills/[skill]/[file]
+# For skills: copy ALL files in the skill directory (skills can contain multiple files)
+cp .claude/toolkit/skills/[skill]/* .claude/skills/[skill]/
 ```
 
 After applying the resolution, update the manifest hashes to reflect the current state.
@@ -1435,9 +1437,10 @@ git push origin contribute/<brief-description>
 **Direct push workflow** (uses `git subtree push` to extract and push):
 
 ```bash
-# Option A: Use git subtree push
+# Option A: Use git subtree push (pushes ALL subtree changes, not just the contribution)
 git subtree push --prefix=.claude/toolkit claude-toolkit contribute/<brief-description>
 # Then open a PR on the toolkit repo
+# Note: This creates a branch containing the full subtree history, not just your changes
 
 # Option B: Clone the toolkit repo and apply the patch
 TOOLKIT_URL=$(git remote get-url claude-toolkit)
@@ -1465,6 +1468,16 @@ Present the PR title and summary:
 > Would you like to adjust the title or description before finalizing?
 
 **Wait for the user to confirm or adjust before providing final commands.**
+
+#### Step C4.6: Clean up local toolkit changes
+
+The changes applied to `.claude/toolkit/` in Step C2.3 were needed for validation and patch generation. Now that the patch has been created, revert these local changes to avoid divergence from the upstream subtree:
+
+```bash
+git checkout -- .claude/toolkit/
+```
+
+If the user explicitly wants to keep the local changes (e.g., while waiting for the PR to be merged), **ask first** before reverting.
 
 ---
 
@@ -1522,6 +1535,7 @@ Example summary format:
 > 1. [Execute the submission commands above]
 > 2. [Open PR with the provided title and description]
 > 3. [Respond to any review feedback]
+> 4. Local toolkit source changes have been reverted (Step C4.6)
 
 ---
 
