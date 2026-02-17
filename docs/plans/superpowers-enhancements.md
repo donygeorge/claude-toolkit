@@ -77,16 +77,16 @@ Note: `disable-model-invocation: false` so that `/implement` can invoke it progr
 
 **Exit Criteria**:
 
-- [ ] `skills/verify/SKILL.md` exists with complete skill definition
-- [ ] Skill has YAML frontmatter with name, description, argument-hint, allowed-tools (includes Write/Edit)
-- [ ] Includes verification gate function (5-step: IDENTIFY→RUN→READ→VERIFY→CLAIM)
-- [ ] Includes rationalization prevention table (8+ entries)
-- [ ] Includes clean-room verification agent spawn pattern
-- [ ] Includes edge case scanning checklist
-- [ ] Fixes issues directly when confident, asks user when unsure
-- [ ] Summarizes findings inline (no report files)
-- [ ] Handles three scopes: plan-based, commit-based, uncommitted
-- [ ] Generic content only — no project-specific references
+- [x] `skills/verify/SKILL.md` exists with complete skill definition
+- [x] Skill has YAML frontmatter with name, description, argument-hint, allowed-tools (includes Write/Edit)
+- [x] Includes verification gate function (5-step: IDENTIFY→RUN→READ→VERIFY→CLAIM)
+- [x] Includes rationalization prevention table (8+ entries)
+- [x] Includes clean-room verification agent spawn pattern
+- [x] Includes edge case scanning checklist
+- [x] Fixes issues directly when confident, asks user when unsure
+- [x] Summarizes findings inline (no report files)
+- [x] Handles three scopes: plan-based, commit-based, uncommitted
+- [x] Generic content only — no project-specific references
 
 ---
 
