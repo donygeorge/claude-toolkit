@@ -745,7 +745,18 @@ The idea document at `docs/ideas/<topic-slug>.md`:
 
 ## Integration with /plan
 
-The idea document is designed as a **natural precursor** to `/plan`:
+The idea document is designed as a **natural precursor** to `/plan`. The plan skill automatically detects idea docs.
+
+**Workflow**: `/brainstorm <topic>` → `docs/ideas/<topic>.md` → `/plan <topic>` → `docs/plans/<topic>.md` → `/implement`
+
+When the user runs `/plan <topic-slug>`, the plan skill:
+
+1. Checks for `docs/ideas/<topic-slug>.md` in Phase 0
+2. If found, reads the idea doc and uses it as starting context
+3. Reduces clarifying questions to only what the idea doc does not cover
+4. Abbreviates Phase 1 research (skips redundant web searches)
+5. Uses the recommended approach as the starting architecture
+6. Passes idea doc findings into the plan agent prompt
 
 | Idea doc section | Feeds into plan section |
 | ---------------- | ---------------------- |
@@ -756,6 +767,4 @@ The idea document is designed as a **natural precursor** to `/plan`:
 | Risks and Open Questions | Risks & Mitigations |
 | Libraries and Tools | Libraries Considered |
 
-When the user runs `/plan <topic-slug>`, the plan skill can read the idea doc for context, allowing it to skip or abbreviate its own research phase and focus on concrete milestones and implementation details.
-
-No changes to the `/plan` skill are required. The idea doc serves as enriched input context that the user references when starting planning.
+The plan skill also still works with free text (`/plan some-feature`) when no idea doc exists — the idea doc integration is additive, not required.

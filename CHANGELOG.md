@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.12.0] - 2026-02-17
+
+### Added
+
+- **Hook debug mode**: Set `TOOLKIT_HOOK_DEBUG=true` to enable verbose debug logging in hooks. Shows tool name, command, file path, and decision points in guard and auto-approve hooks via new `hook_debug()` function in `lib/hook-utils.sh`
+- **Gate bypass**: Set `TOOLKIT_SKIP_GATES=all` to bypass all quality gates, or `TOOLKIT_SKIP_GATES=lint,tests` to skip specific gates. Useful for debugging false positives without editing `toolkit.toml`
+- **Review packet schema**: `review-suite` skill now defines the full JSON schema for `review_packet.json` with required fields, evidence downgrade rules, and examples
+- **Rollback guidance**: Both `implement` and `setup-toolkit --update` skills now include step-by-step rollback instructions using `git revert` (never destructive `git reset --hard`)
+- **Commit-check integration**: The orphaned `commit-check` agent is now fully integrated into `review-suite` as a `quick` preset (`/review commit-check` or `/review quick`), with keyword mapping and execution details
+
+### Fixed
+
+- **Implement graceful degradation**: Build failures now correctly block the milestone and ask user for guidance instead of incorrectly skipping the test phase
+- **Contribute flow safety**: Phase C2.3 now shows a preview diff BEFORE applying changes to toolkit source (previously applied first, then showed diff)
+- **Contribute flow cleanup**: Phase C4.6 now reverts only contributed files instead of all `.claude/toolkit/` changes, preventing data loss of unrelated in-progress work
+
 ## [1.11.0] - 2026-02-17
 
 ### Added

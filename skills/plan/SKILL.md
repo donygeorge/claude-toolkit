@@ -62,13 +62,18 @@ defaults:
 **Before doing ANY research or planning:**
 
 1. Read the user's request carefully
-2. Identify ambiguities, unknowns, or decisions that need user input
-3. Ask ALL clarifying questions in ONE batch — cover:
+2. **Check for an existing idea document**: Look for `docs/ideas/<feature-name>.md` (produced by the `/brainstorm` skill). If found:
+   - Read the idea doc fully — it contains research findings, evaluated approaches, a recommendation, constraints, and open questions
+   - Use this as your starting context — the research phase can be significantly abbreviated
+   - Reduce clarifying questions to only what the idea doc does NOT already cover (typically: scope boundaries and milestone granularity)
+   - Reference the recommended approach as the starting architecture unless the user says otherwise
+3. If NO idea doc exists, identify ambiguities, unknowns, or decisions that need user input
+4. Ask ALL clarifying questions in ONE batch — cover:
    - Scope boundaries (what's in/out)
    - Technical constraints or preferences
    - Integration points with existing code
    - Priority trade-offs (simplicity vs features vs performance)
-4. Wait for answers before proceeding
+5. Wait for answers before proceeding
 
 **Do NOT skip this phase.** Making assumptions leads to wasted planning.
 
@@ -81,12 +86,14 @@ defaults:
    - Check CLAUDE.md and rules for project conventions
 
 2. **External research** (if applicable)
-   - Use WebSearch to research best practices
+   - If an idea doc was found in Phase 0, skip redundant web research — focus only on implementation-specific questions not covered by the idea doc (e.g., specific API signatures, library installation steps, integration patterns)
+   - If no idea doc, use WebSearch to research best practices
    - Use WebFetch to get documentation for relevant libraries
    - Use context7 MCP tools for library-specific docs
 
 3. **Create initial plan draft**
    - Launch plan agent via Task tool
+   - If an idea doc exists, include its recommended approach, research findings, and constraints in the agent prompt
    - Agent writes plan to `docs/plans/<feature-name>.md`
 
 ### Phase 2: Feedback Loop (Codex)
