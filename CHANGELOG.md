@@ -9,6 +9,8 @@ All notable changes to this project will be documented in this file.
 - **Setup skill `--update` mode**: `/setup-toolkit --update [version]` provides an LLM-guided toolkit update workflow with pre-flight checks (status, validate, uncommitted changes), version preview with CHANGELOG entries, intelligent conflict resolution with user confirmation, 10-point post-update validation (shellcheck, validate, generate-settings, JSON validity, symlink health, manifest integrity, hook executability, config cache freshness, project tests, project lint), drift resolution for customized files (keep/merge/revert per file), and a structured summary with commit
 - **Setup skill `--contribute` mode**: `/setup-toolkit --contribute` provides an LLM-guided contribution workflow for upstreaming generic improvements from consuming projects back to the toolkit, featuring candidate identification via status and diff, a 10-point generalizability gate (7 hard requirements + 3 quality requirements), full toolkit test suite validation, and PR submission workflow with generated patch and description
 - **Contributing guide**: New "Contributing from a Consuming Project" section in `CONTRIBUTING.md` documenting both the `/setup-toolkit --contribute` workflow and a manual workflow for users without the skill, with the full 10-point generalizability checklist
+- **Public release prep**: Added `LICENSE` (MIT), `CODE_OF_CONDUCT.md` (Contributor Covenant 2.1), `SECURITY.md` (vulnerability reporting policy), GitHub issue templates (bug report, feature request), and PR template with testing checklist
+- **Version sync**: `VERSION` file now tracks the current release version
 
 ## [1.9.0] - 2026-02-16
 
