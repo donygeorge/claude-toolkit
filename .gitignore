@@ -23,3 +23,7 @@ test-output/
 
 # Machine-specific Claude Code settings
 .claude/settings.local.json
+
+# Local dev: symlinks for toolkit's own skill discovery (not needed in consuming projects)
+.claude/skills
+.claude/commands
