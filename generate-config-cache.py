@@ -61,6 +61,7 @@ SCHEMA: dict[str, dict[str, type | dict]] = {
         "auto-approve": {
             "write_paths": list,
             "bash_commands": list,
+            "mcp_tool_prefixes": list,
         },
         "subagent-context": {
             "critical_rules": list,

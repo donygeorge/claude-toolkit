@@ -466,12 +466,10 @@ class TestDetectToolkitState:
         toolkit_skills = toolkit_dir / "skills"
         project_skills = claude_dir / "skills"
 
-        # Create toolkit skills
         (toolkit_skills / "review-suite").mkdir(parents=True)
         (toolkit_skills / "implement").mkdir(parents=True)
         (toolkit_skills / "plan").mkdir(parents=True)
 
-        # Only create one project skill
         (project_skills / "review-suite").mkdir(parents=True)
 
         state = detect_toolkit_state(tmp_path)
@@ -527,7 +525,6 @@ class TestDetectToolkitState:
         claude_dir = tmp_path / ".claude"
         claude_dir.mkdir(parents=True)
 
-        # Create a broken symlink
         broken_link = claude_dir / "broken-link.md"
         broken_link.symlink_to("/nonexistent/target")
 
@@ -538,7 +535,6 @@ class TestDetectToolkitState:
         claude_dir = tmp_path / ".claude"
         claude_dir.mkdir(parents=True)
 
-        # Create a valid symlink
         target = claude_dir / "target.md"
         target.write_text("# Target\n")
         link = claude_dir / "link.md"
@@ -557,21 +553,17 @@ class TestDetectToolkitState:
         project_skills = claude_dir / "skills"
         project_agents = claude_dir / "agents"
 
-        # Create toolkit structure
         templates_dir.mkdir(parents=True)
         (templates_dir / "toolkit.toml.example").write_text("[project]\nname = 'example'\n")
 
-        # Skills
         (toolkit_skills / "review-suite").mkdir(parents=True)
         (project_skills / "review-suite").mkdir(parents=True)
 
-        # Agents
         toolkit_agents.mkdir(parents=True)
         project_agents.mkdir(parents=True)
         (toolkit_agents / "reviewer.md").write_text("# Reviewer\n")
         (project_agents / "reviewer.md").write_text("# Reviewer\n")
 
-        # Config
         (claude_dir / "toolkit.toml").write_text("[project]\nname = 'my-project'\n")
         (claude_dir / "settings.json").write_text("{}\n")
 
@@ -691,14 +683,9 @@ class TestRunDetection:
         parsed = json.loads(json_str)
         assert parsed == result
 
-    def test_validate_mode_adds_validations(self, tmp_path):
-        (tmp_path / "Makefile").write_text("test:\n\techo test-pass\n")
-        result = run_detection(tmp_path, validate=True)
-        assert "validations" in result
-
-    def test_no_validate_mode_no_validations(self, tmp_path):
-        result = run_detection(tmp_path, validate=False)
-        assert "validations" not in result
+    def test_includes_toolkit_state(self, tmp_path):
+        result = run_detection(tmp_path)
+        assert "toolkit_state" in result
 
 
 # ===================================================================
@@ -730,22 +717,6 @@ class TestCLI:
         # Should be valid JSON
         output = json.loads(result.stdout)
         assert isinstance(output, dict)
-
-    def test_validate_flag(self, tmp_path):
-        result = subprocess.run(
-            [
-                sys.executable,
-                str(SCRIPT),
-                "--project-dir",
-                str(tmp_path),
-                "--validate",
-            ],
-            capture_output=True,
-            text=True,
-        )
-        assert result.returncode == 0
-        output = json.loads(result.stdout)
-        assert "validations" in output
 
     def test_nonexistent_dir(self):
         result = subprocess.run(

@@ -47,7 +47,7 @@ This architecture enables long-running sessions (2-3+ hours) without context exh
 **These rules are NON-NEGOTIABLE. Violating them = failed implementation.**
 
 | Rule | Description |
-|------|-------------|
+| ------ | ------------- |
 | **1. State file is truth** | Always read/write state files. Session can crash and resume. |
 | **2. Fresh context per milestone** | Each milestone gets spawned as a fresh subagent |
 | **3. QA after EVERY milestone** | Run QA agent after each milestone completes |
@@ -95,7 +95,7 @@ defaults:
 ## Arguments
 
 | Argument | Description |
-|----------|-------------|
+| ---------- | ------------- |
 | `<plan>` | Plan file path or name (e.g., `my-feature.md` or `docs/plans/my-feature.md`) |
 | `<milestone>` | Optional milestone to start from (e.g., `M1`, `M3`). Default: first pending |
 | `--continue` | Resume from last state file checkpoint |
@@ -248,6 +248,7 @@ Report milestones completed, commits created, reviews passed, tests added.
 When spawning a milestone orchestrator via Task(), read that file and inject its contents as the prompt, replacing the placeholder variables.
 
 Key phases in the template (12 phases total):
+
 - Phase 0: Prerequisites (git clean)
 - Phase 1: Parse milestone from plan
 - Phase 2: Architecture analysis
@@ -280,12 +281,15 @@ IF --continue flag:
 ## Reliability Mechanisms
 
 ### 1. State File as Truth
+
 All progress written to disk immediately. Session can crash and resume.
 
 ### 2. Phase Validation
+
 Before moving to next phase, validate previous phase completed.
 
 ### 3. Retry Logic
+
 - Test failures: retry up to 3 times
 - Lint failures: run formatter, retry once
 - Codex issues: fix and retry up to 3 times
@@ -293,7 +297,7 @@ Before moving to next phase, validate previous phase completed.
 ### 4. Graceful Degradation
 
 | Failure | Recovery |
-|---------|----------|
+| --------- | ---------- |
 | Codex unavailable | Warn, continue with extra self-review |
 | Build fails | Save error, skip tests, flag for user |
 | Test flaky | Retry 3x, flag as potential flake |
@@ -305,7 +309,7 @@ Before moving to next phase, validate previous phase completed.
 ## Error Handling
 
 | Error | Action |
-|-------|--------|
+| ------- | -------- |
 | Plan file not found | Error with clear message, list available plans |
 | Milestone not found | List available milestones in plan |
 | Dependencies incomplete | Warn and ask user to proceed or not |

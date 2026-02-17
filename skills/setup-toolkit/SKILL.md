@@ -177,41 +177,33 @@ Display a brief summary to the user:
 
 ### Phase 2: Command Validation
 
-Validate that detected commands actually work by running them.
+Validate that detected commands actually work by running them directly.
+
+For each detected command (lint, test, format), run it manually:
 
 ```bash
-python3 .claude/toolkit/detect-project.py --project-dir . --validate
+# Example: validate lint command
+ruff check --version    # Check if available
 ```
 
-Parse the `validations` array from the output. Each entry has:
+**For each command**:
 
-```json
-{
-  "type": "lint|test|format",
-  "stack": "python",
-  "cmd": "ruff check",
-  "passed": true
-}
-```
-
-**For each validation result**:
-
-- If `passed` is true: keep the command
-- If `passed` is false: note the failure and the error reason
+- If the tool is available and responds to `--version`: keep the command
+- If not found: note the failure
 
 Display validation results to the user:
 
 > **Validation results**:
 >
-> - Lint (python): `ruff check` -- passed
-> - Test: `make test` -- passed
-> - Format (python): `ruff format --check .` -- FAILED (error: ...)
+> - Lint (python): `ruff check` -- available
+> - Test: `make test` -- available
+> - Format (python): `ruff format` -- not found
 
-**If a command fails validation**:
+**If a command is not available**:
 
-1. Check if an alternative exists (e.g., if `ruff check` fails, check if `ruff` is installed at a different path)
-2. Ask the user: "The [type] command `[cmd]` failed validation. Would you like to provide an alternative command, or skip this?"
-3. If the user provides an alternative, validate it manually by running it
+1. Check if an alternative exists (e.g., if `ruff` is not found, check if it's installed in `.venv/bin/`)
+2. Ask the user: "The [type] command `[cmd]` was not found. Would you like to provide an alternative command, or skip this?"
+3. If the user provides an alternative, validate it by running `<cmd> --version`
 4. If skipped, leave that field empty in the config and note it in the output
 
 ---

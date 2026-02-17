@@ -15,6 +15,7 @@ Resolves user intent (feature name, diff range, or "uncommitted") into a Scope B
 ## Input
 
 Natural language or structured scope specification:
+
 - `feature:my-feature` - Named feature from features.json
 - `uncommitted` - Uncommitted changes (staged + unstaged)
 - `diff:HEAD~1` - Single commit diff
@@ -53,7 +54,7 @@ Returns a JSON Scope Bundle with:
 
 ### 1. Parse Scope Key
 
-```
+```text
 Input: "my feature" or "my-feature" or "feature:my-feature"
 Output: scope_key = "feature:my-feature", scope_slug = "feature-my-feature"
 
@@ -89,6 +90,7 @@ git diff main..HEAD
 ### 4. Detect Risk Profile
 
 Scan files for patterns:
+
 - `auth`: Files in auth/, login, token, session
 - `storage`: Database access, file I/O
 - `network`: HTTP clients, API calls

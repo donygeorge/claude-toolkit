@@ -22,7 +22,7 @@ Quick reference for project coding conventions. For full details, see `.claude/r
 ## Quick Reference
 
 | Domain | Full Details |
-|--------|--------------|
+| -------- | -------------- |
 | Git | `.claude/rules/git-protocol.md` |
 
 <!-- Add your project's convention domains here -->

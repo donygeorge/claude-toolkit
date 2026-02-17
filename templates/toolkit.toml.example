@@ -109,6 +109,15 @@ write_paths = [
 # These are matched as prefixes against the first word of the command
 bash_commands = []
 
+# MCP tool prefixes to auto-approve (persist for session)
+# Each entry is matched as a prefix against the tool name
+# Default: ["mcp__codex__", "mcp__plugin_playwright_playwright__", "mcp__plugin_context7_context7__"]
+mcp_tool_prefixes = [
+    "mcp__codex__",
+    "mcp__plugin_playwright_playwright__",
+    "mcp__plugin_context7_context7__",
+]
+
 # ---------------------------------------------------------------------------
 # [hooks.subagent-context] — Context injected into subagents
 # ---------------------------------------------------------------------------

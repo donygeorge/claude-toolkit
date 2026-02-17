@@ -7,6 +7,7 @@
 A shareable, configurable collection of Claude Code hooks, agents, skills, and rules for safe, autonomous AI-assisted development. Pure bash + Python 3.11+. No web server, no app — just tools that integrate into `.claude/` directories via git subtree.
 
 **Key Capabilities**:
+
 - 16 configurable hooks (guards, quality gates, lifecycle, automation)
 - 9 agent prompts (reviewer, qa, security, ux, pm, docs, architect, commit-check, plan)
 - 10 skill templates (review, implement, plan, solve, fix, refine, conventions, scope-resolver, gemini, setup)
@@ -202,6 +203,7 @@ python3 -m pytest tests/ -v --cov=. --cov-report=term-missing
 ```
 
 Tests use fixtures in `tests/fixtures/`:
+
 - `sample-toolkit.toml` — Example config
 - `adversarial-toolkit.toml` — Edge cases
 - `settings-*.json` — Base, stack, and project settings
@@ -279,7 +281,7 @@ Run: make test-changed
 ## Common Issues
 
 | Issue | Solution |
-|-------|----------|
+| ------- | ---------- |
 | Shellcheck errors | Run `shellcheck -x -S warning <file>` and fix warnings |
 | Python tests fail | Check fixtures in `tests/fixtures/`, verify tomllib import |
 | Settings merge wrong | Check deterministic sorting in `generate-settings.py` |
@@ -308,7 +310,7 @@ Hooks and scripts read from:
 ## Documentation
 
 | File | Purpose |
-|------|---------|
+| ------ | --------- |
 | `README.md` | Quick start guide and project overview |
 | `docs/reference.md` | Full configuration reference (CLI, hooks, agents, skills, stacks) |
 | `docs/concepts.md` | Mental model explainer (2-minute read) |

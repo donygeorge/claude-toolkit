@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.9.0] - 2026-02-16
+
+### Added
+
+- **Commit skill**: `/commit` skill creates a local commit with only files touched in the current session that are uncommitted; uses haiku model for fast, cheap execution; auto-generates commit message from diff; does nothing if there are no uncommitted session files
+
 ## [1.8.0] - 2026-02-16
 
 ### Added

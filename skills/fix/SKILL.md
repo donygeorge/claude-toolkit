@@ -45,12 +45,14 @@ Systematic bug fix workflow: root-cause, fix, validate, scan for similar issues,
 ### Step 3: Validate the Fix
 
 1. **Run tests**:
+
    ```bash
    # Run project test command for changed files
    make test
    # Run linter
    make lint
    ```
+
 2. **If tests fail**, fix them -- determine if the test was wrong or if the fix introduced a regression
 3. **If the change touches shared code**, run the full test suite
 
@@ -70,6 +72,7 @@ Systematic bug fix workflow: root-cause, fix, validate, scan for similar issues,
 ### Step 6: Add Tests (If Relevant)
 
 Add a test ONLY if:
+
 - The bug could recur (not a one-off typo)
 - No existing test covers this code path
 - The test is simple and targeted
@@ -91,7 +94,7 @@ Write commit message file first, then use -F to avoid guard hook issues.
 
 After completing all steps, provide:
 
-```
+```text
 ## Fix Summary
 - **Bug**: <what was broken>
 - **Root cause**: <why it was broken>

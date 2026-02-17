@@ -17,7 +17,7 @@ Address 47 findings from a 4-agent deep review (Senior Architect, DX Prototyper,
 ## Findings Reference
 
 | ID | Severity | Title | Milestone |
-|----|----------|-------|-----------|
+| ---- | ---------- | ------- | ----------- |
 | C1 | Critical | No tests for hook scripts | M1 |
 | C2 | Critical | Command injection via unquoted variables in hooks | M1 |
 | C3 | Critical | Config cache injection (TOML → bash) | M2 |
@@ -77,6 +77,7 @@ Hooks intentionally omit strict mode so they degrade gracefully (exit 0 on error
 - Document the rationale in a comment header block
 
 **For each hook, verify**:
+
 - [ ] Has `set -u` (or documents why not)
 - [ ] All variables have defaults via `${VAR:-default}` pattern
 - [ ] No undefined variable can silently produce wrong results
@@ -156,6 +157,7 @@ _run_hook() {
 **Tests to include (minimum)**:
 
 Guard-destructive tests:
+
 - [ ] Blocks `git push`
 - [ ] Blocks `git reset --hard`
 - [ ] Blocks `rm -rf .`
@@ -167,6 +169,7 @@ Guard-destructive tests:
 - [ ] Respects `TOOLKIT_GUARD_ENABLED=false`
 
 Auto-approve tests:
+
 - [ ] Auto-approves Read/Glob/Grep tools
 - [ ] Auto-approves safe bash commands (ls, cat, grep)
 - [ ] Does NOT auto-approve git commit/add/push
@@ -176,11 +179,13 @@ Auto-approve tests:
 - [ ] Rejects writes outside project scope
 
 Guard-sensitive-write tests:
+
 - [ ] Blocks writes to `.env`
 - [ ] Blocks writes to `credentials.json`
 - [ ] Allows writes to normal source files
 
 Edge cases:
+
 - [ ] Empty JSON input doesn't crash any hook
 - [ ] Missing jq falls back gracefully (or exits 0)
 - [ ] Malformed JSON doesn't crash hooks
@@ -431,6 +436,7 @@ hook_info() { echo "[toolkit:$(basename "$0" .sh)] $*" >&2; }
 Replace duplicated `INPUT=$(cat)` + jq parsing + `deny()` helper with calls to `hook_read_input` and `hook_deny`. Keep the hooks focused on their matching logic only.
 
 **Migration pattern** (for each hook):
+
 1. Add `source "$(dirname "$0")/../lib/hook-utils.sh"` after `_config.sh`
 2. Replace `INPUT=$(cat) ... jq parsing` with `hook_read_input`
 3. Replace local `deny()` with `hook_deny`
@@ -458,6 +464,7 @@ fi
 ```
 
 Also add a CI/linting check (documented in CLAUDE.md) to flag bash 4+ features:
+
 - No associative arrays (`declare -A`)
 - No `mapfile`/`readarray`
 - No `${var,,}` lowercasing
@@ -500,6 +507,7 @@ indent_style = tab
 **Files to modify**: All hooks
 
 Establish pattern:
+
 - Errors: `hook_error "message"` → `[toolkit:hook-name] ERROR: message` on stderr
 - Warnings: `hook_warn "message"` → `[toolkit:hook-name] WARN: message` on stderr
 - Info: `hook_info "message"` → `[toolkit:hook-name] message` on stderr
@@ -530,6 +538,7 @@ Establish pattern:
 ### 4.1 Extract subcommands to `lib/cmd-*.sh`
 
 **Files to create**:
+
 - `lib/cmd-init.sh` (~280 lines, extracted from toolkit.sh lines 109-388)
 - `lib/cmd-update.sh` (~110 lines, extracted from toolkit.sh lines 394-503)
 - `lib/cmd-customize.sh` (~42 lines, extracted from toolkit.sh lines 568-609)
@@ -538,6 +547,7 @@ Establish pattern:
 - `lib/cmd-generate-settings.sh` (~80 lines, extracted from toolkit.sh lines 891-969)
 
 **Files to modify**:
+
 - `toolkit.sh` — becomes a thin dispatcher (~100 lines): path resolution, helper functions, source commands, dispatch
 
 ### 4.2 Extract `cmd_init` internal helpers
@@ -711,6 +721,7 @@ git -C "$PROJECT_DIR" diff --stat HEAD~1 -- .claude/toolkit/ 2>/dev/null || true
 **Files to modify**: `generate-settings.py`
 
 The current array dedup (lines 238-247) correctly deduplicates. Verify edge cases:
+
 - Mixed type arrays (string + int) — currently handled via `repr()` key
 - Empty arrays — verify concat with empty produces correct result
 - Add test cases for these edge cases in `test_generate_settings.py`
@@ -775,6 +786,7 @@ The README now has a Quick Start section (added by bootstrap-setup M3), but at 4
 **Files to create**: `CONTRIBUTING.md`
 
 Cover:
+
 - How to add a new hook
 - How to add a new agent
 - How to add a new skill
@@ -839,6 +851,7 @@ cmd_explain() {
 **Files to modify**: `templates/stacks/` directory, `generate-settings.py`
 
 Make adding a new stack require only dropping a JSON file:
+
 - Each stack JSON gets a `_meta` key (ignored by merge) with description and required tools
 - `toolkit.sh status` auto-discovers available stacks from the directory
 - Document the stack file format in `CONTRIBUTING.md`
@@ -859,6 +872,7 @@ Make adding a new stack require only dropping a JSON file:
 **Files to modify**: `templates/settings-base.json`, `hooks/_config.sh`
 
 Allow projects to add custom hooks in `.claude/hooks-custom/`:
+
 - `_config.sh` checks for and sources custom hooks directory
 - Settings merge includes custom hooks alongside toolkit hooks
 - Document in `CONTRIBUTING.md`
@@ -899,6 +913,7 @@ Review and consolidate overlapping fixtures. Remove duplicated test data.
 **Files to modify**: `hooks/smart-context.py`, `smart-context/framework.py`
 
 Make smart-context a standalone module that can be used or replaced independently:
+
 - Remove direct `_config.sh` dependencies from the Python module
 - Accept configuration via CLI arguments instead of environment variables
 - Add `--help` and `--version` flags
@@ -953,7 +968,7 @@ M7 is the final polish pass.
 ## Risks & Mitigations
 
 | Risk | Mitigation |
-|------|------------|
+| ------ | ------------ |
 | Migrating hooks to shared utils breaks behavior | Hook test framework (M1) catches regressions before M3 migration |
 | Modularizing toolkit.sh introduces bugs | CLI integration tests already exist; run before/after |
 | Security hardening is too aggressive | Each guard change is tested with hook tests; dry-run mode provides safety net |

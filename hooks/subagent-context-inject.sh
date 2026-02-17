@@ -34,32 +34,29 @@ VERSION=$(cat "$VERSION_FILE" 2>/dev/null || echo "unknown")
 MOD_FILES=$(git status --porcelain 2>/dev/null | head -20 | awk '{print $2}')
 
 # =============================================================================
-# 2. Detect active plan/solve/implement state
+# 2. Detect active orchestration state (config-driven, not hardcoded)
 # =============================================================================
 ACTIVE_STATE=""
 
-# Check for active implement execution
-LATEST_EXECUTE=$(ls -td artifacts/execute/*/M*/ 2>/dev/null | head -1)
-if [ -n "$LATEST_EXECUTE" ]; then
-  PLAN_NAME=$(echo "$LATEST_EXECUTE" | sed 's|artifacts/execute/\([^/]*\)/.*|\1|')
-  MILESTONE=$(echo "$LATEST_EXECUTE" | sed 's|.*/\(M[0-9]*\)/.*|\1|')
-  ACTIVE_STATE="Active implement: $PLAN_NAME $MILESTONE"
-fi
-
-# Check for active solve (GitHub issue)
-if [ -f "artifacts/solve/active.json" ]; then
-  if command -v jq >/dev/null 2>&1; then
-    ISSUE=$(jq -r '.issue_number // empty' artifacts/solve/active.json 2>/dev/null)
-    [ -n "$ISSUE" ] && ACTIVE_STATE="${ACTIVE_STATE:+$ACTIVE_STATE | }Active solve: issue #$ISSUE"
+# Use configured state directories (same as pre-compact.sh)
+while read -r STATE_DIR; do
+  [ -z "$STATE_DIR" ] && continue
+  if [ -d "$STATE_DIR/execute" ]; then
+    LATEST_PLAN=$(ls -t "$STATE_DIR"/execute/*/plan_state.json 2>/dev/null | head -1)
+    if [ -n "$LATEST_PLAN" ] && command -v jq >/dev/null 2>&1; then
+      PLAN_NAME=$(jq -r '.plan_name // empty' "$LATEST_PLAN" 2>/dev/null)
+      PLAN_MS=$(jq -r '.current_milestone // empty' "$LATEST_PLAN" 2>/dev/null)
+      [ -n "$PLAN_NAME" ] && ACTIVE_STATE="${ACTIVE_STATE:+$ACTIVE_STATE | }Active implement: $PLAN_NAME $PLAN_MS"
+    fi
   fi
-fi
-
-# Check for active refine
-LATEST_REFINE=$(ls -td artifacts/refine/*/ 2>/dev/null | head -1)
-if [ -n "$LATEST_REFINE" ]; then
-  REFINE_SCOPE=$(basename "$LATEST_REFINE")
-  ACTIVE_STATE="${ACTIVE_STATE:+$ACTIVE_STATE | }Active refine: $REFINE_SCOPE"
-fi
+  if [ -d "$STATE_DIR/refine" ]; then
+    LATEST_REFINE=$(ls -t "$STATE_DIR"/refine/*/*/state.json 2>/dev/null | head -1)
+    if [ -n "$LATEST_REFINE" ] && command -v jq >/dev/null 2>&1; then
+      REFINE_SCOPE=$(jq -r '.scope // empty' "$LATEST_REFINE" 2>/dev/null)
+      [ -n "$REFINE_SCOPE" ] && ACTIVE_STATE="${ACTIVE_STATE:+$ACTIVE_STATE | }Active refine: $REFINE_SCOPE"
+    fi
+  fi
+done < <(toolkit_iterate_array "$TOOLKIT_HOOKS_COMPACT_STATE_DIRS")
 
 # =============================================================================
 # 3. Build context injection

@@ -300,18 +300,6 @@
         ]
       }
     ],
-    "SubagentStop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/toolkit/hooks/subagent-quality-gate.sh",
-            "timeout": 15000,
-            "statusMessage": "Validating agent output..."
-          }
-        ]
-      }
-    ],
     "SubagentStart": [
       {
         "hooks": [

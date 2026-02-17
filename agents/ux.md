@@ -49,16 +49,19 @@ Scope Bundle with `files`, `entrypoints.screens`
 Search for missing accessibility attributes using the **Grep tool** (NOT bash grep):
 
 For web projects:
+
 - Check all interactive elements have proper ARIA labels
 - Verify form elements have associated labels
 - Check buttons have meaningful text or aria-label
 
 For mobile projects (iOS/Swift):
+
 - Check every `Button` has `.accessibilityIdentifier()`
 - Check every `TextField` has identifier
 - Check every `Toggle`, `Slider`, `Picker` has identifier
 
 For mobile projects (Android/Kotlin):
+
 - Check `contentDescription` on interactive elements
 - Verify `importantForAccessibility` settings
 

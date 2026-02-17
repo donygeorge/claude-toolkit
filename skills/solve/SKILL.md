@@ -64,6 +64,7 @@ defaults:
 ```
 
 When multiple issues are specified:
+
 - Issues are analyzed together for efficiency
 - Code fixes are combined where logical
 - A single commit is created with references to all issues
@@ -72,7 +73,7 @@ When multiple issues are specified:
 ## Arguments
 
 | Argument | Description |
-|----------|-------------|
+| ---------- | ------------- |
 | `<issue_numbers>` | One or more GitHub issue numbers (comma or space separated) |
 | `--plan-only` | Create plan but don't implement (for review) |
 | `--skip-review` | Skip review at end |
@@ -90,6 +91,7 @@ gh issue view <number> --json title,body,labels,state,comments
 ```
 
 Extract from each issue:
+
 - Title and description
 - Labels
 - Comments (may contain logs, screenshots, reproduction steps)
@@ -104,6 +106,7 @@ gh issue list --search "<key terms from title>" --state all --limit 10
 ### Step 2: Download & Analyze Attachments
 
 For any images referenced in issue body:
+
 1. Download images to temporary directory
 2. Validate image files before reading
 3. Analyze screenshots for visual context
@@ -132,6 +135,7 @@ Based on issue labels, identify relevant code areas using Grep/Glob/Read tools.
 ### Step 5: Create Plan
 
 Design the implementation:
+
 - For **bugs**: Identify root cause, minimal fix, add regression test
 - For **features**: Follow existing patterns, design with tests
 - For **crashes**: Defensive fix, error handling
@@ -141,6 +145,7 @@ If `--plan-only` is passed, stop here.
 ### Step 6: Implement
 
 Make changes following project conventions:
+
 - Match existing code style
 - Use appropriate logging
 - Handle errors gracefully

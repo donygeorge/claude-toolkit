@@ -50,42 +50,42 @@ defaults:
 
 ## Architecture
 
-```
+```text
 +---------------------------------------------------------------------+
-|                     REFINE ORCHESTRATOR                               |
-|                                                                       |
-|  +---------+    +----------------------------------------------+     |
-|  | Scope   |--->|              ITERATION LOOP                   |     |
-|  | Resolve |    |                                                |     |
-|  +---------+    |  +---------+  +---------+  +-------------+    |     |
-|                  |  | Phase A |  | Phase B |  |  Phase C     |    |     |
-|                  |  | EVALUATE|->|CONVERGE |->|  FIX         |    |     |
-|                  |  | (Task())|  | CHECK   |  |  (Task())    |    |     |
-|                  |  +---------+  +----+----+  +------+------+    |     |
-|                  |                     |              |            |     |
-|                  |              +------+------+ +-----+-------+   |     |
-|                  |              | CONVERGED?  | |  Phase D    |   |     |
-|                  |              | -> Report   | |  VALIDATE   |   |     |
-|                  |              +-------------+ |  (reviewer  |   |     |
-|                  |                              |   + qa)     |   |     |
-|                  |                              +------+------+   |     |
-|                  |                                     |           |     |
-|                  |                              +------+------+   |     |
-|                  |                              |  Phase E    |   |     |
-|                  |                              |  COMMIT     |   |     |
-|                  |                              +------+------+   |     |
-|                  |                                     |           |     |
-|                  |                              +------+------+   |     |
-|                  |                              |  Phase F    |   |     |
-|                  |                              |  UPDATE     |   |     |
-|                  |                              |  STATE      |   |     |
-|                  |                              +-------------+   |     |
-|                  +----------------------------------------------+     |
-|                                                                       |
-|  +--------------------------------------------------------------+    |
-|  |                  CONVERGENCE REPORT                            |    |
-|  |  Clean-room verification -> Final summary                     |    |
-|  +--------------------------------------------------------------+    |
+| REFINE ORCHESTRATOR |
+|  |
+| +---------+    +----------------------------------------------+ |
+|  | Scope | ---> | ITERATION LOOP |  |
+|  | Resolve |  |  |  |
+| +---------+ | +---------+  +---------+  +-------------+ |  |
+|  |  | Phase A |  | Phase B |  | Phase C |  |  |
+|  |  | EVALUATE | -> | CONVERGE | -> | FIX |  |  |
+|  |  | (Task()) |  | CHECK |  | (Task()) |  |  |
+|  | +---------+  +----+----+  +------+------+ |  |
+|  |  |  |  |  |
+|  | +------+------+ +-----+-------+ |  |
+|  |  | CONVERGED? |  | Phase D |  |  |
+|  |  | -> Report |  | VALIDATE |  |  |
+|  | +-------------+ | (reviewer |  |  |
+|  |  | + qa) |  |  |
+|  | +------+------+ |  |
+|  |  |  |  |
+|  | +------+------+ |  |
+|  |  | Phase E |  |  |
+|  |  | COMMIT |  |  |
+|  | +------+------+ |  |
+|  |  |  |  |
+|  | +------+------+ |  |
+|  |  | Phase F |  |  |
+|  |  | UPDATE |  |  |
+|  |  | STATE |  |  |
+|  | +-------------+ |  |
+| +----------------------------------------------+ |
+|  |
+| +--------------------------------------------------------------+ |
+|  | CONVERGENCE REPORT |  |
+|  | Clean-room verification -> Final summary |  |
+| +--------------------------------------------------------------+ |
 +---------------------------------------------------------------------+
 ```
 
@@ -98,7 +98,7 @@ The refine skill infers scope from keywords in the user's prompt. Scope resoluti
 <!-- Customize these keyword mappings for your project -->
 
 | Keywords in prompt | Inferred scope | Files |
-|-------------------|----------------|-------|
+| ------------------- | ---------------- | ------- |
 | backend, server, python, service | `cross:backend` | `src/**/*.py` or `app/**/*.py` |
 | tests, testing, pytest | `cross:tests` | `tests/**/*.py` |
 | frontend, web, static, js | `cross:frontend` | `src/**/*.{js,ts}` or `app/static/**` |
@@ -119,7 +119,7 @@ All state is persisted to enable resume capability.
 
 ### State Directory
 
-```
+```text
 artifacts/refine/<scope-slug>/<run-id>/
 |-- state.json
 |-- findings.json
@@ -153,6 +153,7 @@ For each iteration (1 to max_iterations):
 Spawn a fresh Task() agent (opus model) to evaluate the scope.
 
 **Agent evaluates for**:
+
 - **Correctness**: Bugs, logic errors, edge cases, null handling
 - **Code quality**: Dead code, unused imports, unclear naming, missing type hints
 - **Consistency**: Pattern violations, style inconsistencies
@@ -177,6 +178,7 @@ Spawn a fresh Task() agent (opus model) to evaluate the scope.
 Spawn a fresh Task() agent to fix findings.
 
 **Fix prioritization**:
+
 1. Critical and high severity first
 2. Trivial and small effort preferred
 3. Skip `large` effort findings (defer them)
@@ -185,6 +187,7 @@ Spawn a fresh Task() agent to fix findings.
 #### Phase D: Validate
 
 Run validation:
+
 1. Project test command for changed files
 2. Linter
 3. If validation fails: fix failures (max 3 attempts)
@@ -204,14 +207,16 @@ Stage only modified files and commit.
 ## Convergence Intelligence
 
 ### Clean Eval
+
 The strongest signal. If a fresh evaluator finds nothing, the scope is clean.
 
 ### Plateau Detection
+
 Track `new_findings` per iteration. If last 2 iterations both had fewer than 2 new findings, diminishing returns.
 
 ### Deferred Findings Lifecycle
 
-```
+```text
 Finding F003 in iteration 1 -> deferred (count: 1)
 Finding F003 in iteration 2 -> deferred again (count: 2)
 Finding F003 in iteration 3 -> DROPPED (exceeded threshold)
@@ -255,7 +260,7 @@ Includes: scope, summary, iteration history, clean-room verification results, de
 ## Error Handling
 
 | Error | Recovery |
-|-------|----------|
+| ------- | ---------- |
 | Eval agent fails | Retry once; if 2 consecutive failures, stop |
 | Fix agent fails | Defer unfixed findings, continue |
 | Validation fails | Max 3 fix attempts; if still failing, revert and defer |
@@ -267,7 +272,7 @@ Includes: scope, summary, iteration history, clean-room verification results, de
 ## Diff from /review
 
 | Aspect | /review | /refine |
-|--------|---------|---------|
+| -------- | --------- | --------- |
 | Evaluation | Single pass | Multiple iterations |
 | Fixes | Reports findings only | Fixes findings automatically |
 | Convergence | N/A | Detects when scope is clean |

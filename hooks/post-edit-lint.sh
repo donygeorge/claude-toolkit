@@ -59,8 +59,9 @@ FALLBACK="${!VAR_FALLBACK:-}"
 resolve_cmd() {
   local CMD="$1"
   local FB="$2"
-  local CMD_FIRST
-  CMD_FIRST=$(echo "$CMD" | awk '{print $1}')
+  # Extract first word using parameter expansion (no subprocess)
+  local CMD_FIRST="${CMD%% *}"
+  [ -z "$CMD_FIRST" ] && { echo ""; return; }
   if [ -x "$CMD_FIRST" ] || command -v "$CMD_FIRST" >/dev/null 2>&1; then
     echo "$CMD"
   elif [ -n "$FB" ] && command -v "$FB" >/dev/null 2>&1; then

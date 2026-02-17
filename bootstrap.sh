@@ -188,8 +188,14 @@ import re, sys
 toml_file = sys.argv[1]
 name = sys.argv[2]
 content = open(toml_file).read()
-content = re.sub(r'name\s*=\s*\"[^\"]*\"', 'name = \"' + name + '\"', content, count=1)
-open(toml_file, 'w').write(content)
+new_content = re.sub(r'name\s*=\s*\"[^\"]*\"', 'name = \"' + name + '\"', content, count=1)
+if new_content == content:
+    # Regex didn't match — try single-quote variant
+    new_content = re.sub(r\"name\s*=\s*'[^']*'\", 'name = \"' + name + '\"', content, count=1)
+if new_content == content:
+    print('Warning: Could not patch project.name — edit .claude/toolkit.toml manually', file=sys.stderr)
+    sys.exit(0)
+open(toml_file, 'w').write(new_content)
 " "$TOML_FILE" "$PROJECT_NAME"
     echo "  Patched project.name = \"${PROJECT_NAME}\""
     NEEDS_REGEN=true
@@ -204,8 +210,11 @@ stacks_str = sys.argv[2]
 stacks = [s.strip() for s in stacks_str.split(',')]
 toml_array = '[' + ', '.join('\"' + s + '\"' for s in stacks) + ']'
 content = open(toml_file).read()
-content = re.sub(r'stacks\s*=\s*\[[^\]]*\]', 'stacks = ' + toml_array, content, count=1)
-open(toml_file, 'w').write(content)
+new_content = re.sub(r'stacks\s*=\s*\[[^\]]*\]', 'stacks = ' + toml_array, content, count=1)
+if new_content == content:
+    print('Warning: Could not patch project.stacks — edit .claude/toolkit.toml manually', file=sys.stderr)
+    sys.exit(0)
+open(toml_file, 'w').write(new_content)
 " "$TOML_FILE" "$STACKS"
     echo "  Patched project.stacks = [${STACKS}]"
     NEEDS_REGEN=true

@@ -90,7 +90,7 @@ Add to `.claude/settings.json`:
 Main entry point. Call this from your hook script.
 
 | Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
+| ----------- | ------ | --------- | ------------- |
 | `skill_commands` | `list[tuple]` | `[]` | Slash command regex -> SKILL.md path mappings |
 | `context_dir_name` | `str` | `"docs/context"` | Relative path to context files |
 | `context_file_suffix` | `str` | `"-domain.md"` | Suffix for context files |

@@ -36,17 +36,17 @@ case "$HOOK_TOOL" in
   WebSearch|WebFetch)
     hook_approve_and_persist "$HOOK_TOOL"
     ;;
-  # MCP tools: codex, playwright, context7
-  mcp__codex__codex|mcp__codex__codex-reply)
-    hook_approve_and_persist "$HOOK_TOOL"
-    ;;
-  mcp__plugin_playwright_playwright__*)
-    hook_approve_and_persist "$HOOK_TOOL"
-    ;;
-  mcp__plugin_context7_context7__*)
-    hook_approve_and_persist "$HOOK_TOOL"
-    ;;
 esac
+
+# --- MCP Tools: Auto-approve by configurable prefix ---
+while read -r MCP_PREFIX; do
+  [ -z "$MCP_PREFIX" ] && continue
+  case "$HOOK_TOOL" in
+    "${MCP_PREFIX}"*)
+      hook_approve_and_persist "$HOOK_TOOL"
+      ;;
+  esac
+done < <(toolkit_iterate_array "$TOOLKIT_HOOKS_AUTO_APPROVE_MCP_TOOL_PREFIXES")
 
 # --- Write/Edit: One-Time Approve Within Project Scope ---
 
@@ -84,8 +84,9 @@ fi
 
 if [ "$HOOK_TOOL" = "Bash" ] && [ -n "$HOOK_COMMAND" ]; then
 
-  # Extract first word of command (handles leading whitespace)
-  CMD_FIRST=$(echo "$HOOK_COMMAND" | awk '{print $1}')
+  # Extract first word of command using parameter expansion
+  CMD_FIRST="${HOOK_COMMAND#"${HOOK_COMMAND%%[! ]*}"}"  # strip leading spaces
+  CMD_FIRST="${CMD_FIRST%% *}"                           # take first word
 
   # --- Always-Approve + Persist: make and venv commands ---
   case "$CMD_FIRST" in

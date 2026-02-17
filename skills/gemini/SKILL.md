@@ -49,15 +49,17 @@ When the skill is triggered:
 
 1. **Parse the prompt** from the user's command
 2. **Invoke Gemini CLI** using:
+
    ```bash
    gemini -p "<prompt>" --output-format text
    ```
+
 3. **Return the response** to the conversation
 
 ### Available Options
 
 | Option | Description | Example |
-|--------|-------------|---------|
+| -------- | ------------- | --------- |
 | `--model <name>` | Override model | `--model flash`, `--model pro` |
 | `--yolo` | Auto-accept all actions (for agentic tasks) | `/gemini --yolo fix this bug` |
 | `--sandbox` | Run in sandbox mode | `/gemini --sandbox explore the codebase` |
@@ -67,7 +69,7 @@ When the skill is triggered:
 The Gemini CLI uses simple aliases (it handles versioning internally):
 
 | Alias | Description |
-|-------|-------------|
+| ------- | ------------- |
 | `flash` | Fast model |
 | `pro` | Reasoning model |
 | (default) | Latest flagship model |
@@ -134,7 +136,7 @@ For code-related queries, include relevant context:
 ### Error Handling
 
 | Error | Action |
-|-------|--------|
+| ------- | -------- |
 | Auth expired | Prompt user to run `gemini` in terminal to re-auth |
 | Network error | Report error, suggest retry |
 | Rate limit | Wait and retry (Gemini CLI handles this) |
@@ -142,6 +144,7 @@ For code-related queries, include relevant context:
 ## When to Use Gemini
 
 Good use cases:
+
 - **Second opinions** on architecture decisions
 - **Alternative approaches** to a problem
 - **Research** on topics outside Claude's training
@@ -149,6 +152,7 @@ Good use cases:
 - **Quick lookups** when web search isn't enough
 
 Not ideal for:
+
 - Tasks requiring codebase access (use Claude Code directly)
 - Tasks needing tool use (editing files, running tests)
 - Long conversations (Gemini CLI is one-shot by default)
@@ -156,7 +160,7 @@ Not ideal for:
 ## Comparison: Gemini vs Codex
 
 | Aspect | Gemini (this skill) | Codex (MCP) |
-|--------|--------------------|----|
+| -------- | -------------------- | ---- |
 | Invocation | Bash CLI | MCP tool |
 | Auth | OAuth (existing) | API key |
 | Mode | One-shot | Conversational |

@@ -11,7 +11,7 @@ The toolkit CLI lives at `.claude/toolkit/toolkit.sh`.
 Initialize the toolkit in your project. Symlinks agents and generic rules, copies skills and rule templates, generates settings.
 
 | Flag | Description |
-|------|-------------|
+| ------ | ------------- |
 | `--from-example` | Create `toolkit.toml` from the bundled example |
 | `--force` | Overwrite existing files (re-symlink agents, re-copy skills) |
 | `--dry-run` | Show what would be created without mutating any files |
@@ -21,7 +21,7 @@ Initialize the toolkit in your project. Symlinks agents and generic rules, copie
 Update the toolkit from the remote repository via git subtree pull. Managed files are refreshed; customized files are preserved.
 
 | Flag | Description |
-|------|-------------|
+| ------ | ------------- |
 | `version` | Specific version tag to pull (e.g., `v1.2.0`) |
 | `--latest` | Pull the latest `main` branch instead of a tagged release |
 | `--force` | Skip the uncommitted-changes check |
@@ -77,7 +77,7 @@ Show usage information for all subcommands.
 ### Global Flags
 
 | Flag | Description |
-|------|-------------|
+| ------ | ------------- |
 | `--dry-run` | Available for `init` and `generate-settings`. Can be placed before the subcommand. |
 
 ---
@@ -91,7 +91,7 @@ All configuration lives in `.claude/toolkit.toml`. Below is every section and ke
 Toolkit-level metadata.
 
 | Key | Type | Default | Description |
-|-----|------|---------|-------------|
+| ----- | ------ | --------- | ------------- |
 | `remote_url` | string | — | Git remote URL for the toolkit repo (used by `update`) |
 
 ### `[project]`
@@ -99,7 +99,7 @@ Toolkit-level metadata.
 Project identification.
 
 | Key | Type | Default | Description |
-|-----|------|---------|-------------|
+| ----- | ------ | --------- | ------------- |
 | `name` | string | — | Display name used in session banners and notifications |
 | `version_file` | string | `"VERSION"` | Path to file containing the current version |
 | `stacks` | array | `[]` | Technology stacks: `"python"`, `"ios"`, `"typescript"` |
@@ -109,7 +109,7 @@ Project identification.
 Environment validation (runs once per session start).
 
 | Key | Type | Default | Description |
-|-----|------|---------|-------------|
+| ----- | ------ | --------- | ------------- |
 | `python_min_version` | string | `"3.11"` | Minimum Python version (major.minor) |
 | `required_tools` | array | `[]` | Tools that must be installed (setup warns if missing) |
 | `optional_tools` | array | `[]` | Tools that are nice to have (info-level if missing) |
@@ -120,7 +120,7 @@ Environment validation (runs once per session start).
 Per-extension lint/format commands. `<ext>` is the file extension without dot (e.g., `py`, `ts`, `swift`).
 
 | Key | Type | Default | Description |
-|-----|------|---------|-------------|
+| ----- | ------ | --------- | ------------- |
 | `cmd` | string | — | Lint check command (receives file path as argument) |
 | `fmt` | string | — | Format command (receives file path as argument) |
 | `fallback` | string | — | Fallback command name if `cmd` is not found |
@@ -139,7 +139,7 @@ fallback = "ruff"
 Quality gates checked before task completion. Each gate runs a command; if it exits non-zero, the task is blocked.
 
 | Key | Type | Default | Description |
-|-----|------|---------|-------------|
+| ----- | ------ | --------- | ------------- |
 | `glob` | string | — | File glob pattern that triggers this gate |
 | `cmd` | string | — | Command to run (exit 0 = pass) |
 | `timeout` | integer | `90` | Max seconds before the gate is killed |
@@ -162,7 +162,7 @@ timeout = 90
 Paths and commands auto-approved without prompting Claude Code's permission dialog.
 
 | Key | Type | Default | Description |
-|-----|------|---------|-------------|
+| ----- | ------ | --------- | ------------- |
 | `write_paths` | array | `[]` | Glob patterns for Write/Edit paths to auto-approve |
 | `bash_commands` | array | `[]` | Bash command prefixes to auto-approve |
 
@@ -171,7 +171,7 @@ Paths and commands auto-approved without prompting Claude Code's permission dial
 Context injected into subagent sessions (spawned by Claude Code for multi-agent work).
 
 | Key | Type | Default | Description |
-|-----|------|---------|-------------|
+| ----- | ------ | --------- | ------------- |
 | `critical_rules` | array | `[]` | Rules injected into every subagent |
 | `available_tools` | array | `[]` | Tools/capabilities available in this project |
 | `stack_info` | string | `""` | Short tech stack description for subagents |
@@ -181,7 +181,7 @@ Context injected into subagent sessions (spawned by Claude Code for multi-agent 
 Pre-compact state preservation. Controls what gets saved before Claude Code compacts context.
 
 | Key | Type | Default | Description |
-|-----|------|---------|-------------|
+| ----- | ------ | --------- | ------------- |
 | `source_dirs` | array | `["app", "src"]` | Directories scanned for recently modified files |
 | `source_extensions` | array | `["*.py"]` | File extensions to include |
 | `state_dirs` | array | `["artifacts"]` | Directories checked for active orchestration state |
@@ -191,7 +191,7 @@ Pre-compact state preservation. Controls what gets saved before Claude Code comp
 Session cleanup thresholds.
 
 | Key | Type | Default | Description |
-|-----|------|---------|-------------|
+| ----- | ------ | --------- | ------------- |
 | `agent_memory_max_lines` | integer | `250` | Max lines in agent memory before truncation |
 | `hook_log_max_lines` | integer | `500` | Max lines in hook log before pruning |
 
@@ -200,7 +200,7 @@ Session cleanup thresholds.
 Platform-aware notification settings.
 
 | Key | Type | Default | Description |
-|-----|------|---------|-------------|
+| ----- | ------ | --------- | ------------- |
 | `app_name` | string | `"Claude Code"` | Application name shown in notifications |
 | `permission_sound` | string | `"Blow"` | macOS sound for permission prompts (`"none"` for silent) |
 
@@ -213,21 +213,21 @@ All 16 hooks, grouped by purpose.
 ### Safety Guards
 
 | Hook | Event | Description |
-|------|-------|-------------|
-| `guard-destructive.sh` | PreToolUse | Blocks destructive git operations (`push`, `reset --hard`), dangerous `rm` patterns, SQL `DROP`/`TRUNCATE`, `eval`, and pipe-to-shell (`\| bash`) |
+| ------ | ------- | ------------- |
+| `guard-destructive.sh` | PreToolUse | Blocks destructive git operations (`push`, `reset --hard`), dangerous `rm` patterns, SQL `DROP`/`TRUNCATE`, `eval`, and pipe-to-shell (`\ \| bash`) |
 | `guard-sensitive-writes.sh` | PreToolUse | Blocks writes to `.env`, credentials, API keys, `.git/` internals, and toolkit config files |
 
 ### Automation
 
 | Hook | Event | Description |
-|------|-------|-------------|
+| ------ | ------- | ------------- |
 | `auto-approve-safe.sh` | PermissionRequest | Auto-approves read-only tools (Read, Glob, Grep), safe bash commands (ls, cat, grep, etc.), and configured write paths |
 | `post-edit-lint.sh` | PostToolUse | Runs linter/formatter asynchronously after file edits, using per-extension config from `toolkit.toml` |
 
 ### Quality Gates
 
 | Hook | Event | Description |
-|------|-------|-------------|
+| ------ | ------- | ------------- |
 | `task-completed-gate.sh` | TaskCompleted | Runs configured quality gates (lint, tests) before allowing task completion |
 | `classify-error.sh` | PostToolUseFailure | Classifies tool errors and suggests recovery strategies |
 | `verify-completion.sh` | Stop | Advisory warning about uncommitted changes when session ends |
@@ -235,7 +235,7 @@ All 16 hooks, grouped by purpose.
 ### Session Lifecycle
 
 | Hook | Event | Description |
-|------|-------|-------------|
+| ------ | ------- | ------------- |
 | `setup.sh` | SessionStart (once) | Validates development environment (Python version, required tools) |
 | `session-start.sh` | SessionStart | Loads project state and session context |
 | `session-end-cleanup.sh` | SessionEnd | Cleans temp files, truncates oversized logs and agent memory |
@@ -245,21 +245,21 @@ All 16 hooks, grouped by purpose.
 ### Subagent Management
 
 | Hook | Event | Description |
-|------|-------|-------------|
+| ------ | ------- | ------------- |
 | `subagent-context-inject.sh` | SubagentStart | Injects project context, critical rules, and stack info into subagent sessions |
 | `subagent-quality-gate.sh` | SubagentStop | Validates subagent output quality |
 
 ### Context & Notifications
 
 | Hook | Event | Description |
-|------|-------|-------------|
+| ------ | ------- | ------------- |
 | `smart-context.py` | UserPromptSubmit | Keyword-based domain context loading (Python script) |
 | `notify.sh` | Notification | Platform-aware notifications for permission prompts and idle alerts (macOS `osascript`, Linux `notify-send`, CI silent) |
 
 ### Helpers (sourced, not standalone)
 
 | File | Purpose |
-|------|---------|
+| ------ | --------- |
 | `_config.sh` | Shared configuration sourced by all hooks. Reads `toolkit-cache.env`, sets `TOOLKIT_*` variables |
 
 ---
@@ -269,7 +269,7 @@ All 16 hooks, grouped by purpose.
 Generic agent prompts in `.claude/agents/`. These are symlinked from the toolkit.
 
 | Agent | File | Purpose |
-|-------|------|---------|
+| ------- | ------ | --------- |
 | Reviewer | `reviewer.md` | Adversarial code review: finds bugs, missing tests, security issues |
 | QA | `qa.md` | Test execution, validation, coverage analysis |
 | Security | `security.md` | Secrets scanning, SAST, dependency vulnerability checks |
@@ -287,7 +287,7 @@ Generic agent prompts in `.claude/agents/`. These are symlinked from the toolkit
 Skill templates in `.claude/skills/`. These are copied (not symlinked) so they can be customized.
 
 | Skill | Directory | Purpose |
-|-------|-----------|---------|
+| ------- | ----------- | --------- |
 | Setup | `setup-toolkit/` | Bootstrap claude-toolkit in a new project (9-phase orchestrator) |
 | Review Suite | `review-suite/` | Multi-agent code review orchestration |
 | Implement | `implement/` | Autonomous plan execution with milestone agents |
@@ -297,6 +297,7 @@ Skill templates in `.claude/skills/`. These are copied (not symlinked) so they c
 | Refine | `refine/` | Iterative evaluate-fix-validate convergence loop |
 | Conventions | `conventions/` | View coding conventions for a domain |
 | Scope Resolver | `scope-resolver/` | Resolve feature scopes for review targeting |
+| Commit | `commit/` | Commit uncommitted session changes with auto-generated message |
 | Gemini | `gemini/` | Second opinion from Google's model |
 
 ---
@@ -306,7 +307,7 @@ Skill templates in `.claude/skills/`. These are copied (not symlinked) so they c
 Stack overlays add technology-specific settings. Configure via `project.stacks` in `toolkit.toml`.
 
 | Stack | File | Adds |
-|-------|------|------|
+| ------- | ------ | ------ |
 | `python` | `templates/stacks/python.json` | Python-specific hook matchers, deny patterns for virtualenvs |
 | `ios` | `templates/stacks/ios.json` | iOS/Swift-specific hook matchers |
 | `typescript` | `templates/stacks/typescript.json` | TypeScript/Node-specific hook matchers, npm patterns |
@@ -316,7 +317,7 @@ Stack overlays add technology-specific settings. Configure via `project.stacks` 
 Applied automatically during `init` based on your stacks configuration.
 
 | Template | Stack | Provides |
-|----------|-------|----------|
+| ---------- | ------- | ---------- |
 | `python.md` | python | Python 3.11+ conventions, ruff, type hints |
 | `swift.md` | ios | SwiftUI, HealthKit/HomeKit patterns |
 | `typescript.md` | typescript | TypeScript/Node conventions |
@@ -362,7 +363,7 @@ The manifest also records SHA-256 hashes for drift detection and timestamps for 
 
 After initialization, your project's `.claude/` directory will contain:
 
-```
+```text
 .claude/
   toolkit.toml              # Your configuration
   toolkit-cache.env         # Generated bash env vars (cached from TOML)

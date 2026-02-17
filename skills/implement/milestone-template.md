@@ -3,12 +3,14 @@
 You are implementing milestone {milestone_id} from the {plan_name} plan.
 
 ## Context
+
 - **Plan file**: {plan_file}
 - **Milestone**: {milestone_id}
 - **Title**: {milestone_title}
 - **State directory**: artifacts/execute/{plan_name}/{milestone_id}/
 
 ## IMPORTANT LESSONS
+
 - Guard hooks may block commit messages containing certain patterns -- use `git commit -F <file>`
 - Write commit message to artifacts/execute/{plan_name}/{milestone_id}/commit-msg.txt first
 - Run commands separately (not chained with &&)
@@ -16,6 +18,7 @@ You are implementing milestone {milestone_id} from the {plan_name} plan.
 - Follow all project conventions from CLAUDE.md and .claude/rules/
 
 ## Your Output
+
 Write result to: `artifacts/execute/{plan_name}/{milestone_id}/result.json`
 
 ---
@@ -115,6 +118,7 @@ Update state.json after all layers complete: `phases_completed` += "implementati
 3. Run linter
 
 If tests fail:
+
 - Fix the failing tests (max 3 attempts)
 - If still failing after 3 attempts, record in state.json and exit
 

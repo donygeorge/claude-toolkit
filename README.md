@@ -90,7 +90,7 @@ git commit -m "Add claude-toolkit"
 The toolkit ships with a CLI at `.claude/toolkit/toolkit.sh`:
 
 | Command | Description |
-|---------|-------------|
+| --------- | ------------- |
 | `init [--force] [--from-example]` | Initialize toolkit in project |
 | `update [version] [--latest] [--force]` | Update toolkit from remote |
 | `customize <path>` | Convert managed file to customized |
@@ -126,7 +126,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, testing, and guide
 ## Documentation
 
 | Document | Description |
-|----------|-------------|
+| ---------- | ------------- |
 | [Toolkit Concepts](docs/concepts.md) | 2-minute mental model overview |
 | [Configuration Reference](docs/reference.md) | Full reference for all options, hooks, agents, skills |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Development guide and contribution guidelines |

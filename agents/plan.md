@@ -38,6 +38,7 @@ These tools are pre-authorized - use them without asking:
 ## Input
 
 You receive either:
+
 - A feature description from the user
 - A Scope Bundle with existing files for reference
 
@@ -150,6 +151,7 @@ Each milestone should have:
 ### Testing Strategy Section
 
 Include a dedicated testing section covering:
+
 - Unit tests: What to test, where tests live
 - Integration tests: API endpoint tests, database tests
 - UI tests: Playwright for web, platform tools for mobile
@@ -225,6 +227,7 @@ After creating the initial plan:
 This agent does not have gates - it produces plans for review.
 
 The plan is complete when:
+
 - All sections are filled out
 - Testing requirements are specific
 - Exit criteria are measurable

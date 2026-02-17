@@ -19,10 +19,24 @@ FAILED_NAMES=()
 TOOLKIT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 HOOKS_DIR="$TOOLKIT_DIR/hooks"
 
-# Create a temp project dir for tests
-TEST_PROJECT_DIR=$(mktemp -d)
-mkdir -p "$TEST_PROJECT_DIR/.claude"
-trap 'rm -rf "$TEST_PROJECT_DIR"' EXIT
+# Require jq for reliable JSON assertions
+if ! command -v jq >/dev/null 2>&1; then
+  echo "ERROR: jq is required for hook tests. Install jq and retry."
+  exit 1
+fi
+
+# Each test group gets a fresh temp dir for isolation.
+# _new_test_project creates a clean temp dir and registers cleanup.
+ALL_TEST_DIRS=()
+_new_test_project() {
+  TEST_PROJECT_DIR=$(mktemp -d)
+  mkdir -p "$TEST_PROJECT_DIR/.claude"
+  ALL_TEST_DIRS+=("$TEST_PROJECT_DIR")
+}
+trap 'for d in "${ALL_TEST_DIRS[@]}"; do rm -rf "$d"; done' EXIT
+
+# Create initial test project
+_new_test_project
 
 _test() {
   local name="$1"
@@ -103,25 +117,24 @@ _assert_stdout_matches() {
   fi
 }
 
-# Assert stdout contains deny decision
-# Note: jq may produce multiline output, so we collapse whitespace for matching
+# Assert stdout contains deny decision (using jq for reliable JSON parsing)
 _assert_denied() {
   local test_name="$1"
-  local flat
-  flat=$(echo "$HOOK_STDOUT" | tr -d '[:space:]')
-  if echo "$flat" | grep -qF '"permissionDecision":"deny"'; then
+  local decision
+  decision=$(echo "$HOOK_STDOUT" | jq -r '.hookSpecificOutput.permissionDecision // empty' 2>/dev/null)
+  if [ "$decision" = "deny" ]; then
     _pass
   else
-    _fail "$test_name (expected deny)"
+    _fail "$test_name (expected deny, got: $decision)"
   fi
 }
 
 # Assert stdout does NOT contain deny decision (allowed)
 _assert_allowed() {
   local test_name="$1"
-  local flat
-  flat=$(echo "$HOOK_STDOUT" | tr -d '[:space:]')
-  if echo "$flat" | grep -qF '"permissionDecision":"deny"'; then
+  local decision
+  decision=$(echo "$HOOK_STDOUT" | jq -r '.hookSpecificOutput.permissionDecision // empty' 2>/dev/null)
+  if [ "$decision" = "deny" ]; then
     _fail "$test_name (expected allow, got deny)"
   else
     _pass
@@ -131,12 +144,12 @@ _assert_allowed() {
 # Assert stdout contains approve decision
 _assert_approved() {
   local test_name="$1"
-  local flat
-  flat=$(echo "$HOOK_STDOUT" | tr -d '[:space:]')
-  if echo "$flat" | grep -qF '"behavior":"allow"'; then
+  local behavior
+  behavior=$(echo "$HOOK_STDOUT" | jq -r '.hookSpecificOutput.decision.behavior // empty' 2>/dev/null)
+  if [ "$behavior" = "allow" ]; then
     _pass
   else
-    _fail "$test_name (expected approve)"
+    _fail "$test_name (expected approve, got: $behavior)"
   fi
 }
 
@@ -145,23 +158,15 @@ _assert_approved() {
 # ============================================================================
 _bash_json() {
   local cmd="$1"
-  if command -v jq >/dev/null 2>&1; then
-    jq -n --arg cmd "$cmd" '{"tool_name":"Bash","tool_input":{"command":$cmd}}'
-  else
-    printf '{"tool_name":"Bash","tool_input":{"command":"%s"}}' "$cmd"
-  fi
+  jq -n --arg cmd "$cmd" '{"tool_name":"Bash","tool_input":{"command":$cmd}}'
 }
 
 # Build PreToolUse JSON for Read/Write/Edit tools
 _tool_json() {
   local tool="$1"
   local file_path="${2:-}"
-  if command -v jq >/dev/null 2>&1; then
-    jq -n --arg tool "$tool" --arg fp "$file_path" \
-      '{"tool_name":$tool,"tool_input":{"file_path":$fp}}'
-  else
-    printf '{"tool_name":"%s","tool_input":{"file_path":"%s"}}' "$tool" "$file_path"
-  fi
+  jq -n --arg tool "$tool" --arg fp "$file_path" \
+    '{"tool_name":$tool,"tool_input":{"file_path":$fp}}'
 }
 
 echo ""
@@ -258,6 +263,7 @@ echo ""
 # ============================================================================
 # auto-approve-safe.sh tests
 # ============================================================================
+_new_test_project
 echo "--- auto-approve-safe.sh ---"
 
 _test "Auto-approves Read tool"
@@ -294,8 +300,8 @@ _test "Does NOT auto-approve git commit"
 exit_code=0
 _run_hook "auto-approve-safe.sh" "$(_bash_json "git commit -m 'test'")" || exit_code=$?
 # Should exit 0 without printing an approve response
-flat_out=$(echo "$HOOK_STDOUT" | tr -d '[:space:]')
-if echo "$flat_out" | grep -qF '"behavior":"allow"'; then
+flat_out=$(echo "$HOOK_STDOUT" | jq -r '.hookSpecificOutput.decision.behavior // empty' 2>/dev/null)
+if [ "$flat_out" = "allow" ]; then
   _fail "Should not auto-approve git commit"
 else
   _pass
@@ -304,8 +310,8 @@ fi
 _test "Does NOT auto-approve git push"
 exit_code=0
 _run_hook "auto-approve-safe.sh" "$(_bash_json "git push origin main")" || exit_code=$?
-flat_out=$(echo "$HOOK_STDOUT" | tr -d '[:space:]')
-if echo "$flat_out" | grep -qF '"behavior":"allow"'; then
+flat_out=$(echo "$HOOK_STDOUT" | jq -r '.hookSpecificOutput.decision.behavior // empty' 2>/dev/null)
+if [ "$flat_out" = "allow" ]; then
   _fail "Should not auto-approve git push"
 else
   _pass
@@ -314,8 +320,8 @@ fi
 _test "Does NOT auto-approve npx"
 exit_code=0
 _run_hook "auto-approve-safe.sh" "$(_bash_json "npx create-react-app myapp")" || exit_code=$?
-flat_out=$(echo "$HOOK_STDOUT" | tr -d '[:space:]')
-if echo "$flat_out" | grep -qF '"behavior":"allow"'; then
+flat_out=$(echo "$HOOK_STDOUT" | jq -r '.hookSpecificOutput.decision.behavior // empty' 2>/dev/null)
+if [ "$flat_out" = "allow" ]; then
   _fail "Should not auto-approve npx"
 else
   _pass
@@ -324,8 +330,8 @@ fi
 _test "Does NOT auto-approve curl"
 exit_code=0
 _run_hook "auto-approve-safe.sh" "$(_bash_json "curl http://example.com")" || exit_code=$?
-flat_out=$(echo "$HOOK_STDOUT" | tr -d '[:space:]')
-if echo "$flat_out" | grep -qF '"behavior":"allow"'; then
+flat_out=$(echo "$HOOK_STDOUT" | jq -r '.hookSpecificOutput.decision.behavior // empty' 2>/dev/null)
+if [ "$flat_out" = "allow" ]; then
   _fail "Should not auto-approve curl"
 else
   _pass
@@ -339,8 +345,8 @@ _assert_approved "Auto-approves write to src/"
 _test "Rejects writes outside project scope"
 exit_code=0
 _run_hook "auto-approve-safe.sh" "$(_tool_json "Write" "/etc/passwd")" || exit_code=$?
-flat_out=$(echo "$HOOK_STDOUT" | tr -d '[:space:]')
-if echo "$flat_out" | grep -qF '"behavior":"allow"'; then
+flat_out=$(echo "$HOOK_STDOUT" | jq -r '.hookSpecificOutput.decision.behavior // empty' 2>/dev/null)
+if [ "$flat_out" = "allow" ]; then
   _fail "Should not auto-approve write to /etc/passwd"
 else
   _pass
@@ -351,6 +357,7 @@ echo ""
 # ============================================================================
 # guard-sensitive-writes.sh tests
 # ============================================================================
+_new_test_project
 echo "--- guard-sensitive-writes.sh ---"
 
 _test "Blocks writes to .env"
@@ -398,6 +405,7 @@ echo ""
 # ============================================================================
 # Edge case tests
 # ============================================================================
+_new_test_project
 echo "--- Edge cases ---"
 
 _test "Empty JSON input does not crash guard-destructive"
@@ -445,6 +453,7 @@ echo ""
 # ============================================================================
 # Subagent network blocking tests
 # ============================================================================
+_new_test_project
 echo "--- Subagent network blocking ---"
 
 # NOTE: The subagent agent-name matching via case + pipe-separated variable
@@ -487,6 +496,7 @@ echo ""
 # ============================================================================
 # Database file protection tests
 # ============================================================================
+_new_test_project
 echo "--- Database file protection ---"
 
 _test "Blocks writes to data/app.sqlite3"
@@ -509,6 +519,7 @@ echo ""
 # ============================================================================
 # classify-error.sh tests
 # ============================================================================
+_new_test_project
 echo "--- classify-error.sh ---"
 
 _test "Classifies connection refused as transient"

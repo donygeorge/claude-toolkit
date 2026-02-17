@@ -206,6 +206,7 @@ Agents that use overlapping tools should not run simultaneously:
 | Security scanners | security, reviewer | Can run in parallel |
 
 If agent times out:
+
 - Mark `timed_out: true`
 - Report partial findings with `severity: med`
 - Do NOT count as gate pass
@@ -213,6 +214,7 @@ If agent times out:
 ## Infrastructure Failures
 
 If tooling fails (exit code 4):
+
 - Mark `infra_failed: true`
 - Set `gate_passed: null` (inconclusive)
 - Report as environment issue, not product bug
@@ -249,6 +251,7 @@ Scope resolution uses the scope-resolver skill with your project's `features.jso
 ## Output
 
 Returns a summary message with:
+
 - Findings count by severity
 - Gate status per agent
 - Path to full review packet

@@ -73,7 +73,7 @@ Configuration flows through three layers:
 
 ## How It All Fits Together
 
-```
+```text
 toolkit.toml (your config)
     |
     v

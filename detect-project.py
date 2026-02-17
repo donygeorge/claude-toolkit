@@ -7,7 +7,6 @@ JSON to stdout.
 
 Usage:
     python3 detect-project.py --project-dir /path/to/project
-    python3 detect-project.py --project-dir /path/to/project --validate
 """
 
 from __future__ import annotations
@@ -60,7 +59,7 @@ LINT_COMMANDS: dict[str, list[dict[str, str]]] = {
 }
 
 # Format commands per stack
-# check_args is used during --validate to verify non-destructively
+# check_args can be used for non-destructive verification
 # Target "." is appended to check commands so tools that require a path work correctly
 FORMAT_COMMANDS: dict[str, list[dict[str, str]]] = {
     "python": [
@@ -353,7 +352,6 @@ def detect_toolkit_state(project_dir: Path) -> dict[str, object]:
         broken: list[str] = []
         for item in sorted(claude_dir.rglob("*")):
             if item.is_symlink() and not item.exists():
-                # Report relative to .claude/
                 try:
                     rel = item.relative_to(claude_dir)
                     broken.append(str(rel))
@@ -364,37 +362,7 @@ def detect_toolkit_state(project_dir: Path) -> dict[str, object]:
     return state
 
 
-def _validate_command(cmd: str, project_dir: Path) -> dict[str, object]:
-    """Actually run a command and record pass/fail.
-
-    Uses shell=True to support commands with pipes, quotes, and other
-    shell features (common in Makefile recipes and package.json scripts).
-    """
-    if not cmd:
-        return {"cmd": cmd, "passed": False, "error": "empty command"}
-    try:
-        result = subprocess.run(
-            cmd,
-            shell=True,
-            capture_output=True,
-            text=True,
-            cwd=str(project_dir),
-            timeout=60,
-        )
-        return {
-            "cmd": cmd,
-            "passed": result.returncode == 0,
-            "returncode": result.returncode,
-        }
-    except subprocess.TimeoutExpired:
-        return {"cmd": cmd, "passed": False, "error": "timeout"}
-    except FileNotFoundError:
-        return {"cmd": cmd, "passed": False, "error": "command not found"}
-    except OSError as exc:
-        return {"cmd": cmd, "passed": False, "error": str(exc)}
-
-
-def run_detection(project_dir: Path, validate: bool = False) -> dict[str, object]:
+def run_detection(project_dir: Path) -> dict[str, object]:
     """Run all detection functions and assemble the result dict."""
     stacks = detect_stacks(project_dir)
     name = detect_name(project_dir)
@@ -423,54 +391,6 @@ def run_detection(project_dir: Path, validate: bool = False) -> dict[str, object
         "toolkit_state": toolkit_state,
     }
 
-    # Optionally validate commands by actually running them
-    if validate:
-        validations: list[dict[str, object]] = []
-
-        # Validate lint commands
-        for stack, info in lint.items():
-            cmd = info.get("cmd", "")
-            if cmd:
-                validations.append(
-                    {"type": "lint", "stack": stack, **_validate_command(cmd, project_dir)}
-                )
-
-        # Validate test command
-        test_cmd = test.get("cmd", "")
-        if test_cmd:
-            validations.append(
-                {"type": "test", **_validate_command(test_cmd, project_dir)}
-            )
-
-        # Validate format commands using non-destructive check mode
-        for stack, info in fmt.items():
-            cmd = info.get("cmd", "")
-            check_cmd = info.get("check_cmd", "")
-            if check_cmd:
-                result = _validate_command(check_cmd, project_dir)
-                result["type"] = "format"
-                result["stack"] = stack
-                validations.append(result)
-            elif cmd:
-                # Fallback: check the executable exists
-                exe = cmd.split()[0] if cmd else ""
-                if exe and shutil.which(exe):
-                    validations.append(
-                        {"type": "format", "stack": stack, "cmd": cmd, "passed": True}
-                    )
-                else:
-                    validations.append(
-                        {
-                            "type": "format",
-                            "stack": stack,
-                            "cmd": cmd,
-                            "passed": False,
-                            "error": "executable not found",
-                        }
-                    )
-
-        result["validations"] = validations
-
     return result
 
 
@@ -484,11 +404,6 @@ def main() -> int:
         required=True,
         help="Path to the project directory to scan",
     )
-    parser.add_argument(
-        "--validate",
-        action="store_true",
-        help="Actually run detected commands and record pass/fail",
-    )
     args = parser.parse_args()
 
     project_dir = Path(args.project_dir).resolve()
@@ -496,7 +411,7 @@ def main() -> int:
         print(f"Error: not a directory: {project_dir}", file=sys.stderr)
         return 1
 
-    result = run_detection(project_dir, validate=args.validate)
+    result = run_detection(project_dir)
 
     # Output deterministic JSON
     print(json.dumps(result, indent=2, sort_keys=True))
