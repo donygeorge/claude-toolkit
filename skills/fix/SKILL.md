@@ -47,10 +47,10 @@ Systematic bug fix workflow: root-cause, fix, validate, scan for similar issues,
 1. **Run tests**:
 
    ```bash
-   # Run project test command for changed files
-   make test
-   # Run linter
-   make lint
+   # Run the project's configured test command
+   <project-test-command>
+   # Run the project's configured lint command
+   <project-lint-command>
    ```
 
 2. **If tests fail**, fix them -- determine if the test was wrong or if the fix introduced a regression

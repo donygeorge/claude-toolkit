@@ -24,7 +24,7 @@ FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty' 2>/dev/null)
 [ -z "$FILE_PATH" ] && exit 0
 # Reject suspicious paths (traversal, absolute paths outside project)
 case "$FILE_PATH" in
-  *..*) exit 0 ;;  # Directory traversal
+  */../*|*/..*) exit 0 ;;  # Directory traversal
   /*)                # Absolute path — must be under project dir
     PROJECT_DIR_CHECK="${CLAUDE_PROJECT_DIR:-$(cd "$(dirname "$0")/../.." && pwd)}"
     case "$FILE_PATH" in

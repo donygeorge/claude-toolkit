@@ -111,7 +111,7 @@ _atomic_write() {
   local content
   content=$(cat)
   local tmp="${target}.tmp.$$"
-  printf '%s' "$content" > "$tmp"
+  printf '%s\n' "$content" > "$tmp"
   mv "$tmp" "$target"
 }
 

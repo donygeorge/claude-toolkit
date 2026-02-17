@@ -18,7 +18,7 @@ cd "$PROJECT_DIR" || exit 0
 
 # Collect changed files (staged + unstaged + untracked)
 CHANGED_FILES=$(
-  { git diff --name-only HEAD 2>/dev/null; git ls-files --others --exclude-standard 2>/dev/null; } | sort -u
+  { git diff --name-only HEAD 2>/dev/null || git diff --name-only --cached 2>/dev/null; git ls-files --others --exclude-standard 2>/dev/null; } | sort -u
 )
 
 # Collect changed shell scripts in .claude/hooks/
@@ -85,10 +85,10 @@ if [ -n "$TOOLKIT_HOOKS_TASK_COMPLETED_GATES_LINT_CMD" ]; then
     fi
 
     if command -v "$(echo "$LINT_CMD" | awk '{print $1}')" >/dev/null 2>&1 || [ -x "$(echo "$LINT_CMD" | awk '{print $1}')" ]; then
-      # Word splitting on $LINT_CMD is intentional — config values like
-      # ".venv/bin/ruff check --quiet" must split into command + arguments.
-      # shellcheck disable=SC2086
-      if ! LINT_OUTPUT=$(echo "$MATCHING_FILES" | xargs $LINT_CMD 2>&1); then
+      # Parse config value into array for safe execution (prevents glob expansion
+      # while still splitting "ruff check --quiet" into command + arguments).
+      read -ra LINT_ARGS <<< "$LINT_CMD"
+      if ! LINT_OUTPUT=$(echo "$MATCHING_FILES" | xargs "${LINT_ARGS[@]}" 2>&1); then
         echo "[toolkit:task-completed-gate] ERROR: lint errors found. Fix lint issues and retry." >&2
         echo "$LINT_OUTPUT" >&2
         exit 2
@@ -128,9 +128,9 @@ if [ -n "$TOOLKIT_HOOKS_TASK_COMPLETED_GATES_TESTS_CMD" ]; then
     fi
 
     if [ "$CAN_RUN" = "true" ]; then
-      # Word splitting on $TESTS_CMD is intentional — see lint gate comment above.
-      # shellcheck disable=SC2086
-      if ! TEST_OUTPUT=$(timeout "$TESTS_TIMEOUT" $TESTS_CMD 2>&1); then
+      # Parse config value into array for safe execution (prevents glob expansion).
+      read -ra TESTS_ARGS <<< "$TESTS_CMD"
+      if ! TEST_OUTPUT=$(timeout "$TESTS_TIMEOUT" "${TESTS_ARGS[@]}" 2>&1); then
         echo "[toolkit:task-completed-gate] ERROR: tests failing." >&2
         echo "$TEST_OUTPUT" | tail -20 >&2
         exit 2

@@ -12,6 +12,22 @@ All notable changes to this project will be documented in this file.
 - **Public release prep**: Added `LICENSE` (MIT), `CODE_OF_CONDUCT.md` (Contributor Covenant 2.1), `SECURITY.md` (vulnerability reporting policy), GitHub issue templates (bug report, feature request), and PR template with testing checklist
 - **Version sync**: `VERSION` file now tracks the current release version
 
+### Fixed
+
+- **Security**: Fix sed metacharacter injection in `cmd-init.sh` — replaced `sed` template substitution with `awk` to prevent `{{PROJECT_NAME}}` values containing sed metacharacters from corrupting output
+- **Security**: Fix incomplete JSON escaping in `subagent-context-inject.sh` fallback path — add backslash escaping before quote escaping when jq is unavailable
+- **Security**: Harden command execution in `task-completed-gate.sh` — use `read -ra` array parsing instead of bare word splitting for lint/test commands, preventing glob expansion of config values
+- **Security**: Add tool type guard to `guard-sensitive-writes.sh` — now only runs for Write/Edit operations instead of all PreToolUse events
+- **Security**: Fix `_atomic_write` in `hook-utils.sh` to preserve trailing newlines (use `printf '%s\n'` matching other implementations)
+- **Security**: Use lambda replacement in `bootstrap.sh` regex TOML patching to prevent backreference injection
+- **Bug**: Remove nonexistent `subagent-quality-gate.sh` from `cmd-explain.sh` hook listing
+- **Bug**: Fix `task-completed-gate.sh` `git diff HEAD` failure on initial commits — fall back to `git diff --cached`
+- **Bug**: Fix truncation constant in `session-end-cleanup.sh` — was 55 (leaving negative tail lines for small configs), now 8 (head-5 + 3 separator lines)
+- **Bug**: Fix `post-edit-lint.sh` directory traversal check — `*..*` matched legitimate filenames like `foo..bar.py`, now uses `*/../*|*/..*` for actual traversal patterns only
+- **Bug**: Consolidate `_atomic_write` in `session-end-cleanup.sh` — source `hook-utils.sh` instead of inline duplicate
+- **Bug**: Replace hardcoded `make test`/`make lint` in `skills/solve/SKILL.md` and `skills/fix/SKILL.md` with generic `<project-test-command>`/`<project-lint-command>` placeholders
+- **Docs**: Update metrics across CLAUDE.md and README.md — fix skill count (10 → 11), pytest count (126 → 290), add missing entries (bootstrap.sh, detect-project.py, commit skill, setup-toolkit/ directory name, test_detect_project.py, test_hooks.sh)
+
 ## [1.9.0] - 2026-02-16
 
 ### Added

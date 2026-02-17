@@ -13,6 +13,12 @@ source "$(dirname "$0")/../lib/hook-utils.sh"
 
 hook_read_input
 
+# Only guard Write/Edit operations — skip other PreToolUse events
+case "$HOOK_TOOL" in
+  Write|Edit) ;;
+  *) exit 0 ;;
+esac
+
 # No file path — nothing to guard
 [ -z "$HOOK_FILE_PATH" ] && exit 0
 

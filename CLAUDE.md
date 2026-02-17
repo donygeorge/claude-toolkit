@@ -10,7 +10,7 @@ A shareable, configurable collection of Claude Code hooks, agents, skills, and r
 
 - 16 configurable hooks (guards, quality gates, lifecycle, automation)
 - 9 agent prompts (reviewer, qa, security, ux, pm, docs, architect, commit-check, plan)
-- 10 skill templates (review, implement, plan, solve, fix, refine, conventions, scope-resolver, gemini, setup)
+- 11 skill templates (review, implement, plan, solve, fix, refine, conventions, scope-resolver, gemini, setup, commit)
 - Three-tier settings merge (base + stacks + project)
 - Manifest tracking for managed vs customized files
 - Config-driven via `toolkit.toml`
@@ -23,7 +23,7 @@ A shareable, configurable collection of Claude Code hooks, agents, skills, and r
 
 ```bash
 # Run tests
-python3 -m pytest tests/ -v              # Python unit tests (126 tests)
+python3 -m pytest tests/ -v              # Python unit tests (290 tests)
 bash tests/test_toolkit_cli.sh           # CLI integration tests
 bash tests/test_manifest.sh              # Manifest integration tests
 
@@ -48,6 +48,8 @@ bash toolkit.sh help                      # Show usage
 ```text
 .
 ├── toolkit.sh                   # CLI entry point (thin dispatcher)
+├── bootstrap.sh                 # Shell bootstrap for new projects
+├── detect-project.py            # Auto-detect project stacks and commands
 ├── generate-settings.py         # Three-tier JSON merge (base + stacks + project)
 ├── generate-config-cache.py     # TOML to bash env cache
 ├── hooks/                       # Hook scripts (16 files)
@@ -59,7 +61,7 @@ bash toolkit.sh help                      # Show usage
 │   ├── task-completed-gate.sh   # Quality gates before task completion
 │   ├── setup.sh                 # Environment validation
 │   ├── session-*.sh             # Lifecycle hooks (start, end, compact)
-│   ├── subagent-*.sh            # Subagent context + quality gates
+│   ├── subagent-context-inject.sh # Subagent context injection
 │   ├── verify-completion.sh     # Uncommitted change warnings
 │   ├── notify.sh                # Platform-aware notifications
 │   └── smart-context.py         # Keyword-based context loading
@@ -73,7 +75,7 @@ bash toolkit.sh help                      # Show usage
 │   ├── architect.md             # Deep architecture analysis
 │   ├── commit-check.md          # Lightweight post-commit check
 │   └── plan.md                  # Feature planning agent
-├── skills/                      # Skill templates (9 directories, each has SKILL.md)
+├── skills/                      # Skill templates (11 directories, each has SKILL.md)
 │   ├── review-suite/            # Multi-agent code review
 │   ├── implement/               # Autonomous plan execution
 │   ├── plan/                    # Feature planning
@@ -83,7 +85,8 @@ bash toolkit.sh help                      # Show usage
 │   ├── conventions/             # View coding conventions
 │   ├── scope-resolver/          # Feature scope resolver
 │   ├── gemini/                  # Second opinion from Google
-│   └── setup/                   # Project onboarding orchestrator
+│   ├── setup-toolkit/           # Project onboarding orchestrator
+│   └── commit/                  # Auto-commit session changes
 ├── rules/                       # Generic rules (symlinked to projects)
 │   └── git-protocol.md          # Git staging and commit rules
 ├── templates/                   # Configuration templates
@@ -113,9 +116,11 @@ bash toolkit.sh help                      # Show usage
 │   └── plans/                   # Implementation plans
 ├── mcp/                         # MCP templates
 │   └── base.mcp.json            # Base MCP server config
-└── tests/                       # Test suite
+└── tests/                       # Test suite (290 pytest + bash integration)
     ├── test_generate_settings.py
     ├── test_generate_config_cache.py
+    ├── test_detect_project.py
+    ├── test_hooks.sh
     ├── test_toolkit_cli.sh
     ├── test_manifest.sh
     └── fixtures/                # Test fixtures (sample configs, etc.)

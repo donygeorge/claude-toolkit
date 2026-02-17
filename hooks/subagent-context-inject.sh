@@ -116,7 +116,7 @@ if command -v jq >/dev/null 2>&1; then
   jq -n --arg ctx "$CONTEXT" \
     '{hookSpecificOutput:{hookEventName:"SubagentStart",additionalContext:$ctx}}'
 else
-  SAFE_CTX=$(printf '%s' "$CONTEXT" | sed 's/"/\\"/g' | tr '\n' ' ')
+  SAFE_CTX=$(printf '%s' "$CONTEXT" | sed 's/\\/\\\\/g; s/"/\\"/g' | tr '\n' ' ')
   printf '{"hookSpecificOutput":{"hookEventName":"SubagentStart","additionalContext":"%s"}}\n' "$SAFE_CTX"
 fi
 

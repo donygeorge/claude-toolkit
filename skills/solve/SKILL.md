@@ -156,12 +156,11 @@ Make changes following project conventions:
 ### Step 7: Test
 
 ```bash
-# Run project test command
-make test
-# or: pytest, npm test, etc.
+# Run the project's configured test command
+<project-test-command>
 
-# Run linter
-make lint
+# Run the project's configured lint command
+<project-lint-command>
 ```
 
 If tests fail, attempt to fix (max 3 iterations).

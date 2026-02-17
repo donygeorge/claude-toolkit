@@ -47,7 +47,6 @@ cmd_explain() {
       echo "  pre-compact.sh             -- Saves state before context compaction"
       echo "  post-compact-reinject.sh   -- Restores context after compaction"
       echo "  subagent-context-inject.sh -- Injects project context into subagents"
-      echo "  subagent-quality-gate.sh   -- Validates subagent output"
       echo "  verify-completion.sh       -- Warns about uncommitted changes"
       echo "  smart-context.py           -- Keyword-based domain context loading"
       echo "  notify.sh                  -- Platform-aware notifications"

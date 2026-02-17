@@ -188,10 +188,11 @@ import re, sys
 toml_file = sys.argv[1]
 name = sys.argv[2]
 content = open(toml_file).read()
-new_content = re.sub(r'name\s*=\s*\"[^\"]*\"', 'name = \"' + name + '\"', content, count=1)
+repl = lambda m: 'name = \"' + name + '\"'
+new_content = re.sub(r'name\s*=\s*\"[^\"]*\"', repl, content, count=1)
 if new_content == content:
     # Regex didn't match — try single-quote variant
-    new_content = re.sub(r\"name\s*=\s*'[^']*'\", 'name = \"' + name + '\"', content, count=1)
+    new_content = re.sub(r\"name\s*=\s*'[^']*'\", repl, content, count=1)
 if new_content == content:
     print('Warning: Could not patch project.name — edit .claude/toolkit.toml manually', file=sys.stderr)
     sys.exit(0)

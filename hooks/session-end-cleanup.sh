@@ -7,14 +7,8 @@ set -u
 
 # shellcheck source=_config.sh
 source "$(dirname "$0")/_config.sh"
-
-_atomic_write() {
-  # Write content (from stdin) to $1 atomically via temp file + mv
-  local target="$1"
-  local tmp="${target}.tmp.$$"
-  cat > "$tmp"
-  mv "$tmp" "$target"
-}
+# shellcheck source=../lib/hook-utils.sh
+source "$(dirname "$0")/../lib/hook-utils.sh"
 
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(cd "$(dirname "$0")/../.." && pwd)}"
 
@@ -30,7 +24,7 @@ if [ -d "$MEMORY_DIR" ]; then
     [ -f "$MEM_FILE" ] || continue
     LINE_COUNT=$(wc -l < "$MEM_FILE" | tr -d ' ')
     if [ "$LINE_COUNT" -gt "$MAX_MEMORY_LINES" ]; then
-      TAIL_LINES=$((MAX_MEMORY_LINES - 55))
+      TAIL_LINES=$((MAX_MEMORY_LINES - 8))
       # Guard against negative/zero TAIL_LINES when MAX_MEMORY_LINES is small
       [ "$TAIL_LINES" -lt 10 ] && TAIL_LINES=10
       { head -5 "$MEM_FILE"; echo ""; echo "<!-- Auto-truncated from $LINE_COUNT lines -->"; echo ""; tail -"$TAIL_LINES" "$MEM_FILE"; } | _atomic_write "$MEM_FILE"

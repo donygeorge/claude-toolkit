@@ -173,7 +173,7 @@ _init_rule_templates() {
           # Substitute {{PROJECT_NAME}} with project name from toolkit.toml
           local project_name
           project_name=$(_read_toml_value "$toml_file" "project.name" 2>/dev/null || echo "my-project")
-          sed "s/{{PROJECT_NAME}}/${project_name}/g" "$template_file" > "$target"
+          awk -v name="$project_name" '{gsub(/\{\{PROJECT_NAME\}\}/, name); print}' "$template_file" > "$target"
           _ok "Created rules/${rule_name} from template (stack: ${stack})"
         fi
       done
