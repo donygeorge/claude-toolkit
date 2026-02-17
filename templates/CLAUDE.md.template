@@ -11,11 +11,10 @@
 **Key Commands**:
 
 ```bash
-make run              # Start the application
-make test             # Run all tests
-make test-changed     # Run tests for changed files only
-make lint             # Check code quality
-make fmt              # Format code
+{{RUN_COMMAND}}              # Start the application
+{{TEST_COMMAND}}             # Run tests
+{{LINT_COMMAND}}             # Check code quality
+{{FORMAT_COMMAND}}           # Format code
 ```
 
 ## Critical Rules
@@ -34,14 +33,14 @@ make fmt              # Format code
 
 ### During Implementation
 
-1. **Run `make test-changed`** after each logical chunk
+1. **Run `{{TEST_COMMAND}}`** after each logical chunk
 2. **One logical change at a time** - Verify before moving to next
 
 ### Before Marking Complete
 
 1. **Self-review checklist**:
-   - [ ] `make lint` passes
-   - [ ] `make test-changed` passes
+   - [ ] `{{LINT_COMMAND}}` passes
+   - [ ] `{{TEST_COMMAND}}` passes
    - [ ] Type hints on public functions
    - [ ] No hardcoded values that should be constants
 

@@ -271,12 +271,12 @@ Update the CLAUDE.md template to support detected commands and update documentat
 
 **Exit Criteria**:
 
-- [ ] `templates/CLAUDE.md.template` has `{{LINT_COMMAND}}`, `{{TEST_COMMAND}}`, `{{FORMAT_COMMAND}}` placeholders replacing hardcoded `make lint`, `make test`, `make fmt`
-- [ ] Template's "Key Commands" section uses the new placeholders
-- [ ] Template's "Before Marking Complete" checklist uses the new placeholders
-- [ ] Template's "During Implementation" section uses the new placeholders
-- [ ] `CHANGELOG.md` has entry documenting the streamlined setup flow
-- [ ] All existing tests still pass: `python3 -m pytest tests/ -v`
+- [x] `templates/CLAUDE.md.template` has `{{LINT_COMMAND}}`, `{{TEST_COMMAND}}`, `{{FORMAT_COMMAND}}` placeholders replacing hardcoded `make lint`, `make test`, `make fmt`
+- [x] Template's "Key Commands" section uses the new placeholders
+- [x] Template's "Before Marking Complete" checklist uses the new placeholders
+- [x] Template's "During Implementation" section uses the new placeholders
+- [x] `CHANGELOG.md` has entry documenting the streamlined setup flow
+- [x] All existing tests still pass: `python3 -m pytest tests/ -v`
 
 ---
 

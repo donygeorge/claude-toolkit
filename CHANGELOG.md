@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.0] - 2026-02-16
+
+### Added
+
+- **Streamlined setup flow**: single copy-paste bootstrap prompt takes a project from zero to fully configured toolkit — no manual terminal steps required
+- `detect-project.py`: auto-detects project stacks, lint/test/format commands, source directories, version files, and toolkit installation state; outputs JSON for use by `/setup` and `bootstrap.sh`
+- `BOOTSTRAP_PROMPT.md`: self-contained prompt users paste into Claude Code to install and configure the toolkit from scratch, solving the chicken-and-egg problem where `/setup` can't exist before the toolkit is installed
+
+### Changed
+
+- `bootstrap.sh`: simplified to git subtree operations + `toolkit.sh init`; `--name` and `--stacks` flags now optional; removed ~200 lines of TOML generation; added `--repair` flag for partial installs
+- `/setup` skill: rewritten as comprehensive 9-phase orchestrator (state detection, project discovery, command validation, user confirmation, config generation, CLAUDE.md creation, settings generation, end-to-end verification, commit)
+- `templates/CLAUDE.md.template`: replaced hardcoded `make` commands with `{{LINT_COMMAND}}`, `{{TEST_COMMAND}}`, `{{FORMAT_COMMAND}}`, `{{RUN_COMMAND}}` placeholders for project-specific customization
+
 ## [1.0.1] - 2026-02-16
 
 ### Fixed
