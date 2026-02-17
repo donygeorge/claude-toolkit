@@ -2,6 +2,35 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.13.0] - 2026-02-17
+
+### Fixed
+
+- **Review-suite timestamp format**: Fix run_id timestamp format in review-suite to match output-schema.json (dash format instead of underscore)
+- **Implement allowed-tools wording**: Fix "removed from" wording in implement skill (now "intentionally not listed")
+- **Solve visual tools contradiction**: Fix "MUST use visual tools" contradiction in solve skill (now "SHOULD attempt")
+
+### Added
+
+- **Verify skill documentation**: Document /verify skill in README, CLAUDE.md, and reference docs (13 skills total, 14 including explore alias)
+- **Skill workflow map**: Add skill workflow map to README showing brainstorm -> plan -> implement -> verify pipeline
+- **Brainstorm auto-plan flag**: Add `--auto-plan` flag to brainstorm skill for pipeline continuity
+- **Plan auto-implement flag**: Add `--auto-implement` flag to plan skill for pipeline continuity
+- **Implement version check**: Add version file check (Step 2e) to implement skill
+- **Skill defaults in toolkit.toml**: Add skill defaults documentation to toolkit.toml.example with commented `[skills.*]` sections
+- **Skill defaults reference**: Add Skill Defaults subsection to docs/reference.md
+- **Skill test infrastructure**: Add `tests/test_skills.sh` with 75 assertions validating frontmatter, structural sections, companion files, skill count, and timestamp consistency
+
+### Improved
+
+- **Brainstorm skill**: Improve persona prompt template, gemini timing, team shutdown, ad-hoc threshold
+- **Implement skill**: Improve state schema with phase tracking, enhanced resume logic
+- **Refine skill**: Improve convergence threshold clarification, scope evolution, clean-room termination
+- **Plan skill**: Improve idea doc detection, agent launch spec, unified codex stop condition
+- **Fix skill**: Improve scan scope limits, test addition decision tree
+- **Commit skill**: Improve session file detection strategy
+- **Skill customization notes**: Add customization notes to 7 major skills referencing `toolkit.sh customize`
+
 ## [1.12.0] - 2026-02-17
 
 ### Added

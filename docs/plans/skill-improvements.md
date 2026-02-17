@@ -232,18 +232,18 @@ Create `test_skills.sh` to validate skill file structure and cross-references. U
 
 **Exit Criteria**:
 
-- [ ] `tests/test_skills.sh` exists and is executable
-- [ ] Tests validate every `skills/*/SKILL.md` has `name`, `description`, `user-invocable` frontmatter fields
-- [ ] Tests validate each skill has at least one structural section (Usage, Workflow, Execution Flow, or Two Modes)
-- [ ] Tests validate `review-suite/output-schema.json` is valid JSON
-- [ ] Tests validate `implement/milestone-template.md` exists
-- [ ] Tests validate skill directory count equals 13
-- [ ] Tests validate no underscore timestamps in review-suite/SKILL.md
-- [ ] `bash tests/test_skills.sh` passes with zero failures
-- [ ] `bash tests/test_hooks.sh` still passes (regression check)
-- [ ] `bash tests/test_toolkit_cli.sh` still passes (regression check)
-- [ ] `python3 -m pytest tests/ -v` still passes (regression check)
-- [ ] CHANGELOG.md has `[1.13.0]` entry with Fixed, Added, and Improved subsections
+- [x] `tests/test_skills.sh` exists and is executable
+- [x] Tests validate every `skills/*/SKILL.md` has `name`, `description`, `user-invocable` frontmatter fields
+- [x] Tests validate each skill has at least one structural section (Usage, Workflow, Execution Flow, or Two Modes)
+- [x] Tests validate `review-suite/output-schema.json` is valid JSON
+- [x] Tests validate `implement/milestone-template.md` exists
+- [x] Tests validate skill directory count equals 14 (13 skills + explore alias)
+- [x] Tests validate no underscore timestamps in review-suite/SKILL.md
+- [x] `bash tests/test_skills.sh` passes with zero failures (89 tests)
+- [x] `bash tests/test_hooks.sh` still passes (regression check — 50 tests)
+- [x] `bash tests/test_toolkit_cli.sh` still passes (regression check — 67 tests)
+- [x] `python3 -m pytest tests/ -v` still passes (regression check — 290 tests)
+- [x] CHANGELOG.md has `[1.13.0]` entry with Fixed, Added, and Improved subsections
 
 ## Testing Strategy
 
