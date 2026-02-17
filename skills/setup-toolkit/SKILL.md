@@ -1,7 +1,7 @@
 ---
 name: setup-toolkit
 description: Detect project stacks and commands, validate config, generate toolkit.toml and CLAUDE.md. Handles fresh setup, partial installs, and reconfiguration.
-argument-hint: "[--reconfigure] [--update [version]]"
+argument-hint: "[--reconfigure] [--update [version]] [--contribute]"
 user-invocable: true
 disable-model-invocation: true
 ---
@@ -19,6 +19,7 @@ Orchestrate post-bootstrap project configuration. Auto-detect stacks and command
 /setup-toolkit --reconfigure       # Full re-detection, ignoring cached state
 /setup-toolkit --update            # Update toolkit to latest release
 /setup-toolkit --update v1.3.0     # Update toolkit to a specific version
+/setup-toolkit --contribute        # Upstream generic improvements back to toolkit
 ```
 
 ## When to Use
@@ -34,12 +35,13 @@ Orchestrate post-bootstrap project configuration. Auto-detect stacks and command
 | ---- | ------ |
 | `--reconfigure` | Skip state checks, run full re-detection from scratch. Useful when the project's tech stack or commands have changed. Existing `toolkit.toml` customizations are preserved (you will be asked about conflicts). |
 | `--update [version]` | Run the Update Flow instead of the setup flow. Performs pre-flight checks, fetches the latest (or specified) toolkit version, executes the update with conflict resolution, validates the result, resolves drift in customized files, and commits. If `version` is provided (e.g., `v1.3.0`), updates to that specific tag; otherwise updates to the latest release. |
+| `--contribute` | Run the Contribute Flow instead of the setup flow. Identifies customized files with generic improvements, evaluates them against a 10-point generalizability checklist, prepares clean changes for the toolkit repo, validates with the full test suite, and generates submission instructions (patch or PR). |
 
 ---
 
 ## Execution Flow
 
-> **Routing**: If `--update` was passed, skip the setup phases below and jump directly to the [Update Flow](#update-flow) section.
+> **Routing**: If `--update` was passed, skip the setup phases below and jump directly to the [Update Flow](#update-flow) section. If `--contribute` was passed, skip the setup phases below and jump directly to the [Contribute Flow](#contribute-flow) section.
 
 Execute these phases in order. Do NOT skip phases.
 
@@ -955,3 +957,486 @@ Update claude-toolkit from [old_version] to [new_version]
 | Subtree pull conflict | Detect conflicted files with `git diff --diff-filter=U --name-only`. Present conflicts to user. Offer automatic resolution or abort (`git merge --abort`). See Phase U2 for details. |
 | Validation failure (any of 10 checks) | Attempt auto-fix up to 3 times per check. If still failing, present the error details to the user and ask how to proceed. Do not silently ignore validation failures. |
 | Drift merge failure | If an intelligent merge fails or produces ambiguous results, show both versions to the user and ask them to choose or manually edit. Do not apply an uncertain merge automatically. |
+
+---
+
+## Contribute Flow
+
+This flow is executed when `--contribute` is passed. It replaces the setup phases above.
+
+> **User Interaction Principle**: The contribute flow is collaborative. At every decision point -- which files to contribute, how to extract generic parts, how to handle divergence, which submission workflow -- ask the user. Never auto-proceed past a judgment call.
+
+### Phase C0: Identify Candidates
+
+Find all customized and modified files that could potentially be contributed upstream.
+
+#### Step C0.1: Check toolkit status
+
+```bash
+bash .claude/toolkit/toolkit.sh status
+```
+
+Review the output. Identify two categories of candidate files:
+
+1. **Customized files**: Files marked as "customized" in the manifest (the user explicitly took ownership via `toolkit.sh customize`)
+2. **Modified managed files**: Files that differ from the toolkit source but are still marked as "managed" (local edits without formal customization)
+
+If no customized or modified files are found, inform the user:
+
+> No customized or modified files were found. There is nothing to contribute upstream. If you have improvements to suggest, first customize a file with `toolkit.sh customize <path>`, make your changes, and then re-run `/setup-toolkit --contribute`.
+
+**Stop here** if no candidates are found.
+
+#### Step C0.2: Diff each candidate against toolkit source
+
+For each candidate file, generate a detailed diff against the toolkit source:
+
+```bash
+diff -u .claude/toolkit/<source_path> .claude/<installed_path>
+```
+
+For agents and rules, the toolkit source is in `.claude/toolkit/agents/` or `.claude/toolkit/rules/`. For skills, the toolkit source is in `.claude/toolkit/skills/<skill_name>/`.
+
+#### Step C0.3: Analyze and present candidates
+
+For each candidate, provide a structured analysis:
+
+> **Candidate**: [file_path]
+>
+> **Change summary**: [brief description of what changed]
+>
+> **Generic vs project-specific assessment**:
+>
+> - Generic changes: [list of changes that are reusable across projects]
+> - Project-specific changes: [list of changes that reference project-specific tools, paths, or conventions]
+> - Mixed changes: [list of changes where generic and project-specific parts are interleaved]
+>
+> **Recommendation**: [contribute as-is / extract generic parts / skip]
+
+After presenting all candidates, **ask the user**:
+
+> Which changes do you want to propose contributing? You can select or deselect individual candidates. Reply with the file names you want to include, or "all" / "none".
+
+**Wait for the user to select candidates before proceeding.**
+
+---
+
+### Phase C1: Generalizability Gate
+
+Evaluate each selected candidate against a strict 10-point generalizability checklist. All 7 hard requirements must pass. Quality requirements are advisory but strongly recommended.
+
+#### Hard Requirements (all must pass)
+
+| # | Requirement | Check |
+| - | ----------- | ----- |
+| H1 | No project paths | The change must not contain absolute paths or project-specific directory structures (e.g., `src/myapp/`, `/opt/myproject/`) |
+| H2 | No project tool references | The change must not reference project-specific tools by name (e.g., a specific CI system, a proprietary CLI tool, a project-internal script) |
+| H3 | No project conventions | The change must not encode project-specific coding conventions, naming patterns, or workflow rules that are not universally applicable |
+| H4 | No project defaults | The change must not hardcode project-specific default values (e.g., a specific port number, a specific database name, a project-specific URL) |
+| H5 | Config-driven variability | Any behavior that could vary between projects must be driven by `toolkit.toml` configuration or `_config.sh` variables, not hardcoded |
+| H6 | Agent/skill genericness | If the change is to an agent prompt or skill, the content must be universally applicable -- no references to specific frameworks, libraries, or tools unless they are configurable |
+| H7 | Hook uses `_config.sh` | If the change is to a hook script, all project-variable values must come from `_config.sh` variables, not hardcoded in the hook |
+
+#### Quality Requirements (strongly recommended)
+
+| # | Requirement | Check |
+| - | ----------- | ----- |
+| Q1 | Backward compatible | The change must not break existing configurations or workflows -- existing toolkit.toml files must continue to work without modification |
+| Q2 | Follows existing patterns | The change must follow the coding style, structure, and conventions already established in the toolkit (e.g., hook structure, agent prompt format, skill phase style) |
+| Q3 | Clear purpose | The change must have a clear, documented purpose -- what problem does it solve, and why is it useful across projects? |
+
+#### Step C1.1: Evaluate each candidate
+
+For each selected candidate, evaluate all 10 points. Present the results:
+
+> **Generalizability check**: [file_path]
+>
+> | # | Requirement | Result | Notes |
+> | - | ----------- | ------ | ----- |
+> | H1 | No project paths | pass/FAIL | [details] |
+> | H2 | No project tool refs | pass/FAIL | [details] |
+> | H3 | No project conventions | pass/FAIL | [details] |
+> | H4 | No project defaults | pass/FAIL | [details] |
+> | H5 | Config-driven variability | pass/FAIL | [details] |
+> | H6 | Agent/skill genericness | pass/FAIL | [details] |
+> | H7 | Hook uses _config.sh | pass/FAIL | [details] |
+> | Q1 | Backward compatible | pass/FAIL | [details] |
+> | Q2 | Follows patterns | pass/FAIL | [details] |
+> | Q3 | Clear purpose | pass/FAIL | [details] |
+
+#### Step C1.2: Handle mixed changes
+
+If a candidate contains both generic and project-specific changes (mixed), show what would be kept vs removed:
+
+> **Extracting generic parts from**: [file_path]
+>
+> **Will keep** (generic):
+>
+> ```diff
+> [diff of generic changes only]
+> ```
+>
+> **Will remove** (project-specific):
+>
+> ```diff
+> [diff of project-specific changes]
+> ```
+>
+> Does this extraction look correct? Would you like to adjust what is kept vs removed?
+
+**Ask the user to confirm** the extraction before proceeding.
+
+#### Step C1.3: Handle gate failures
+
+If any hard requirement fails, inform the user with specific guidance:
+
+> **Generalizability gate FAILED** for [file_path]:
+>
+> - [H#]: [specific issue and what needs to change]
+>
+> Options:
+>
+> 1. **Revise** the change to make it more generic (I can suggest specific modifications)
+> 2. **Skip** this file and continue with other candidates
+
+**Ask the user** which option they prefer. If they choose to revise, suggest specific modifications that would make the change pass the gate, then re-evaluate.
+
+---
+
+### Phase C2: Prepare Clean Changes
+
+Apply only the approved, gate-passing changes to the toolkit source files. Handle divergence intelligently.
+
+#### Step C2.1: Check for toolkit source divergence
+
+For each approved candidate, compare the toolkit source that the user's customization was originally based on against the current toolkit source:
+
+```bash
+# Read the toolkit_hash from the manifest for this file
+# Compare against the current toolkit source hash
+```
+
+If the toolkit source has changed since the user customized the file (i.e., the manifest `toolkit_hash` differs from the current file hash), there is divergence.
+
+#### Step C2.2: Handle divergence
+
+If divergence is detected for a file, show the situation to the user:
+
+> **Toolkit source has diverged**: [file_path]
+>
+> The toolkit source for this file has changed since you customized it. Your changes were based on an older version.
+>
+> **Your changes** (what you want to contribute):
+>
+> ```diff
+> [user's changes relative to their base version]
+> ```
+>
+> **Upstream changes** (what changed in toolkit since your customization):
+>
+> ```diff
+> [toolkit changes since the user's base version]
+> ```
+>
+> **Conflict assessment**: [describe whether the changes overlap or are in separate sections]
+
+If the changes are in separate sections (no conflict):
+
+> The changes appear to be in separate sections. I can merge them cleanly. Here is the proposed merged result:
+>
+> ```diff
+> [merged diff]
+> ```
+>
+> Does this merge look correct?
+
+If the changes overlap (potential conflict):
+
+> The changes overlap in the same sections. I need your guidance:
+>
+> 1. **Adapt changes** -- I will attempt to integrate your changes into the current toolkit source, preserving both sets of changes
+> 2. **Skip** this file -- exclude it from the contribution
+> 3. **Abort** -- stop the contribute flow entirely
+>
+> Which would you prefer?
+
+If the user chooses to adapt, show the proposed adaptation and **ask the user to confirm** before applying.
+
+**Wait for the user's decision on each diverged file.**
+
+#### Step C2.3: Apply changes to toolkit source
+
+For each approved file (with divergence resolved), apply the changes to the toolkit source files:
+
+```bash
+# Copy the approved changes to .claude/toolkit/<source_path>
+```
+
+After applying all changes, show the final prepared changes:
+
+```bash
+cd .claude/toolkit && git diff
+```
+
+> **Prepared changes for contribution**:
+>
+> ```diff
+> [full diff of all changes applied to toolkit source]
+> ```
+>
+> Please review these changes. Are they ready for validation?
+
+**Wait for user confirmation before proceeding to validation.**
+
+---
+
+### Phase C3: Validate Contribution
+
+Run the FULL toolkit test suite against the modified toolkit source. ALL checks must pass -- no exceptions.
+
+#### Step C3.1: Shellcheck
+
+```bash
+shellcheck -x -S warning .claude/toolkit/hooks/*.sh .claude/toolkit/lib/*.sh .claude/toolkit/toolkit.sh
+```
+
+#### Step C3.2: Python tests
+
+```bash
+cd .claude/toolkit && python3 -m pytest tests/ -v
+```
+
+#### Step C3.3: CLI integration tests
+
+```bash
+cd .claude/toolkit && bash tests/test_toolkit_cli.sh
+```
+
+#### Step C3.4: Manifest integration tests
+
+```bash
+cd .claude/toolkit && bash tests/test_manifest.sh
+```
+
+#### Step C3.5: Hook tests
+
+```bash
+cd .claude/toolkit && bash tests/test_hooks.sh
+```
+
+#### Step C3.6: Settings determinism
+
+```bash
+cd .claude/toolkit && python3 -m pytest tests/test_generate_settings.py -v
+```
+
+#### Step C3.7: Edge case verification
+
+If the contribution modifies hooks, verify that `_config.sh` still sources correctly. If the contribution modifies agent prompts or skills, verify they contain no project-specific references by re-running the generalizability checks (H1-H7) on the final files.
+
+#### Validation summary
+
+Present all results in a table:
+
+| Check | Result | Notes |
+| ----- | ------ | ----- |
+| Shellcheck | pass/fail | [details] |
+| Python tests | pass/fail | [details] |
+| CLI integration tests | pass/fail | [details] |
+| Manifest integration tests | pass/fail | [details] |
+| Hook tests | pass/fail | [details] |
+| Settings determinism | pass/fail | [details] |
+| Edge case verification | pass/fail | [details] |
+
+If ANY check fails, inform the user:
+
+> **Validation failed**: [list of failed checks with details]
+>
+> Options:
+> 1. **Investigate** the failure and attempt to fix it
+> 2. **Adjust** the contribution to avoid the failing test
+> 3. **Abort** the contribution
+
+**Ask the user** which option they prefer. Do not proceed past validation failures without the user's explicit decision.
+
+---
+
+### Phase C4: Prepare Submission
+
+Generate the contribution artifacts and guide the user through the submission workflow.
+
+#### Step C4.1: Generate patch
+
+Create a patch file from the validated changes:
+
+```bash
+cd .claude/toolkit && git diff > /tmp/toolkit-contribution.patch
+```
+
+#### Step C4.2: Write contribution description
+
+Draft a contribution description based on the changes:
+
+> **Contribution: [brief title]**
+>
+> **Summary**
+>
+> [1-3 sentence description of what this contribution adds or improves]
+>
+> **Changes**
+>
+> [bulleted list of specific changes, one per file]
+>
+> **Generalizability**
+>
+> All changes pass the 10-point generalizability checklist:
+>
+> - No project-specific paths, tool references, conventions, or defaults
+> - Config-driven variability where needed
+> - Backward compatible with existing configurations
+> - Follows established toolkit patterns
+>
+> **Testing**
+>
+> All toolkit tests pass:
+>
+> - [list each test suite and result]
+
+#### Step C4.3: Ask user for submission workflow
+
+Present the submission options:
+
+> How would you like to submit this contribution?
+>
+> 1. **Fork workflow** (recommended for external contributors): Fork the toolkit repo, push changes to a branch, and open a PR
+> 2. **Direct push** (for maintainers with write access): Push changes directly to a branch on the toolkit repo
+>
+> Which workflow would you prefer?
+
+**Wait for the user's choice.**
+
+#### Step C4.4: Provide submission commands
+
+Based on the user's choice, provide copy-pasteable commands:
+
+**Fork workflow**:
+
+```bash
+# 1. Fork the toolkit repo on GitHub (if not already done)
+# 2. Clone your fork
+git clone <your-fork-url> /tmp/toolkit-contribution
+cd /tmp/toolkit-contribution
+
+# 3. Create a branch
+git checkout -b contribute/<brief-description>
+
+# 4. Apply the patch
+git apply /tmp/toolkit-contribution.patch
+
+# 5. Commit
+git add -A
+git commit -m "<contribution title>"
+
+# 6. Push and open PR
+git push origin contribute/<brief-description>
+# Then open a PR from your fork to the upstream repo
+```
+
+**Direct push workflow**:
+
+```bash
+# 1. Navigate to the toolkit subtree
+cd .claude/toolkit
+
+# 2. Create a branch
+git checkout -b contribute/<brief-description>
+
+# 3. Changes are already applied -- commit them
+git add -A
+git commit -m "<contribution title>"
+
+# 4. Push to remote
+git push claude-toolkit contribute/<brief-description>
+# Then open a PR on the toolkit repo
+```
+
+#### Step C4.5: Ask user to review
+
+Present the PR title and summary:
+
+> **Proposed PR title**: [title]
+>
+> **Proposed PR body**:
+> [the contribution description from Step C4.2]
+>
+> Would you like to adjust the title or description before finalizing?
+
+**Wait for the user to confirm or adjust before providing final commands.**
+
+---
+
+### Phase C5: Summary
+
+Present a mandatory structured summary of the entire contribute flow.
+
+The summary must include ALL of the following sections:
+
+- **Changes proposed**: [count] files, with a brief description of each change
+- **Generalizability results**: table showing all 10 checks (H1-H7, Q1-Q3) for each file with pass/fail status
+- **Validation results**: table showing all 7 test suite checks and their pass/fail status
+- **Submission method**: fork workflow or direct push
+- **Submission instructions**: the copy-pasteable commands from Phase C4
+- **Patch location**: path to the generated patch file
+- **Next steps**: what the user needs to do after this flow completes (e.g., open the PR, respond to review feedback)
+
+Example summary format:
+
+> ## Contribution Summary
+>
+> ### Changes Proposed
+>
+> | File | Change |
+> | ---- | ------ |
+> | [file1] | [description] |
+> | [file2] | [description] |
+>
+> ### Generalizability Results
+>
+> | File | H1 | H2 | H3 | H4 | H5 | H6 | H7 | Q1 | Q2 | Q3 |
+> | ---- | -- | -- | -- | -- | -- | -- | -- | -- | -- | -- |
+> | [file1] | pass | pass | pass | pass | pass | pass | pass | pass | pass | pass |
+>
+> ### Validation Results
+>
+> | Check | Result |
+> | ----- | ------ |
+> | Shellcheck | pass |
+> | Python tests | pass |
+> | CLI integration tests | pass |
+> | Manifest integration tests | pass |
+> | Hook tests | pass |
+> | Settings determinism | pass |
+> | Edge case verification | pass |
+>
+> ### Submission
+>
+> - **Method**: [fork / direct push]
+> - **Patch**: `/tmp/toolkit-contribution.patch`
+> - **Branch**: `contribute/<description>`
+>
+> ### Next Steps
+>
+> 1. [Execute the submission commands above]
+> 2. [Open PR with the provided title and description]
+> 3. [Respond to any review feedback]
+
+---
+
+## Contribute Error Handling
+
+| Error | Recovery |
+| ----- | -------- |
+| No customized files found | Inform the user that there are no candidates to contribute. Suggest using `toolkit.sh customize <path>` to take ownership of a file first, then making changes and re-running `/setup-toolkit --contribute`. |
+| Generalizability gate failure | Show which specific checks failed (H1-H7) with detailed guidance on what needs to change. Offer to help revise the change to make it generic, or let the user skip the file. Do not proceed with a file that fails any hard requirement. |
+| Test failures after applying changes | Present the test output and determine whether the failure is caused by the contribution or is pre-existing. **Ask the user** whether to investigate, adjust the contribution, or abort. Do not ignore test failures. |
+| Toolkit source divergence | Show both the user's base version and the current toolkit source. Assess whether the changes conflict or can be merged cleanly. If ambiguous, present options (adapt, skip, abort) and **ask the user** to decide. Do not auto-merge when the result is uncertain. |

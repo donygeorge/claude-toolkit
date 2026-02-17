@@ -94,19 +94,19 @@ Extend the setup-toolkit skill with an LLM-guided contribution workflow featurin
 
 **Exit Criteria**:
 
-- [ ] Skill frontmatter `argument-hint` updated to include `[--contribute]`
-- [ ] Usage section shows `--contribute` example
-- [ ] Flags table includes `--contribute` with description
-- [ ] Routing logic handles `--contribute` flag alongside `--update`
-- [ ] Phase C0 (Identify Candidates): instructs to run `toolkit.sh status`, diff each customized/modified file against toolkit source, present analysis with generic vs project-specific assessment. **Ask user**: which changes do you want to propose contributing? Let user select/deselect candidates.
-- [ ] Phase C1 (Generalizability Gate): defines 10-point checklist — 7 hard requirements (no project paths, no project tool refs, no project conventions, no project defaults, config-driven variability, agent/skill genericness, hook uses _config.sh) and 3 quality requirements (backward compatible, follows patterns, clear purpose). For mixed changes, show what would be kept vs removed and **ask user to confirm** the extraction. Fail with specific guidance. **Ask user**: want to revise the change to make it more generic, or skip this file?
-- [ ] Phase C2 (Prepare Clean Changes): instructs to apply only approved changes to toolkit source, verify clean application. If toolkit source has diverged, show the divergence and **ask user** how to proceed (adapt changes, skip, or abort). Show final prepared changes and **ask user to review** before validation.
-- [ ] Phase C3 (Validate Contribution): instructs to run FULL toolkit test suite — shellcheck, pytest, CLI tests, manifest tests, hook tests, settings determinism, edge case verification. ALL must pass, no exceptions. **Ask user** if test failures need investigation or if the contribution should be adjusted.
-- [ ] Phase C4 (Prepare Submission): instructs to generate patch, write contribution description. **Ask user**: fork workflow or direct push? **Ask user** to review the PR title/summary before finalizing. Provide copy-pasteable commands.
-- [ ] Phase C5 (Summary): mandatory structured summary template with: changes proposed, all 10 generalizability checks, all validation results, submission instructions
-- [ ] User interaction principle documented: "The contribute flow is collaborative. At every decision point — which files to contribute, how to extract generic parts, how to handle divergence, which submission workflow — ask the user. Never auto-proceed past a judgment call."
-- [ ] Error handling table covers: no customized files found, generalizability gate failure, test failures, toolkit source divergence
-- [ ] Skill content remains GENERIC — no project-specific paths, tools, or conventions
+- [x] Skill frontmatter `argument-hint` updated to include `[--contribute]`
+- [x] Usage section shows `--contribute` example
+- [x] Flags table includes `--contribute` with description
+- [x] Routing logic handles `--contribute` flag alongside `--update`
+- [x] Phase C0 (Identify Candidates): instructs to run `toolkit.sh status`, diff each customized/modified file against toolkit source, present analysis with generic vs project-specific assessment. **Ask user**: which changes do you want to propose contributing? Let user select/deselect candidates.
+- [x] Phase C1 (Generalizability Gate): defines 10-point checklist — 7 hard requirements (no project paths, no project tool refs, no project conventions, no project defaults, config-driven variability, agent/skill genericness, hook uses _config.sh) and 3 quality requirements (backward compatible, follows patterns, clear purpose). For mixed changes, show what would be kept vs removed and **ask user to confirm** the extraction. Fail with specific guidance. **Ask user**: want to revise the change to make it more generic, or skip this file?
+- [x] Phase C2 (Prepare Clean Changes): instructs to apply only approved changes to toolkit source, verify clean application. If toolkit source has diverged, show the divergence and **ask user** how to proceed (adapt changes, skip, or abort). Show final prepared changes and **ask user to review** before validation.
+- [x] Phase C3 (Validate Contribution): instructs to run FULL toolkit test suite — shellcheck, pytest, CLI tests, manifest tests, hook tests, settings determinism, edge case verification. ALL must pass, no exceptions. **Ask user** if test failures need investigation or if the contribution should be adjusted.
+- [x] Phase C4 (Prepare Submission): instructs to generate patch, write contribution description. **Ask user**: fork workflow or direct push? **Ask user** to review the PR title/summary before finalizing. Provide copy-pasteable commands.
+- [x] Phase C5 (Summary): mandatory structured summary template with: changes proposed, all 10 generalizability checks, all validation results, submission instructions
+- [x] User interaction principle documented: "The contribute flow is collaborative. At every decision point — which files to contribute, how to extract generic parts, how to handle divergence, which submission workflow — ask the user. Never auto-proceed past a judgment call."
+- [x] Error handling table covers: no customized files found, generalizability gate failure, test failures, toolkit source divergence
+- [x] Skill content remains GENERIC — no project-specific paths, tools, or conventions
 
 ### M2: Documentation & CHANGELOG
 
