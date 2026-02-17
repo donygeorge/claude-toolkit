@@ -211,6 +211,70 @@ Task:
    - The report format they should follow (see Persona Report Format)
    - Instruction: "Send your report back via SendMessage when complete"
 
+### Persona Prompt Template
+
+When spawning each persona agent via Task(), use this template (replace placeholders):
+
+```text
+You are {persona_name} for a brainstorm session on "{topic}".
+
+## Your Persona
+Thinking style: {persona_thinking_style}
+Key question: {persona_key_question}
+Research focus: {persona_research_focus}
+Bias: {persona_bias}
+
+## Topic
+{topic}
+
+## Constraints
+{constraints_from_user}
+
+## Candidate Approaches to Investigate
+{approaches_list}
+
+## Codebase Context
+{codebase_findings_from_phase_1}
+
+## User Goals and Priorities
+{user_answers_from_phase_0}
+
+## Instructions
+1. Research each candidate approach from YOUR persona's perspective.
+2. Always include "2025" or "2026" in your WebSearch queries.
+3. Use WebSearch, WebFetch, Read, Grep, Glob, and context7 tools for research.
+4. Structure your report using the Persona Report Format below.
+5. Send your completed report back via SendMessage when done.
+
+## Persona Report Format
+Follow this structure exactly:
+
+## {persona_name} Report: {topic}
+
+### Key Findings
+- <finding 1 with source>
+- <finding 2 with source>
+- <finding 3 with source>
+
+### Approach Evaluations
+
+#### A1: <Name>
+- **My take**: <1-2 sentence opinion from your perspective>
+- **Evidence**: <supporting evidence with sources>
+- **Concerns**: <issues from your perspective>
+
+(Repeat for each approach)
+
+### My Recommendation
+<which approach you favor and why>
+
+### Surprising Findings
+<anything unexpected>
+
+### Sources
+- <URLs and references>
+```
+
 ### Phase 4: Monitor & Coordinate
 
 1. **Receive persona reports** — Messages from teammates are delivered automatically. Wait for all personas to report.
@@ -319,9 +383,11 @@ mcp__codex__codex:
 ### Phase 8: Finalize & Commit
 
 1. **Shutdown the team** (if one was created):
-   - Send shutdown request to each active persona via SendMessage
-   - Wait for shutdown confirmations
-   - Call TeamDelete to clean up team files
+   - Send all shutdown requests in parallel (one `SendMessage` with `type: "shutdown_request"` per active persona). Do NOT send them sequentially.
+   - Wait up to **30 seconds** per agent for shutdown confirmation.
+   - **Failure handling**: If an agent does not respond within 30 seconds, log a warning ("Agent {name} did not confirm shutdown within 30s — proceeding") and continue. Do not block finalization on unresponsive agents.
+   - After all confirmations are received (or timeouts elapsed), call TeamDelete to clean up team files.
+   - If TeamDelete fails, log a warning and proceed — team files in `~/.claude/teams/` will not affect the project.
 
 2. **Write the final idea document** to `docs/ideas/<topic-slug>.md`.
 
@@ -329,7 +395,7 @@ mcp__codex__codex:
    - Create `docs/ideas/` directory if it does not exist
    - Stage `docs/ideas/<topic-slug>.md`
    - Write commit message to a temp file
-   - Commit with `git commit -F <file>` (not heredoc — per toolkit convention)
+   - Commit with `git commit -F <file>` (avoids shell escaping issues with heredoc)
    - Message format: `Add idea exploration: <topic>`
 
 4. **Present final summary**:
@@ -522,6 +588,15 @@ Invoke this as a single Task (subagent_type: `general-purpose`) that runs the Ge
 
 If the `gemini` CLI is not installed, skip with a log message: "Gemini CLI not found — skipping second opinion."
 
+### Gemini Invocation Timing
+
+Invoke the gemini-consultant **after** all persona reports have been collected (end of Phase 4) and **during** the synthesis phase (Phase 5). Specifically:
+
+1. **After persona reports**: Once all persona reports are in, pass the collected findings and the current approach evaluations to the gemini-consultant as input context.
+2. **During synthesis**: The gemini-consultant's response feeds into the synthesis — its critique, alternatives, and contrarian take are incorporated alongside persona reports in the evaluation matrix and disagreement analysis.
+
+Do NOT invoke gemini-consultant in parallel with other personas during Phase 4. Its value comes from reacting to the team's collective findings, not duplicating their research.
+
 ### Persona Report Format
 
 Each persona should structure their report as:
@@ -578,6 +653,16 @@ Between checkpoints, the orchestrator should ask the user whenever:
 - Domain-specific knowledge is needed to evaluate an approach
 - Research contradicts the user's initial assumptions
 - A promising but unexpected direction emerges
+
+### When NOT to Ask Ad-Hoc Questions
+
+Do NOT interrupt the user with ad-hoc questions when:
+
+- **Fewer than 3 persona reports have been received** — wait for enough data before surfacing findings. Early reports are partial and the question may answer itself once more personas report in.
+- **Synthesis has already started** (Phase 5+) — at this point, incorporate findings into the synthesis and present them at Checkpoint 3 (Phase 6) instead of interrupting with mid-synthesis questions.
+- **The question is cosmetic or low-stakes** — e.g., formatting preferences, minor naming choices, or non-blocking decisions. Save these for the next checkpoint.
+- **You already asked an ad-hoc question in the last 2 minutes** — batch related questions rather than peppering the user with frequent interruptions.
+- **The answer is available in the codebase or user's earlier responses** — search before asking.
 
 ---
 

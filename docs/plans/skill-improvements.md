@@ -133,21 +133,21 @@ Address all identified documentation gaps, ambiguities, and underspecified secti
 
 **Exit Criteria**:
 
-- [ ] brainstorm/SKILL.md contains a concrete persona prompt template with placeholders
-- [ ] brainstorm/SKILL.md specifies gemini-consultant invocation timing (after persona reports, during synthesis)
-- [ ] brainstorm/SKILL.md team shutdown section includes timeout (30s), parallel shutdown, failure handling
-- [ ] brainstorm/SKILL.md has "When NOT to Ask Ad-Hoc Questions" section with concrete threshold
-- [ ] implement/SKILL.md state schema includes `current_phase` and `phases_completed` fields
-- [ ] implement/SKILL.md resume logic references `phases_completed` array
-- [ ] refine/SKILL.md convergence_threshold has inline comment explaining it means "max new findings per iteration"
-- [ ] refine/SKILL.md scope evolution specifies discovery mechanism, limits (10/iteration, 30 total), and module priority
-- [ ] refine/SKILL.md clean-room section specifies behavior for 0, 1-3, and 4+ issues, and termination after 2 rounds
-- [ ] plan/SKILL.md includes slug normalization and glob fallback for idea doc detection
-- [ ] plan/SKILL.md specifies `subagent_type: general-purpose` for plan agent with prompt template
-- [ ] plan/SKILL.md codex stop condition is "SOLID:" only (no "no major issues" fuzzy match)
-- [ ] fix/SKILL.md scan scope includes strategy (same module first), cap (20 matches), and reporting behavior
-- [ ] fix/SKILL.md test addition uses a decision tree format
-- [ ] commit/SKILL.md detection strategy says "rely on conversation history, cross-reference with git status"
+- [x] brainstorm/SKILL.md contains a concrete persona prompt template with placeholders
+- [x] brainstorm/SKILL.md specifies gemini-consultant invocation timing (after persona reports, during synthesis)
+- [x] brainstorm/SKILL.md team shutdown section includes timeout (30s), parallel shutdown, failure handling
+- [x] brainstorm/SKILL.md has "When NOT to Ask Ad-Hoc Questions" section with concrete threshold
+- [x] implement/SKILL.md state schema includes `current_phase` and `phases_completed` fields
+- [x] implement/SKILL.md resume logic references `phases_completed` array
+- [x] refine/SKILL.md convergence_threshold has inline comment explaining it means "max new findings per iteration"
+- [x] refine/SKILL.md scope evolution specifies discovery mechanism, limits (10/iteration, 30 total), and module priority
+- [x] refine/SKILL.md clean-room section specifies behavior for 0, 1-3, and 4+ issues, and termination after 2 rounds
+- [x] plan/SKILL.md includes slug normalization and glob fallback for idea doc detection
+- [x] plan/SKILL.md specifies `subagent_type: general-purpose` for plan agent with prompt template
+- [x] plan/SKILL.md codex stop condition is "SOLID:" only (no "no major issues" fuzzy match)
+- [x] fix/SKILL.md scan scope includes strategy (same module first), cap (20 matches), and reporting behavior
+- [x] fix/SKILL.md test addition uses a decision tree format
+- [x] commit/SKILL.md detection strategy says "rely on conversation history, cross-reference with git status"
 
 ### M3: Add Version Update Check to Implement
 

@@ -154,6 +154,8 @@ defaults:
       "id": "M0",
       "title": "Foundation",
       "status": "completed",
+      "current_phase": "Phase 11",
+      "phases_completed": ["Phase 0", "Phase 1", "Phase 2", "Phase 3", "Phase 4", "Phase 5", "Phase 6", "Phase 7", "Phase 8", "Phase 8b", "Phase 9", "Phase 10", "Phase 11"],
       "started_at": "2026-01-28T10:00:00Z",
       "completed_at": "2026-01-28T10:45:00Z",
       "commit": "abc123",
@@ -297,9 +299,14 @@ IF --continue flag:
   1. Read artifacts/execute/<plan>/plan_state.json
   2. Find current_milestone
   IF milestone.status == "in_progress":
-    - Resume milestone from last completed phase
+    - Read the milestone's phases_completed array to determine progress
+    - Resume from the first phase NOT in phases_completed
+    - Example: if phases_completed = ["Phase 0", "Phase 1", "Phase 2"],
+      resume from Phase 3
+    - Pass phases_completed to the Milestone Orchestrator so it skips
+      already-completed phases
   ELSE:
-    - Start next pending milestone
+    - Start next pending milestone (phases_completed will be empty)
 ```
 
 ---

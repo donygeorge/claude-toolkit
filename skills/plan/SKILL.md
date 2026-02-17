@@ -61,11 +61,15 @@ defaults:
 **Before doing ANY research or planning:**
 
 1. Read the user's request carefully
-2. **Check for an existing idea document**: Look for `docs/ideas/<feature-name>.md` (produced by the `/brainstorm` skill). If found:
-   - Read the idea doc fully — it contains research findings, evaluated approaches, a recommendation, constraints, and open questions
-   - Use this as your starting context — the research phase can be significantly abbreviated
-   - Reduce clarifying questions to only what the idea doc does NOT already cover (typically: scope boundaries and milestone granularity)
-   - Reference the recommended approach as the starting architecture unless the user says otherwise
+2. **Check for an existing idea document**: Look for `docs/ideas/<feature-name>.md` (produced by the `/brainstorm` skill).
+   - **Slug normalization**: Normalize the feature name to a slug for matching: lowercase, replace spaces and underscores with hyphens, strip special characters (e.g., "User Notifications" becomes `user-notifications`).
+   - **Exact match first**: Check for `docs/ideas/<slug>.md`.
+   - **Glob fallback**: If no exact match, search with `docs/ideas/*{slug}*` to catch partial matches or naming variations (e.g., `docs/ideas/user-notifications-v2.md` would match slug `user-notifications`). If multiple matches, prefer the most recently modified file.
+   - If found:
+     - Read the idea doc fully — it contains research findings, evaluated approaches, a recommendation, constraints, and open questions
+     - Use this as your starting context — the research phase can be significantly abbreviated
+     - Reduce clarifying questions to only what the idea doc does NOT already cover (typically: scope boundaries and milestone granularity)
+     - Reference the recommended approach as the starting architecture unless the user says otherwise
 3. If NO idea doc exists, identify ambiguities, unknowns, or decisions that need user input
 4. Ask ALL clarifying questions in ONE batch — cover:
    - Scope boundaries (what's in/out)
@@ -91,9 +95,36 @@ defaults:
    - Use context7 MCP tools for library-specific docs
 
 3. **Create initial plan draft**
-   - Launch plan agent via Task tool
+   - Launch plan agent via Task tool with `subagent_type: "general-purpose"` (the agent needs Read, Write, Edit, Grep, Glob, Bash, WebSearch, WebFetch, and context7 tools)
    - If an idea doc exists, include its recommended approach, research findings, and constraints in the agent prompt
    - Agent writes plan to `docs/plans/<feature-name>.md`
+
+   **Plan agent Task() invocation**:
+
+   ```text
+   Task:
+     subagent_type: "general-purpose"
+     prompt: |
+       You are a plan author. Create a detailed implementation plan for "{feature_name}".
+
+       Write the plan to docs/plans/{feature_name}.md using the plan template format
+       (milestones with exit criteria, evaluation criteria, etc.).
+
+       ## Context
+       {codebase_findings}
+       {idea_doc_content_if_available}
+       {user_requirements}
+
+       ## Constraints
+       {user_constraints_and_priorities}
+
+       ## Rules
+       - Follow the plan template structure exactly
+       - Every milestone needs testable exit criteria as checkboxes
+       - No time estimates -- focus on what, not when
+       - List specific file paths in each milestone
+       - End with evaluation criteria grouped by category
+   ```
 
 ### Phase 2: Feedback Loop (Codex)
 
@@ -102,7 +133,7 @@ After the initial plan is created, iterate with codex for feedback:
 **Loop Rules**:
 
 - Maximum 10 iterations
-- Stop early if codex response starts with "SOLID:" or says "no major issues"
+- Stop early if codex response starts with "SOLID:"
 - Incorporate feedback and regenerate plan each iteration
 - Track iteration count and feedback summary
 

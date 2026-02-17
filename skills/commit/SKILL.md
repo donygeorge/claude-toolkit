@@ -28,7 +28,15 @@ If the output is empty, stop immediately and tell the user there is nothing to c
 
 ### Step 2: Filter to Session Files
 
-From the uncommitted changes, identify which files were touched in this Claude Code session. Only include files that you (the AI assistant) created or modified during this session. Do NOT include:
+From the uncommitted changes, identify which files were touched in this Claude Code session.
+
+**Detection strategy**: Rely on your conversation history to identify files you created or modified during this session. Cross-reference with `git status` output to confirm they are actually uncommitted. Specifically:
+
+1. Review your conversation history for all Write, Edit, and Bash commands that created or modified files.
+2. Build a list of files you touched in this session.
+3. Intersect that list with the `git status --porcelain` output to find files that are both session-touched AND uncommitted.
+
+Only include files that you (the AI assistant) created or modified during this session. Do NOT include:
 
 - Files that were already modified before the session started
 - Files you did not touch

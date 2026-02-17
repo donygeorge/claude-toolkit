@@ -103,21 +103,41 @@ Skip the reproducing test for:
 
 ### Step 5: Scan for Similar Patterns
 
+**Scan scope strategy**:
+
+1. **Same module first**: Start by searching files in the same directory/module as the bug. These are most likely to share the same pattern.
+2. **Expand to related modules**: If the pattern is architectural (e.g., missing error handling on all API endpoints), expand to sibling modules and direct dependencies.
+3. **Cap at 20 matches**: Stop collecting after 20 grep matches. If more than 20 matches are found, report the total count to the user (e.g., "Found 47 instances of this pattern — showing first 20. Consider a dedicated refactoring pass for the remaining 27.").
+4. **Report findings**: For each match, note the file, line, and whether it has the same bug or is a false positive.
+
+**Scan execution**:
+
 1. **Search for the same bug pattern** elsewhere in the codebase:
    - If the bug was a missing null check, grep for other similar patterns
    - If the bug was a wrong API response shape, check other endpoints
-2. **Fix any similar issues found**
+2. **Fix any similar issues found** (within the 20-match cap)
 3. **If no similar issues exist**, skip this step
 
-### Step 6: Add Tests (If Relevant)
+### Step 6: Add Tests (Decision Tree)
 
-Add a test ONLY if:
+Use this decision tree to determine whether to add a test:
 
-- The bug could recur (not a one-off typo)
-- No existing test covers this code path
-- The test is simple and targeted
-
-Do NOT add tests for simple typo fixes, import corrections, or config changes.
+```text
+Is the fix a typo, import correction, or config change?
+├── YES → Do NOT add a test. Stop.
+└── NO → Continue.
+    │
+    Does an existing test already cover this code path?
+    ├── YES → Do NOT add a new test. Verify the existing test passes. Stop.
+    └── NO → Continue.
+        │
+        Could this bug recur (logic error, edge case, race condition)?
+        ├── YES → Add a targeted regression test that:
+        │         1. Reproduces the original bug (fails without the fix)
+        │         2. Passes with the fix applied
+        │         3. Is minimal — tests only the fixed behavior
+        └── NO (one-off, unlikely to recur) → Do NOT add a test. Stop.
+```
 
 ### Step 7: Commit
 

@@ -31,7 +31,7 @@ aliases:
 
 defaults:
   max_iterations: 8
-  convergence_threshold: 2
+  convergence_threshold: 2  # max new findings per iteration before plateau is detected
   deferred_drop_after: 2
 ```
 
@@ -199,7 +199,12 @@ Stage only modified files and commit.
 
 1. Update state files
 2. Drop findings deferred 2+ consecutive times
-3. Add newly-discovered related files to scope (max 10 additions)
+3. **Scope evolution** — discover and add related files:
+   - **Discovery mechanism**: During Phase A (Evaluate) and Phase C (Fix), the agent may encounter imports, callers, or dependencies outside the current scope. Track these as candidate files.
+   - **Module priority**: Prefer files in the same module/directory as existing scope files. Files in unrelated modules are lower priority and should only be added if they have direct dependency relationships.
+   - **Per-iteration limit**: Add at most **10 new files** per iteration to avoid scope explosion.
+   - **Total limit**: The scope may grow by at most **30 files** across all iterations combined (tracked in `state.json` as `scope_additions_total`). Once this limit is reached, no further files are added.
+   - **Reporting**: Log each scope addition with the reason (e.g., "Added `utils/helpers.py` — imported by `services/auth.py` which is in scope").
 
 ---
 
@@ -211,7 +216,7 @@ The strongest signal. If a fresh evaluator finds nothing, the scope is clean.
 
 ### Plateau Detection
 
-Track `new_findings` per iteration. If last 2 iterations both had fewer than 2 new findings, diminishing returns.
+Track `new_findings` per iteration. If last 2 iterations both had fewer than `convergence_threshold` (default: 2) new findings, diminishing returns have been reached. The threshold means "max new findings per iteration" — if an iteration produces fewer new findings than this value, it counts toward the plateau signal.
 
 ### Deferred Findings Lifecycle
 
@@ -228,12 +233,23 @@ Finding F003 in iteration 3 -> DROPPED (exceeded threshold)
 **Mandatory** when convergence is reached. Spawn a separate, fresh agent that:
 
 1. Reads current state of all files (post-fixes)
-2. Evaluates independently
+2. Evaluates independently (same criteria as Phase A)
 3. Reports any remaining issues
 
-- If 3 or fewer fixable issues: fix inline
-- If 4+ issues: run one more iteration
-- Maximum 2 clean-room rounds
+### Clean-Room Outcome Handling
+
+| Issues Found | Action |
+| ------------ | ------ |
+| **0 issues** | Pass immediately. Convergence confirmed — proceed to final report. |
+| **1-3 issues** | Fix inline (the clean-room agent fixes them directly), then re-verify with a second clean-room round. |
+| **4+ issues** | Fail the milestone. Do NOT attempt to fix — the scope has not converged. Log the issues, escalate to the user, and recommend running another full `/refine` pass with adjusted scope or parameters. |
+
+### Termination
+
+Maximum **2 clean-room rounds**. After 2 rounds:
+
+- If issues persist (1+ remaining after round 2), report them in the convergence report as "unresolved clean-room findings" and conclude. Do not start a 3rd round.
+- The convergence report should clearly indicate whether clean-room verification passed (0 issues) or ended with residual findings.
 
 ---
 
