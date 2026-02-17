@@ -34,8 +34,8 @@ Toolkit repo: https://github.com/donygeorge/claude-toolkit.git
    git fetch claude-toolkit
    git subtree add --squash --prefix=.claude/toolkit claude-toolkit main
    bash .claude/toolkit/toolkit.sh init --from-example
-2. Read and follow .claude/skills/setup/SKILL.md (the /setup skill) to detect
-   stacks, validate commands, generate toolkit.toml, create CLAUDE.md, and commit.
+2. Read and follow .claude/skills/setup-toolkit/SKILL.md (the /setup-toolkit skill)
+   to detect stacks, validate commands, generate toolkit.toml, create CLAUDE.md, and commit.
 ```
 
 If you use a fork, replace the GitHub URL above. See [BOOTSTRAP_PROMPT.md](BOOTSTRAP_PROMPT.md) for the standalone version.
@@ -48,7 +48,7 @@ If you prefer a shell script, run from your project root:
 bash /path/to/claude-toolkit/bootstrap.sh --name my-project --stacks python
 ```
 
-Then open Claude Code and run `/setup` to auto-detect and validate your configuration.
+Then open Claude Code and run `/setup-toolkit` to auto-detect and validate your configuration.
 
 ### Manual Setup
 
@@ -70,9 +70,9 @@ bash .claude/toolkit/toolkit.sh init --from-example
 # Edit .claude/toolkit.toml to match your project
 ```
 
-#### 3. Run /setup in Claude Code
+#### 3. Run /setup-toolkit in Claude Code
 
-Open Claude Code in your project and run `/setup`. Claude will detect your stacks, validate commands, and generate the full configuration.
+Open Claude Code in your project and run `/setup-toolkit`. Claude will detect your stacks, validate commands, and generate the full configuration.
 
 #### 4. Commit
 

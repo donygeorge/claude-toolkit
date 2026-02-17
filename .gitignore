@@ -21,6 +21,9 @@ toolkit-cache.env
 # Test artifacts
 test-output/
 
+# Implementation artifacts (created by /implement skill)
+artifacts/
+
 # Machine-specific Claude Code settings
 .claude/settings.local.json
 

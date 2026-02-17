@@ -18,6 +18,6 @@ Toolkit repo: https://github.com/donygeorge/claude-toolkit.git
    git fetch claude-toolkit
    git subtree add --squash --prefix=.claude/toolkit claude-toolkit main
    bash .claude/toolkit/toolkit.sh init --from-example
-2. Read and follow .claude/skills/setup/SKILL.md (the /setup skill) to detect
-   stacks, validate commands, generate toolkit.toml, create CLAUDE.md, and commit.
+2. Read and follow .claude/skills/setup-toolkit/SKILL.md (the /setup-toolkit skill)
+   to detect stacks, validate commands, generate toolkit.toml, create CLAUDE.md, and commit.
 ```

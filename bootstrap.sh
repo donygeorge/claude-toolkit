@@ -15,7 +15,7 @@
 #   1. Adds claude-toolkit as a git subtree under .claude/toolkit/
 #   2. Runs toolkit.sh init --from-example (creates toolkit.toml from example)
 #   3. Optionally patches project.name and project.stacks in toolkit.toml
-#   4. Shows next steps (run /setup in Claude Code)
+#   4. Shows next steps (run /setup-toolkit in Claude Code)
 #
 # Requirements: git, jq, python3 (3.11+), bash 4+
 
@@ -261,7 +261,7 @@ Toolkit version: ${TOOLKIT_VERSION}"
 else
   echo "Next steps:"
   echo "  1. Open Claude Code in this project"
-  echo "  2. Run: /setup"
+  echo "  2. Run: /setup-toolkit"
   echo "     This will auto-detect your stacks, validate lint/test commands,"
   echo "     configure toolkit.toml, generate CLAUDE.md, and commit."
   echo ""

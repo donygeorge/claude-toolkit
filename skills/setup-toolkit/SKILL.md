@@ -1,5 +1,5 @@
 ---
-name: setup
+name: setup-toolkit
 description: Detect project stacks and commands, validate config, generate toolkit.toml and CLAUDE.md. Handles fresh setup, partial installs, and reconfiguration.
 argument-hint: "[--reconfigure]"
 user-invocable: true
@@ -15,8 +15,8 @@ Orchestrate post-bootstrap project configuration. Auto-detect stacks and command
 ## Usage
 
 ```bash
-/setup                     # Configure toolkit for current project state
-/setup --reconfigure       # Full re-detection, ignoring cached state
+/setup-toolkit                     # Configure toolkit for current project state
+/setup-toolkit --reconfigure       # Full re-detection, ignoring cached state
 ```
 
 ## When to Use
@@ -50,7 +50,7 @@ ls .claude/toolkit/toolkit.sh
 
 If the file does not exist, the toolkit is not installed. Tell the user:
 
-> The toolkit subtree is not installed. Please follow the bootstrap instructions in the toolkit README to install it first, then re-run `/setup`.
+> The toolkit subtree is not installed. Please follow the bootstrap instructions in the toolkit README to install it first, then re-run `/setup-toolkit`.
 
 **Stop here** if the toolkit is not installed.
 
@@ -435,6 +435,20 @@ If the test command fails:
 
 Stage and commit all configuration changes.
 
+#### Step 8.0: Ensure .gitignore entries
+
+Check the project's `.gitignore` and ensure it contains the toolkit-related entries. If `.gitignore` does not exist, create it. Add any missing lines:
+
+```text
+# Claude Toolkit - implementation artifacts
+artifacts/
+
+# Claude Toolkit - generated config cache
+toolkit-cache.env
+```
+
+If `.gitignore` already contains these entries, skip this step.
+
 #### Step 8.1: Review changes
 
 ```bash
@@ -463,6 +477,7 @@ git add .claude/toolkit-cache.env
 git add .claude/settings.json
 git add .mcp.json
 git add CLAUDE.md
+git add .gitignore
 ```
 
 Also stage any files created or restored by `toolkit.sh init --force` (skills, agents, rules).

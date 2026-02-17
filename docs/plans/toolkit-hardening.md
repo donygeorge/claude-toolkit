@@ -6,11 +6,13 @@
 >
 > **Source**: 4-agent review (Architect, Prototyper, QA, Security)
 >
-> **Dependency**: Incorporates [streamline-bootstrap-setup.md](streamline-bootstrap-setup.md) as M6
+> **Dependency**: Incorporates [streamline-bootstrap-setup.md](streamline-bootstrap-setup.md) as M6 (M0-M4 now implemented)
 
 ## Summary
 
 Address 47 findings from a 4-agent deep review (Senior Architect, DX Prototyper, Senior QA, Security Engineer) covering long-term maintainability, developer experience, quality gaps, and security vulnerabilities. Organized into 7 incremental milestones, each a mergeable PR.
+
+**Note**: The [streamline-bootstrap-setup plan](streamline-bootstrap-setup.md) (M0-M4) has been fully implemented. This adds `detect-project.py`, a simplified `bootstrap.sh`, a comprehensive `/setup-toolkit` skill, `BOOTSTRAP_PROMPT.md`, and updated `CLAUDE.md.template`. The test count has grown from 126 to 214+ pytest tests. M6 section 6.1 is now complete; sections 6.2-6.4 remain.
 
 ## Findings Reference
 
@@ -21,7 +23,7 @@ Address 47 findings from a 4-agent deep review (Senior Architect, DX Prototyper,
 | C3 | Critical | Config cache injection (TOML → bash) | M2 |
 | C4 | Critical | Race conditions in concurrent hook execution | M2 |
 | H1 | High | Monolithic toolkit.sh (~1027 lines) | M4 |
-| H2 | High | Too many onboarding steps / no single-command setup | M6 |
+| H2 | High | Too many onboarding steps / no single-command setup | M6 (resolved by bootstrap-setup) |
 | H3 | High | Duplicated pattern matching across hooks | M3 |
 | H4 | High | No schema validation for settings merge output | M5 |
 | H5 | High | No integrity verification for updates | M5 |
@@ -29,7 +31,7 @@ Address 47 findings from a 4-agent deep review (Senior Architect, DX Prototyper,
 | H7 | High | Error messages inconsistent and sometimes cryptic | M3 |
 | H8 | High | Guard hook bypass via settings manipulation | M2 |
 | H9 | High | Temp file handling inconsistencies | M2 |
-| H10 | High | Cognitive load / too many concepts | M6 |
+| H10 | High | Cognitive load / too many concepts | M6 (partially addressed by bootstrap-setup) |
 | H11 | High | Missing `set -euo pipefail` in several hooks | M1 |
 | M1 | Medium | No plugin/extension architecture for hooks | M7 |
 | M2 | Medium | Stack system limited and hard to extend | M7 |
@@ -40,7 +42,7 @@ Address 47 findings from a 4-agent deep review (Senior Architect, DX Prototyper,
 | M7 | Medium | Python scripts don't validate TOML structure deeply | M2 |
 | M8 | Medium | File permissions not hardened | M2 |
 | M9 | Medium | No dry-run / preview mode | M5 |
-| M10 | Medium | README too long for quick reference | M6 |
+| M10 | Medium | README too long for quick reference | M6 (partially addressed — Quick Start added, still 400+ lines) |
 | M11 | Medium | Hook output format not standardized | M3 |
 | M12 | Medium | No health check / self-test command | M5 |
 | M13 | Medium | smart-context framework tightly coupled | M7 |
@@ -744,7 +746,7 @@ Follow the milestones defined in `docs/plans/streamline-bootstrap-setup.md`:
 
 - **M0**: Create `detect-project.py` for auto-detection
 - **M1**: Simplify `bootstrap.sh` to git-only operations
-- **M2**: Rewrite `/setup` skill as comprehensive orchestrator
+- **M2**: Rewrite `/setup-toolkit` skill as comprehensive orchestrator
 - **M3**: Update CLAUDE.md template + docs
 
 ### 6.2 Split README into quick-start + reference
@@ -800,7 +802,7 @@ cmd_explain() {
 
 - [ ] `detect-project.py` exists and works
 - [ ] `bootstrap.sh` simplified per streamline plan
-- [ ] `/setup` skill rewritten per streamline plan
+- [ ] `/setup-toolkit` skill rewritten per streamline plan
 - [ ] README.md under 200 lines with quick-start focus
 - [ ] `docs/reference.md` has full configuration reference
 - [ ] `docs/concepts.md` explains mental model
@@ -951,7 +953,7 @@ The plan is complete when:
 1. **Zero critical findings remain**: C1-C4 all resolved
 2. **Hook test coverage**: 30+ test cases covering all guard hooks
 3. **CLI modular**: toolkit.sh under 150 lines, each command in its own file
-4. **Onboarding**: New project setup takes under 5 minutes with `/setup`
+4. **Onboarding**: New project setup takes under 5 minutes with `/setup-toolkit`
 5. **All tests pass**: Python (126+), bash hooks (30+), CLI integration, manifest
 6. **Shellcheck clean**: All `.sh` files pass with no warnings
 
