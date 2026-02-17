@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # PostToolUseFailure hook: Classify errors and suggest recovery strategies
 # Returns structured JSON hookSpecificOutput with additionalContext for the model.
 #

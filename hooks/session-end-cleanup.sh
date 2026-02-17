@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # SessionEnd hook: Clean up temporary files on session end
 #
 # set -u: Catch undefined variable bugs. No set -e/-o pipefail — hooks must

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # PreCompact hook: Output working state context that survives compaction
 # Hook output is injected into conversation after compact completes
 # Also saves state to compact-state.txt for post-compact-reinject.sh

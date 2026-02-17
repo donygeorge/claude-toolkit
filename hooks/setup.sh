@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Setup hook: Validate development environment on first session start
 #
 # set -u: Catch undefined variable bugs. No set -e/-o pipefail — hooks must
@@ -54,7 +54,7 @@ done < <(toolkit_iterate_array "$TOOLKIT_HOOKS_SETUP_REQUIRED_TOOLS")
 while read -r TOOL; do
   [ -z "$TOOL" ] && continue
   if ! command -v "$TOOL" >/dev/null 2>&1 && [ ! -x ".venv/bin/$TOOL" ]; then
-    echo "INFO: Optional tool not found: ${TOOL}" >&2
+    echo "[toolkit:setup] Optional tool not found: ${TOOL}" >&2
   fi
 done < <(toolkit_iterate_array "$TOOLKIT_HOOKS_SETUP_OPTIONAL_TOOLS")
 
@@ -64,7 +64,7 @@ done < <(toolkit_iterate_array "$TOOLKIT_HOOKS_SETUP_OPTIONAL_TOOLS")
 while read -r TOOL; do
   [ -z "$TOOL" ] && continue
   if ! command -v "$TOOL" >/dev/null 2>&1; then
-    echo "INFO: Security tool not found: ${TOOL}" >&2
+    echo "[toolkit:setup] Security tool not found: ${TOOL}" >&2
   fi
 done < <(toolkit_iterate_array "$TOOLKIT_HOOKS_SETUP_SECURITY_TOOLS")
 

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # TaskCompleted hook: Quality gate — blocks task completion if lint/tests fail
 # Exit 0 = allow task completion
 # Exit 2 = block with stderr feedback (agent must fix before completing)
@@ -31,7 +31,7 @@ if [ -n "$CHANGED_SH" ]; then
   for SH_FILE in $CHANGED_SH; do
     if [ -f "$SH_FILE" ]; then
       if ! SH_SYNTAX=$(bash -n "$SH_FILE" 2>&1); then
-        echo "Task cannot be completed: syntax error in $SH_FILE" >&2
+        echo "[toolkit:task-completed-gate] ERROR: syntax error in $SH_FILE" >&2
         echo "$SH_SYNTAX" >&2
         exit 2
       fi
@@ -89,7 +89,7 @@ if [ -n "$TOOLKIT_HOOKS_TASK_COMPLETED_GATES_LINT_CMD" ]; then
       # ".venv/bin/ruff check --quiet" must split into command + arguments.
       # shellcheck disable=SC2086
       if ! LINT_OUTPUT=$(echo "$MATCHING_FILES" | xargs $LINT_CMD 2>&1); then
-        echo "Task cannot be completed: lint errors found. Fix lint issues and retry." >&2
+        echo "[toolkit:task-completed-gate] ERROR: lint errors found. Fix lint issues and retry." >&2
         echo "$LINT_OUTPUT" >&2
         exit 2
       fi
@@ -131,7 +131,7 @@ if [ -n "$TOOLKIT_HOOKS_TASK_COMPLETED_GATES_TESTS_CMD" ]; then
       # Word splitting on $TESTS_CMD is intentional — see lint gate comment above.
       # shellcheck disable=SC2086
       if ! TEST_OUTPUT=$(timeout "$TESTS_TIMEOUT" $TESTS_CMD 2>&1); then
-        echo "Task cannot be completed: tests failing." >&2
+        echo "[toolkit:task-completed-gate] ERROR: tests failing." >&2
         echo "$TEST_OUTPUT" | tail -20 >&2
         exit 2
       fi

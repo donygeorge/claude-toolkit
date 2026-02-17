@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Stop hook: Advisory check for uncommitted changes
 # Non-blocking (always exit 0)
 #

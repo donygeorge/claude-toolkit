@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # PostToolUse hook: Auto-format and lint files after edits
 # Supports configurable linters per file extension via toolkit.toml
 #

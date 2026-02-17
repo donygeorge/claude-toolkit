@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.0] - 2026-02-16
+
+### Added
+
+- **Shared hook utilities**: `lib/hook-utils.sh` extracts common patterns (input parsing, deny/approve responses, audit logging, atomic writes, standardized logging) into a shared library, reducing code duplication across hooks
+- **Standardized logging**: `hook_warn()`, `hook_error()`, `hook_info()` helpers output `[toolkit:hook-name]` prefixed messages to stderr; all hooks updated to use this format
+- **Bash 3.2 compatibility check**: `hooks/_config.sh` now warns at load time if bash version is older than 3.2 (macOS default)
+- **`.editorconfig`**: Project-wide editor settings for consistent formatting (LF line endings, UTF-8, per-language indent styles)
+
+### Changed
+
+- **Hook migration**: `guard-destructive.sh`, `guard-sensitive-writes.sh`, and `auto-approve-safe.sh` now source `lib/hook-utils.sh` for shared `hook_read_input`, `hook_deny`, `hook_approve`, `hook_approve_and_persist`, and `_audit_log` functions instead of inline implementations
+- **Shebang standardization**: All `.sh` files now use `#!/usr/bin/env bash` consistently (was `#!/bin/bash` in 13 hook files)
+- **Error message format**: Hook error/warning messages in `setup.sh`, `task-completed-gate.sh`, and `subagent-quality-gate.sh` now use `[toolkit:hook-name]` prefix pattern
+
 ## [1.3.0] - 2026-02-16
 
 ### Added

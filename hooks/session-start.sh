@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # SessionStart hook: Load project state once per session
 #
 # set -u: Catch undefined variable bugs. No set -e/-o pipefail — hooks must

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # SubagentStop hook: Validate agent output quality before accepting results
 # Checks that agents produced meaningful evidence appropriate to their role.
 # In deep/thorough mode: critical failures block (exit 2). In smoke mode: warnings only.
@@ -39,12 +39,12 @@ FAILURES=""
 
 # --- Helper: add a warning ---
 warn() {
-  WARNINGS="${WARNINGS}WARNING ($AGENT_TYPE): $1\n"
+  WARNINGS="${WARNINGS}[toolkit:subagent-quality-gate] WARN ($AGENT_TYPE): $1\n"
 }
 
 # --- Helper: add a failure ---
 fail() {
-  FAILURES="${FAILURES}FAILURE ($AGENT_TYPE): $1\n"
+  FAILURES="${FAILURES}[toolkit:subagent-quality-gate] ERROR ($AGENT_TYPE): $1\n"
 }
 
 # =============================================================================

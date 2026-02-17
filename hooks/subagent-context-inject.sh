@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # SubagentStart hook: Inject project context into subagents
 # Provides branch state, modified files, active plan/solve state, and critical rules.
 #

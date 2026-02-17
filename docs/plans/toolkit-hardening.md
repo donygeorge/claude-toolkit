@@ -507,15 +507,15 @@ Establish pattern:
 
 ### Exit Criteria
 
-- [ ] `lib/hook-utils.sh` exists with shared functions
-- [ ] At least 3 hooks migrated to use shared utilities
-- [ ] All `.sh` files use `#!/usr/bin/env bash`
-- [ ] `.editorconfig` exists
-- [ ] Error messages follow `[toolkit:hook-name]` pattern
-- [ ] Bash 3.2 compatibility check added
-- [ ] `shellcheck -x -S warning hooks/*.sh lib/*.sh` passes
-- [ ] All hook tests pass
-- [ ] All Python tests pass
+- [x] `lib/hook-utils.sh` exists with shared functions
+- [x] At least 3 hooks migrated to use shared utilities
+- [x] All `.sh` files use `#!/usr/bin/env bash`
+- [x] `.editorconfig` exists
+- [x] Error messages follow `[toolkit:hook-name]` pattern
+- [x] Bash 3.2 compatibility check added
+- [x] `shellcheck -x -S warning hooks/*.sh lib/*.sh` passes
+- [x] All hook tests pass
+- [x] All Python tests pass
 
 ---
 

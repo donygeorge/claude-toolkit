@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # SessionStart(compact) hook: Re-inject critical context AFTER compaction
 # Reads state saved by pre-compact.sh
 #
