@@ -177,20 +177,20 @@ Add a standalone Python detection script (stdlib only) that auto-detects project
 
 **Exit Criteria**:
 
-- [ ] `detect-project.py` exists at repo root with CLI entry point
-- [ ] Detects stacks from file presence: `*.py`/`pyproject.toml`/`requirements.txt` → python, `tsconfig.json`/`*.ts` → typescript, `*.xcodeproj`/`Package.swift`/`*.swift` → ios
-- [ ] Detects project name from `basename(git rev-parse --show-toplevel)`
-- [ ] Detects version file with precedence: package.json > pyproject.toml > VERSION
-- [ ] Detects source directories by scanning for common patterns (src/, app/, lib/, packages/)
-- [ ] Detects lint commands by probing executables (ruff, eslint, swiftlint) with `--version` check
-- [ ] Detects test commands by parsing Makefile targets and package.json scripts
-- [ ] Detects format commands (ruff format, prettier, swiftformat)
-- [ ] Outputs valid JSON to stdout with `--project-dir` flag
-- [ ] Has `--validate` flag that actually runs detected commands and records pass/fail
-- [ ] Detects toolkit installation state: subtree exists, toml exists, toml is still the unmodified example, settings.json generated, missing skills/agents, broken symlinks
-- [ ] Uses only Python stdlib (no external deps except pytest for tests)
-- [ ] All pytest tests pass: `python3 -m pytest tests/test_detect_project.py -v`
-- [ ] Tests cover: each stack detection, multi-stack, empty project, version file precedence, source dir detection, Makefile parsing, package.json parsing, toolkit state detection (all scenarios)
+- [x] `detect-project.py` exists at repo root with CLI entry point
+- [x] Detects stacks from file presence: `*.py`/`pyproject.toml`/`requirements.txt` → python, `tsconfig.json`/`*.ts` → typescript, `*.xcodeproj`/`Package.swift`/`*.swift` → ios
+- [x] Detects project name from `basename(git rev-parse --show-toplevel)`
+- [x] Detects version file with precedence: package.json > pyproject.toml > VERSION
+- [x] Detects source directories by scanning for common patterns (src/, app/, lib/, packages/)
+- [x] Detects lint commands by probing executables (ruff, eslint, swiftlint) with `--version` check
+- [x] Detects test commands by parsing Makefile targets and package.json scripts
+- [x] Detects format commands (ruff format, prettier, swiftformat)
+- [x] Outputs valid JSON to stdout with `--project-dir` flag
+- [x] Has `--validate` flag that actually runs detected commands and records pass/fail
+- [x] Detects toolkit installation state: subtree exists, toml exists, toml is still the unmodified example, settings.json generated, missing skills/agents, broken symlinks
+- [x] Uses only Python stdlib (no external deps except pytest for tests)
+- [x] All pytest tests pass: `python3 -m pytest tests/test_detect_project.py -v`
+- [x] Tests cover: each stack detection, multi-stack, empty project, version file precedence, source dir detection, Makefile parsing, package.json parsing, toolkit state detection (all scenarios)
 
 ### M1: Simplify bootstrap.sh
 
