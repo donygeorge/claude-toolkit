@@ -310,8 +310,12 @@ Replace placeholders with detected values:
 | `{{PROJECT_NAME}}` | Confirmed project name |
 | `{{PROJECT_DESCRIPTION}}` | Ask user for a brief description if not obvious from the project |
 | `{{TECH_STACK}}` | Comma-separated stacks (e.g., "Python 3.11+, TypeScript") |
+| `{{RUN_COMMAND}}` | The project's run/start command (ask user if not obvious) |
+| `{{TEST_COMMAND}}` | Validated test command from Phase 2 |
+| `{{LINT_COMMAND}}` | Validated lint command from Phase 2 |
+| `{{FORMAT_COMMAND}}` | Validated format command from Phase 2 |
 
-For the "Key Commands" section, replace the template command placeholders with the validated commands from Phase 2. For example, replace `make test` with the actual validated test command, `make lint` with the actual lint command, and `make fmt` with the actual format command. If a command was not detected, comment it out with a note to customize.
+For any command placeholder where no command was detected or validated, comment out that line with a note to customize.
 
 Write the result to `CLAUDE.md` at the project root.
 
