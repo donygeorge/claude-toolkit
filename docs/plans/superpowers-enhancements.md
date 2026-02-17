@@ -321,14 +321,14 @@ Add a lightweight Python script that analyzes Claude Code session transcripts to
 
 **Exit Criteria**:
 
-- [ ] Script reads JSONL session transcript files
-- [ ] Groups token usage by subagent/agent
-- [ ] Shows per-agent breakdown (input tokens, output tokens, cache tokens)
-- [ ] Shows cost estimates (with configurable pricing)
-- [ ] Has `--help` with usage instructions
-- [ ] Works with Python 3.11+ stdlib only (no external dependencies)
-- [ ] Handles missing/malformed lines gracefully
-- [ ] Tested manually with a real session transcript
+- [x] Script reads JSONL session transcript files
+- [x] Groups token usage by subagent/agent
+- [x] Shows per-agent breakdown (input tokens, output tokens, cache tokens)
+- [x] Shows cost estimates (with configurable pricing)
+- [x] Has `--help` with usage instructions
+- [x] Works with Python 3.11+ stdlib only (no external dependencies)
+- [x] Handles missing/malformed lines gracefully
+- [x] Tested manually with a real session transcript
 
 ---
 
