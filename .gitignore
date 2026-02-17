@@ -27,6 +27,9 @@ artifacts/
 # Machine-specific Claude Code settings
 .claude/settings.local.json
 
+# Hook runtime logs
+.claude/guard-audit.log
+
 # Local dev: symlinks for toolkit's own skill discovery (not needed in consuming projects)
 .claude/skills
 .claude/commands
