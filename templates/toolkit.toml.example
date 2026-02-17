@@ -52,6 +52,10 @@ cmd = ".venv/bin/ruff check"
 fmt = ".venv/bin/ruff format"
 fallback = "ruff"
 
+[hooks.post-edit-lint.linters.md]
+cmd = "npx markdownlint-cli2"
+fmt = "npx markdownlint-cli2 --fix"
+
 # Example for TypeScript:
 # [hooks.post-edit-lint.linters.ts]
 # cmd = "npx eslint"
