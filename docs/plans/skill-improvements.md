@@ -94,12 +94,12 @@ Fix the 3 blocking inconsistencies/contradictions across review-suite, implement
 
 **Exit Criteria**:
 
-- [ ] All run_id examples in review-suite/SKILL.md use dash format matching `^[0-9]{8}-[0-9]{6}$`
-- [ ] No occurrences of underscore-format timestamps (`[0-9]{8}_[0-9]{6}`) in review-suite/SKILL.md
-- [ ] implement/SKILL.md says "intentionally not listed" not "removed"
-- [ ] implement/SKILL.md documents that Task-spawned agents inherit full tool access
-- [ ] solve/SKILL.md uses "SHOULD attempt" not "MUST use" for visual reproduction
-- [ ] solve/SKILL.md provides fallback strategies when visual tools are unavailable
+- [x] All run_id examples in review-suite/SKILL.md use dash format matching `^[0-9]{8}-[0-9]{6}$`
+- [x] No occurrences of underscore-format timestamps (`[0-9]{8}_[0-9]{6}`) in review-suite/SKILL.md
+- [x] implement/SKILL.md says "intentionally not listed" not "removed"
+- [x] implement/SKILL.md documents that Task-spawned agents inherit full tool access
+- [x] solve/SKILL.md uses "SHOULD attempt" not "MUST use" for visual reproduction
+- [x] solve/SKILL.md provides fallback strategies when visual tools are unavailable
 
 ### M1: Document /verify Skill and Update Counts
 

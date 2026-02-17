@@ -33,10 +33,10 @@ This architecture enables long-running sessions (2-3+ hours) without context exh
 
 ## Two-Tier Architecture (ENFORCED)
 
-1. **Plan Executor** (top-level, YOU): **Cannot write or edit files** -- Write and Edit tools are removed from allowed-tools. You manage state, spawn agents, report status.
+1. **Plan Executor** (top-level, YOU): **Cannot write or edit files** -- Write and Edit tools are intentionally not listed in allowed-tools. You manage state, spawn agents, report status.
 2. **Milestone Orchestrator** (per-milestone): Fresh context per milestone via Task() agent, does ALL implementation work.
 
-> **WHY**: Write/Edit are intentionally excluded so the Plan Executor physically cannot implement code inline. ALL code changes MUST go through Task() agents. Milestone agents spawned via Task() DO have full Write/Edit tools available.
+> **WHY**: Write/Edit are intentionally not listed so the Plan Executor physically cannot implement code inline. ALL code changes MUST go through Task() agents. Task-spawned milestone agents inherit full tool access (including Write, Edit, and all other tools) regardless of the Plan Executor's allowed-tools list.
 >
 > For the full milestone orchestrator prompt template, read `.claude/skills/implement/milestone-template.md`.
 

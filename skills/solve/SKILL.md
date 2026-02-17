@@ -111,9 +111,9 @@ For any images referenced in issue body:
 2. Validate image files before reading
 3. Analyze screenshots for visual context
 
-### Step 3: Reproduce Issues with Visual Tools
+### Step 3: Reproduce Issues
 
-**You MUST use visual tools to reproduce issues before fixing them.**
+**You SHOULD attempt visual reproduction of issues before fixing them.**
 
 #### For Web UI Issues
 
@@ -123,9 +123,21 @@ Use Playwright MCP tools to navigate and capture state.
 
 Skip visual reproduction if purely backend logic.
 
+#### When Visual Tools Are Unavailable
+
+If Playwright or other visual tools are not configured or fail to initialize:
+
+1. **Analyze code paths statically** -- trace the reported issue through the codebase using Grep/Read
+2. **Check logs and error output** -- reproduce via CLI or API calls where possible
+3. **Review test coverage** -- find existing tests that exercise the affected code path
+4. **Document the limitation** -- note in the commit that visual reproduction was not performed and why
+
+Do NOT block on visual tool availability. Code analysis and static tracing are valid reproduction strategies.
+
 #### Document Reproduction Status
 
-- **If reproduced**: Note exact steps taken and continue
+- **If reproduced visually**: Note exact steps taken and continue
+- **If reproduced via code analysis**: Note the traced code path and continue
 - **If NOT reproduced**: Still analyze code, note uncertainty in commit
 
 ### Step 4: Understand Context
@@ -175,9 +187,9 @@ If tests fail, attempt to fix (max 3 iterations).
 >
 > This prevents increasingly desperate changes that compound the problem.
 
-### Step 8: Verify Fixes with Visual Tools
+### Step 8: Verify Fixes
 
-Verify fixes using the same visual tools used in Step 3.
+Verify fixes using the same approach used in Step 3. If visual tools were used for reproduction, use them again to confirm the fix. If code analysis or CLI reproduction was used instead, verify through the same method.
 
 ### Step 9: QA Review
 
