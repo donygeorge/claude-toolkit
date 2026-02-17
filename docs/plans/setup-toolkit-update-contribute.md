@@ -70,19 +70,19 @@ Extend the setup-toolkit skill with a complete LLM-guided update workflow. This 
 
 **Exit Criteria**:
 
-- [ ] Skill frontmatter `argument-hint` updated to include `[--update [version]]`
-- [ ] Usage section shows `--update` and `--update v1.3.0` examples
-- [ ] Flags table includes `--update [version]` with description
-- [ ] Routing logic added at top of Execution Flow: if `--update` passed, jump to Update Flow
-- [ ] Phase U0 (Pre-flight): instructs to run `toolkit.sh status`, `toolkit.sh validate`, check `git diff` and `git status` for uncommitted changes, resolve issues before proceeding
-- [ ] Phase U1 (Fetch & Preview): instructs to fetch tags, show current vs available versions, display CHANGELOG entries for version range, preview drift for customized files. **Ask user**: which version to update to (present options). **Wait for confirmation** before proceeding.
-- [ ] Phase U2 (Execute Update): instructs to run `toolkit.sh update [version]`, on conflict detect via `git diff --diff-filter=U`. **Ask user**: resolve conflicts automatically or abort? If resolving, show proposed resolution for each conflicted file and **ask user to confirm** before applying.
-- [ ] Phase U3 (Post-Update Validation): includes ALL 10 checks: shellcheck, toolkit validate, generate-settings, JSON validity, symlink health, manifest integrity, hook executability, config cache freshness, project test suite, project lint. Max 3 fix attempts per issue. **Ask user** if any validation failure is unclear or requires a judgment call.
-- [ ] Phase U4 (Drift Resolution): for each customized file with drift, show both versions, analyze nature of changes. **Ask user for each file**: keep customization, merge upstream changes, or revert to managed? Perform intelligent merge if chosen, show result and **ask user to confirm** before applying. Update manifest hashes after confirmation.
-- [ ] Phase U5 (Summary & Commit): mandatory structured summary template with: version transition, files changed, customizations preserved, drift resolved, all 10 validation results, new features from CHANGELOG, action required (restart Claude Code). **Ask user** to review summary before committing. Stages and commits.
-- [ ] User interaction principle documented: "When in doubt, ask. Never make assumptions about which version to pull, how to resolve conflicts, or what to do with drift. Present options and let the user decide."
-- [ ] Error handling table covers: fetch failure, subtree pull conflict, validation failures, drift merge failure
-- [ ] Skill content remains GENERIC — no project-specific paths, tools, or conventions
+- [x] Skill frontmatter `argument-hint` updated to include `[--update [version]]`
+- [x] Usage section shows `--update` and `--update v1.3.0` examples
+- [x] Flags table includes `--update [version]` with description
+- [x] Routing logic added at top of Execution Flow: if `--update` passed, jump to Update Flow
+- [x] Phase U0 (Pre-flight): instructs to run `toolkit.sh status`, `toolkit.sh validate`, check `git diff` and `git status` for uncommitted changes, resolve issues before proceeding
+- [x] Phase U1 (Fetch & Preview): instructs to fetch tags, show current vs available versions, display CHANGELOG entries for version range, preview drift for customized files. **Ask user**: which version to update to (present options). **Wait for confirmation** before proceeding.
+- [x] Phase U2 (Execute Update): instructs to run `toolkit.sh update [version]`, on conflict detect via `git diff --diff-filter=U`. **Ask user**: resolve conflicts automatically or abort? If resolving, show proposed resolution for each conflicted file and **ask user to confirm** before applying.
+- [x] Phase U3 (Post-Update Validation): includes ALL 10 checks: shellcheck, toolkit validate, generate-settings, JSON validity, symlink health, manifest integrity, hook executability, config cache freshness, project test suite, project lint. Max 3 fix attempts per issue. **Ask user** if any validation failure is unclear or requires a judgment call.
+- [x] Phase U4 (Drift Resolution): for each customized file with drift, show both versions, analyze nature of changes. **Ask user for each file**: keep customization, merge upstream changes, or revert to managed? Perform intelligent merge if chosen, show result and **ask user to confirm** before applying. Update manifest hashes after confirmation.
+- [x] Phase U5 (Summary & Commit): mandatory structured summary template with: version transition, files changed, customizations preserved, drift resolved, all 10 validation results, new features from CHANGELOG, action required (restart Claude Code). **Ask user** to review summary before committing. Stages and commits.
+- [x] User interaction principle documented: "When in doubt, ask. Never make assumptions about which version to pull, how to resolve conflicts, or what to do with drift. Present options and let the user decide."
+- [x] Error handling table covers: fetch failure, subtree pull conflict, validation failures, drift merge failure
+- [x] Skill content remains GENERIC — no project-specific paths, tools, or conventions
 
 ### M1: Add `--contribute` mode to `/setup-toolkit`
 

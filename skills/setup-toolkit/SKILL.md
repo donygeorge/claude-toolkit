@@ -1,7 +1,7 @@
 ---
 name: setup-toolkit
 description: Detect project stacks and commands, validate config, generate toolkit.toml and CLAUDE.md. Handles fresh setup, partial installs, and reconfiguration.
-argument-hint: "[--reconfigure]"
+argument-hint: "[--reconfigure] [--update [version]]"
 user-invocable: true
 disable-model-invocation: true
 ---
@@ -17,6 +17,8 @@ Orchestrate post-bootstrap project configuration. Auto-detect stacks and command
 ```bash
 /setup-toolkit                     # Configure toolkit for current project state
 /setup-toolkit --reconfigure       # Full re-detection, ignoring cached state
+/setup-toolkit --update            # Update toolkit to latest release
+/setup-toolkit --update v1.3.0     # Update toolkit to a specific version
 ```
 
 ## When to Use
@@ -31,10 +33,13 @@ Orchestrate post-bootstrap project configuration. Auto-detect stacks and command
 | Flag | Effect |
 | ---- | ------ |
 | `--reconfigure` | Skip state checks, run full re-detection from scratch. Useful when the project's tech stack or commands have changed. Existing `toolkit.toml` customizations are preserved (you will be asked about conflicts). |
+| `--update [version]` | Run the Update Flow instead of the setup flow. Performs pre-flight checks, fetches the latest (or specified) toolkit version, executes the update with conflict resolution, validates the result, resolves drift in customized files, and commits. If `version` is provided (e.g., `v1.3.0`), updates to that specific tag; otherwise updates to the latest release. |
 
 ---
 
 ## Execution Flow
+
+> **Routing**: If `--update` was passed, skip the setup phases below and jump directly to the [Update Flow](#update-flow) section.
 
 Execute these phases in order. Do NOT skip phases.
 
@@ -516,3 +521,437 @@ After completion, report to the user:
 - Files created or modified
 - Validation result (pass/fail)
 - Any items needing manual attention
+
+---
+
+## Update Flow
+
+This flow is executed when `--update` is passed. It replaces the setup phases above.
+
+> **User Interaction Principle**: When in doubt, ask. Never make assumptions about which version to pull, how to resolve conflicts, or what to do with drift. Present options and let the user decide.
+
+### Phase U0: Pre-flight
+
+Verify the project is in a healthy state before attempting an update.
+
+#### Step U0.1: Check toolkit status
+
+```bash
+bash .claude/toolkit/toolkit.sh status
+```
+
+Review the output. Note the current toolkit version and any reported issues.
+
+#### Step U0.2: Validate current installation
+
+```bash
+bash .claude/toolkit/toolkit.sh validate
+```
+
+If validation reports issues, inform the user:
+
+> Validation found issues with the current installation. These should be resolved before updating.
+
+List each issue. Attempt to fix automatically (e.g., broken symlinks via `toolkit.sh init --force`, stale cache via regeneration). Re-run validation after fixes. If issues persist, **ask the user** whether to proceed with the update anyway or abort.
+
+#### Step U0.3: Check for uncommitted changes
+
+```bash
+git status --porcelain
+git diff --stat
+```
+
+If there are uncommitted changes (especially in `.claude/toolkit/`), warn the user:
+
+> There are uncommitted changes in your working tree. Updating the toolkit may cause conflicts with these changes.
+
+List the changed files. **Ask the user**: commit or stash changes first, or proceed anyway?
+
+**Do NOT proceed until the user confirms.**
+
+---
+
+### Phase U1: Fetch & Preview
+
+Fetch available versions and let the user choose which version to update to.
+
+#### Step U1.1: Fetch tags from remote
+
+```bash
+git fetch claude-toolkit --tags
+```
+
+If the fetch fails, see the [Update Error Handling](#update-error-handling) table.
+
+#### Step U1.2: Show available versions
+
+```bash
+git tag -l 'v*' --sort=-version:refname | head -10
+```
+
+Read the current toolkit version:
+
+```bash
+cat .claude/toolkit/VERSION
+```
+
+Display a version comparison to the user:
+
+> **Current version**: [current_version]
+> **Available versions**: [list of tags, newest first]
+> **Latest release**: [newest tag]
+
+If `--update` was called with a specific version (e.g., `--update v1.3.0`), confirm that the requested version exists in the tag list.
+
+#### Step U1.3: Show CHANGELOG entries
+
+Display the CHANGELOG entries between the current version and the target version:
+
+```bash
+cat .claude/toolkit/CHANGELOG.md
+```
+
+Extract and display only the entries between the current and target versions. Summarize key changes (new features, bug fixes, breaking changes).
+
+#### Step U1.4: Preview drift for customized files
+
+```bash
+bash .claude/toolkit/toolkit.sh status
+```
+
+If the status output shows customized files, note them. These files will need drift resolution after the update (Phase U4).
+
+> **Customized files that may be affected by this update**:
+>
+> - [list of customized files from status output]
+
+#### Step U1.5: Ask user to confirm
+
+Present the update plan to the user:
+
+> **Update plan**:
+>
+> - From: [current_version]
+> - To: [target_version]
+> - New features: [brief summary from CHANGELOG]
+> - Customized files to review after update: [count]
+>
+> Which version would you like to update to? [present options: latest, specific version, or abort]
+
+**Wait for the user to confirm before proceeding.**
+
+---
+
+### Phase U2: Execute Update
+
+Run the toolkit update and handle any conflicts.
+
+#### Step U2.1: Run the update command
+
+```bash
+bash .claude/toolkit/toolkit.sh update [version]
+```
+
+Replace `[version]` with the user's chosen version (e.g., `v1.3.0`), or omit for the latest release.
+
+#### Step U2.2: Check for conflicts
+
+If the update command fails, check for merge conflicts:
+
+```bash
+git diff --diff-filter=U --name-only
+```
+
+If there are conflicted files, present them to the user:
+
+> **Merge conflicts detected** in the following files:
+>
+> - [list of conflicted files]
+
+**Ask the user**: Would you like me to resolve these conflicts automatically, or would you prefer to abort the update?
+
+If the user chooses automatic resolution:
+
+1. For each conflicted file, read the file and analyze the conflict markers
+2. Show the proposed resolution (which side to keep, or how to merge)
+3. **Ask the user to confirm** the resolution for each file before applying
+4. After resolving, mark the file as resolved: `git add [resolved_file]`
+5. Once all conflicts are resolved, complete the subtree merge: `git commit --no-edit`
+
+Note: This commit completes the subtree merge only. The Phase U5 commit will capture additional post-update changes (settings regeneration, drift resolution, manifest updates).
+
+If the user chooses to abort:
+
+```bash
+git merge --abort
+```
+
+Inform the user the update was aborted and no changes were made.
+
+---
+
+### Phase U3: Post-Update Validation
+
+Run all 10 validation checks to ensure the update did not break anything. For each failing check, attempt up to 3 automatic fix attempts before escalating to the user.
+
+#### Check 1: Shellcheck
+
+```bash
+shellcheck -x -S warning .claude/toolkit/hooks/*.sh .claude/toolkit/lib/*.sh .claude/toolkit/toolkit.sh
+```
+
+If issues are found: these are in toolkit code and should not be modified locally. Note them and report to the user.
+
+#### Check 2: Toolkit validate
+
+```bash
+bash .claude/toolkit/toolkit.sh validate
+```
+
+If issues are found: attempt auto-fix (init --force, chmod +x). Retry up to 3 times.
+
+#### Check 3: Generate settings
+
+```bash
+bash .claude/toolkit/toolkit.sh generate-settings
+```
+
+If this fails: check toolkit.toml for compatibility with the new toolkit version. **Ask the user** if the error is unclear.
+
+#### Check 4: JSON validity
+
+```bash
+python3 -c "import json; json.load(open('.claude/settings.json'))"
+python3 -c "import json; json.load(open('.mcp.json'))"
+```
+
+If invalid: regenerate settings (Check 3). If still invalid, **ask the user**.
+
+#### Check 5: Symlink health
+
+```bash
+bash .claude/toolkit/toolkit.sh validate
+```
+
+Specifically check the symlink section of the output. If broken symlinks exist:
+
+```bash
+bash .claude/toolkit/toolkit.sh init --force
+```
+
+Retry up to 3 times.
+
+#### Check 6: Manifest integrity
+
+Check that the manifest file exists and is valid:
+
+```bash
+python3 -c "import json; json.load(open('toolkit-manifest.json'))"
+```
+
+If missing or invalid, re-initialize:
+
+```bash
+bash .claude/toolkit/toolkit.sh init --force
+```
+
+#### Check 7: Hook executability
+
+```bash
+ls -la .claude/toolkit/hooks/*.sh
+```
+
+Verify all hook scripts are executable. If any are not:
+
+```bash
+chmod +x .claude/toolkit/hooks/*.sh
+```
+
+#### Check 8: Config cache freshness
+
+```bash
+python3 .claude/toolkit/generate-config-cache.py --toml .claude/toolkit.toml --output .claude/toolkit-cache.env
+```
+
+Regenerate the config cache to ensure it reflects any new config options from the update.
+
+#### Check 9: Project test suite
+
+Run the project's configured test command (from toolkit.toml):
+
+```bash
+# Run the project's test command as configured in toolkit.toml
+```
+
+If tests fail: determine whether the failure is related to the toolkit update or a pre-existing issue. **Ask the user** if the failure is unclear or requires a judgment call.
+
+#### Check 10: Project lint
+
+Run the project's configured lint command (from toolkit.toml):
+
+```bash
+# Run the project's lint command as configured in toolkit.toml
+```
+
+If lint fails: determine whether the failure is related to the toolkit update or a pre-existing issue. **Ask the user** if the failure is unclear.
+
+#### Validation summary
+
+After all 10 checks, present the results in a table:
+
+| Check | Result | Notes |
+| ----- | ------ | ----- |
+| Shellcheck | pass/fail | [details] |
+| Toolkit validate | pass/fail | [details] |
+| Generate settings | pass/fail | [details] |
+| JSON validity | pass/fail | [details] |
+| Symlink health | pass/fail | [details] |
+| Manifest integrity | pass/fail | [details] |
+| Hook executability | pass/fail | [details] |
+| Config cache freshness | pass/fail | [details] |
+| Project test suite | pass/fail/skipped | [details] |
+| Project lint | pass/fail/skipped | [details] |
+
+If any checks failed after fix attempts, **ask the user** how to proceed.
+
+---
+
+### Phase U4: Drift Resolution
+
+For each customized file that has upstream changes (drift), help the user decide how to handle it.
+
+#### Step U4.1: Detect drift
+
+```bash
+bash .claude/toolkit/toolkit.sh status
+```
+
+Identify all customized files with drift (where the toolkit source has changed since the file was customized).
+
+If no drift is detected, skip to Phase U5.
+
+#### Step U4.2: Analyze each drifted file
+
+For each customized file with drift:
+
+1. Read the user's customized version (in `.claude/agents/`, `.claude/rules/`, or `.claude/skills/`)
+2. Read the updated toolkit source version (in `.claude/toolkit/agents/`, `.claude/toolkit/rules/`, or `.claude/toolkit/skills/`)
+3. Compare the two versions and analyze the nature of the changes:
+   - What did the user customize? (their local changes)
+   - What changed upstream? (toolkit updates)
+   - Are the changes in the same sections (potential conflict) or different sections (clean merge)?
+
+Present the analysis to the user:
+
+> **Drift detected**: [file_path]
+>
+> **Your customizations**:
+> [summary of user's changes]
+>
+> **Upstream changes**:
+> [summary of toolkit changes]
+>
+> **Conflict risk**: [low/medium/high -- based on whether changes overlap]
+
+#### Step U4.3: Ask user for resolution
+
+For each drifted file, **ask the user**:
+
+> How would you like to handle this file?
+>
+> 1. **Keep customization** -- preserve your version, ignore upstream changes
+> 2. **Merge upstream changes** -- intelligently merge both sets of changes
+> 3. **Revert to managed** -- discard your customizations and use the new toolkit version
+
+**Wait for the user's choice.**
+
+#### Step U4.4: Apply resolution
+
+Based on the user's choice:
+
+**Keep customization**: No file changes needed. Update the manifest to record the new toolkit hash (so drift is no longer reported for the current version):
+
+```bash
+# Update manifest hash for this file to suppress future drift warnings
+```
+
+**Merge upstream changes**: Perform an intelligent merge of the user's customizations with the upstream changes. Show the merged result to the user and **ask for confirmation** before writing the file. If the merge is ambiguous, present options and let the user decide.
+
+**Revert to managed**: Replace the customized file with the toolkit source. If the file was a broken symlink, restore the symlink. Update the manifest to mark the file as "managed" again:
+
+```bash
+# For agents/rules: restore symlink
+ln -sf ../toolkit/agents/[file] .claude/agents/[file]
+# For skills: copy from toolkit source
+cp .claude/toolkit/skills/[skill]/[file] .claude/skills/[skill]/[file]
+```
+
+After applying the resolution, update the manifest hashes to reflect the current state.
+
+---
+
+### Phase U5: Summary & Commit
+
+Present a comprehensive summary and commit the update.
+
+#### Step U5.1: Generate summary
+
+Compile the following mandatory structured summary. The summary must include all of these sections:
+
+- **Version transition**: [old_version] -> [new_version]
+- **Files changed**: [count] files modified by the update, with list from `git diff --stat`
+- **Customizations preserved**: [count], with list of customized files that were kept
+- **Drift resolved**: [count], with list of drifted files and their resolution (kept/merged/reverted)
+- **Validation results**: a table with all 10 checks (shellcheck, toolkit validate, generate settings, JSON validity, symlink health, manifest integrity, hook executability, config cache freshness, project test suite, project lint) and their pass/fail/skipped status
+- **New features from CHANGELOG**: notable new features or changes between the old and new version
+- **Action required**: remind user to restart Claude Code to pick up the updated settings and hooks
+
+#### Step U5.2: Ask user to review
+
+Present the summary to the user:
+
+> Please review this update summary. Does everything look correct? Reply with "yes" to commit, or note any concerns.
+
+**Wait for the user to confirm before committing.**
+
+#### Step U5.3: Stage and commit
+
+Stage all changed files individually. Do NOT use `git add .` or `git add -A`.
+
+```bash
+git add .claude/toolkit/
+git add .claude/settings.json
+git add .claude/toolkit-cache.env
+git add .mcp.json
+git add toolkit-manifest.json
+```
+
+Also stage any files that were modified during drift resolution (agents, rules, skills).
+
+Write a descriptive commit message and commit:
+
+```bash
+git commit -F /tmp/update-commit-msg.txt
+```
+
+Example commit message:
+
+```text
+Update claude-toolkit from [old_version] to [new_version]
+
+- [count] files updated via subtree pull
+- [count] customizations preserved
+- [count] drift resolutions applied
+- All validation checks passed
+```
+
+---
+
+## Update Error Handling
+
+| Error | Recovery |
+| ----- | -------- |
+| `git fetch claude-toolkit` fails | Check that the `claude-toolkit` remote exists: `git remote -v`. If missing, ask the user for the remote URL and add it: `git remote add claude-toolkit <url>`. Retry the fetch. |
+| Subtree pull conflict | Detect conflicted files with `git diff --diff-filter=U --name-only`. Present conflicts to user. Offer automatic resolution or abort (`git merge --abort`). See Phase U2 for details. |
+| Validation failure (any of 10 checks) | Attempt auto-fix up to 3 times per check. If still failing, present the error details to the user and ask how to proceed. Do not silently ignore validation failures. |
+| Drift merge failure | If an intelligent merge fails or produces ambiguous results, show both versions to the user and ask them to choose or manually edit. Do not apply an uncertain merge automatically. |
