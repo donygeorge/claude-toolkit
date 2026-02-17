@@ -3,7 +3,6 @@ name: setup-toolkit
 description: Use when setting up, updating, or contributing back to the toolkit.
 argument-hint: "[--reconfigure] [--update [version]] [--contribute]"
 user-invocable: true
-disable-model-invocation: true
 ---
 
 # Setup Skill

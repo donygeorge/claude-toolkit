@@ -3,7 +3,6 @@ name: solve
 description: Use when working on one or more GitHub issues.
 argument-hint: "<github-issue-url-or-number>"
 user-invocable: true
-disable-model-invocation: true
 ---
 
 # Solve Issue Skill

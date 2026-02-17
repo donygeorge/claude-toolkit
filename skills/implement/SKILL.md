@@ -3,7 +3,6 @@ name: implement
 description: Use when you have an approved plan file and are ready to build.
 argument-hint: "<plan-file> [milestone] [--continue]"
 user-invocable: true
-disable-model-invocation: true
 model: opus
 allowed-tools:
   - Read

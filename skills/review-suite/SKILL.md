@@ -3,7 +3,6 @@ name: review
 description: Use when code changes need review before merging or completing.
 argument-hint: "[agent] [scope]"
 user-invocable: true
-disable-model-invocation: true
 ---
 
 # Review Suite Skill

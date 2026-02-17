@@ -3,7 +3,6 @@ name: verify
 description: Use after completing implementation, bug fixes, or any code changes to verify correctness.
 argument-hint: "[plan-file | commit-range | uncommitted] [--quick]"
 user-invocable: true
-disable-model-invocation: false
 allowed-tools:
   - Read
   - Write

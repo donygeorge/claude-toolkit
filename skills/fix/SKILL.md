@@ -3,7 +3,6 @@ name: fix
 description: Use when a bug needs fixing but there is no GitHub issue to track it.
 argument-hint: '"description of the bug" or paste an error/stack trace'
 user-invocable: true
-disable-model-invocation: true
 model: opus
 allowed-tools:
   - Read

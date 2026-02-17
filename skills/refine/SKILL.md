@@ -3,7 +3,6 @@ name: refine
 description: Use when existing code needs iterative quality improvement.
 argument-hint: '"scope or description" [--resume] [--max-iterations N]'
 user-invocable: true
-disable-model-invocation: true
 model: opus
 allowed-tools:
   - Read
