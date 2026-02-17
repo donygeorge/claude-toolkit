@@ -571,13 +571,13 @@ Move `_refresh_symlinks()` (currently in toolkit.sh lines 505-562) into `lib/cmd
 
 ### Exit Criteria
 
-- [ ] `toolkit.sh` is under 150 lines (dispatcher + helpers)
-- [ ] Each `lib/cmd-*.sh` contains one subcommand
-- [ ] `cmd_init` uses helper functions for each distinct operation
-- [ ] All CLI integration tests pass: `bash tests/test_toolkit_cli.sh`
-- [ ] All manifest tests pass: `bash tests/test_manifest.sh`
-- [ ] `shellcheck -x -S warning toolkit.sh lib/*.sh` passes
-- [ ] CLI behavior is identical before/after (no user-visible changes)
+- [x] `toolkit.sh` is under 150 lines (dispatcher + helpers) — 137 lines
+- [x] Each `lib/cmd-*.sh` contains one subcommand — 7 files created
+- [x] `cmd_init` uses helper functions for each distinct operation — 9 helpers
+- [x] All CLI integration tests pass: `bash tests/test_toolkit_cli.sh` — 46 passed
+- [x] All manifest tests pass: `bash tests/test_manifest.sh` — 19 passed
+- [x] `shellcheck -x -S warning toolkit.sh lib/*.sh` passes — clean
+- [x] CLI behavior is identical before/after (no user-visible changes) — confirmed by Codex review
 
 ---
 

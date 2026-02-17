@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.0] - 2026-02-16
+
+### Changed
+
+- **CLI modularization**: Split monolithic `toolkit.sh` (1050 lines) into a thin dispatcher (137 lines) plus 7 modular subcommand files in `lib/cmd-*.sh`: `cmd-init.sh`, `cmd-update.sh`, `cmd-customize.sh`, `cmd-status.sh`, `cmd-validate.sh`, `cmd-generate-settings.sh`, `cmd-help.sh`
+- **Init helper decomposition**: Broke `cmd_init` (280 lines) into 9 focused helper functions: `_init_toml`, `_init_agents`, `_init_skills`, `_init_rules`, `_init_rule_templates`, `_init_agent_memory`, `_init_git_remote`, `_init_config`, `_init_manifest`
+- **Moved `_refresh_symlinks`**: Relocated from `toolkit.sh` to `lib/cmd-update.sh` where it belongs (only used by the update flow)
+
 ## [1.4.0] - 2026-02-16
 
 ### Added

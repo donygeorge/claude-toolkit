@@ -43,7 +43,7 @@ bash toolkit.sh help                      # Show usage
 
 ```text
 .
-├── toolkit.sh                   # CLI entry point
+├── toolkit.sh                   # CLI entry point (thin dispatcher, ~137 lines)
 ├── generate-settings.py         # Three-tier JSON merge (base + stacks + project)
 ├── generate-config-cache.py     # TOML to bash env cache
 ├── hooks/                       # Hook scripts (16 files)
@@ -92,7 +92,15 @@ bash toolkit.sh help                      # Show usage
 │   ├── framework.py             # Context loading logic
 │   └── README.md                # Framework documentation
 ├── lib/                         # Shared libraries
-│   └── manifest.sh              # Manifest functions (sourced by toolkit.sh)
+│   ├── manifest.sh              # Manifest functions (sourced by toolkit.sh)
+│   ├── hook-utils.sh            # Shared hook utilities (opt-in by hooks)
+│   ├── cmd-init.sh              # Init subcommand + 9 helper functions
+│   ├── cmd-update.sh            # Update subcommand + _refresh_symlinks
+│   ├── cmd-customize.sh         # Customize subcommand
+│   ├── cmd-status.sh            # Status subcommand
+│   ├── cmd-validate.sh          # Validate subcommand
+│   ├── cmd-generate-settings.sh # Generate-settings subcommand
+│   └── cmd-help.sh              # Help subcommand
 ├── mcp/                         # MCP templates
 │   └── base.mcp.json            # Base MCP server config
 └── tests/                       # Test suite
@@ -120,10 +128,12 @@ These rules apply to ALL work in this toolkit.
 
 ### Core CLI & Config
 
-- `toolkit.sh` — CLI entry point (7 subcommands: init, update, customize, status, validate, generate-settings, help)
+- `toolkit.sh` — Thin CLI dispatcher (~137 lines): path resolution, helpers, sources `lib/cmd-*.sh` modules
+- `lib/cmd-*.sh` — Modular subcommand files (init, update, customize, status, validate, generate-settings, help)
 - `generate-settings.py` — Three-tier JSON merge (base + stack overlays + project overrides)
 - `generate-config-cache.py` — TOML to bash env cache (used by `_config.sh`)
 - `lib/manifest.sh` — Manifest tracking functions (read, update, check customizations)
+- `lib/hook-utils.sh` — Shared hook utilities (input parsing, deny/approve, audit logging)
 
 ### Configuration System
 
