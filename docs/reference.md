@@ -288,7 +288,7 @@ Skill templates in `.claude/skills/`. These are copied (not symlinked) so they c
 
 | Skill | Directory | Purpose |
 | ------- | ----------- | --------- |
-| Setup | `setup-toolkit/` | Bootstrap claude-toolkit in a new project (9-phase orchestrator) |
+| Setup | `setup-toolkit/` | Bootstrap claude-toolkit in a new project (9-phase orchestrator). Flags: `--update [version]` runs an LLM-guided update with pre-flight checks, conflict resolution, drift management, and 10-point post-update validation; `--contribute` runs an LLM-guided contribution workflow with a 10-point generalizability gate, full test validation, and PR submission |
 | Review Suite | `review-suite/` | Multi-agent code review orchestration |
 | Implement | `implement/` | Autonomous plan execution with milestone agents |
 | Plan | `plan/` | Feature planning with research and review |

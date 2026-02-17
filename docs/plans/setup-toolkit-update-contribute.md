@@ -120,16 +120,16 @@ Update reference docs, contributing guide, and changelog to document the new mod
 
 **Exit Criteria**:
 
-- [ ] `docs/reference.md` Skills Reference table: Setup skill entry updated to show `--update` and `--contribute` flags with descriptions
-- [ ] `CONTRIBUTING.md`: new section "Contributing from a Consuming Project" added after "Pull Request Process"
-- [ ] CONTRIBUTING section explains `/setup-toolkit --contribute` as the primary workflow
-- [ ] CONTRIBUTING section includes brief manual workflow (for users without the skill): identify changes via `toolkit.sh status` + `diff`, verify generalizability manually, clone toolkit, apply changes, run full test suite, open PR
-- [ ] CONTRIBUTING section emphasizes the generalizability requirement (link to the 10-point checklist concept)
-- [ ] `CHANGELOG.md`: entry documenting `--update` and `--contribute` modes added to setup-toolkit skill
-- [ ] All existing tests still pass: `python3 -m pytest tests/ -v`
-- [ ] All existing CLI tests pass: `bash tests/test_toolkit_cli.sh`
-- [ ] All existing hook tests pass: `bash tests/test_hooks.sh`
-- [ ] All shell scripts pass: `shellcheck -x -S warning hooks/*.sh lib/*.sh toolkit.sh`
+- [x] `docs/reference.md` Skills Reference table: Setup skill entry updated to show `--update` and `--contribute` flags with descriptions
+- [x] `CONTRIBUTING.md`: new section "Contributing from a Consuming Project" added after "Pull Request Process"
+- [x] CONTRIBUTING section explains `/setup-toolkit --contribute` as the primary workflow
+- [x] CONTRIBUTING section includes brief manual workflow (for users without the skill): identify changes via `toolkit.sh status` + `diff`, verify generalizability manually, clone toolkit, apply changes, run full test suite, open PR
+- [x] CONTRIBUTING section emphasizes the generalizability requirement (link to the 10-point checklist concept)
+- [x] `CHANGELOG.md`: entry documenting `--update` and `--contribute` modes added to setup-toolkit skill
+- [x] All existing tests still pass: `python3 -m pytest tests/ -v`
+- [x] All existing CLI tests pass: `bash tests/test_toolkit_cli.sh`
+- [x] All existing hook tests pass: `bash tests/test_hooks.sh`
+- [x] All shell scripts pass: `shellcheck -x -S warning hooks/*.sh lib/*.sh toolkit.sh`
 
 ---
 

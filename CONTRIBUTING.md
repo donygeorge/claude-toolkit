@@ -262,3 +262,70 @@ Custom hook scripts should follow the same conventions as toolkit hooks (source 
 3. Run the full test suite (all five test commands above)
 4. Update documentation (`docs/reference.md`, `CHANGELOG.md`)
 5. Submit a pull request with a clear description
+
+## Contributing from a Consuming Project
+
+If you are using claude-toolkit in a project and have made improvements to hooks, agents, skills, or rules that could benefit all users, you can contribute those changes back upstream.
+
+### Primary Workflow: `/setup-toolkit --contribute`
+
+The easiest way to contribute is through the `/setup-toolkit --contribute` skill. It provides an LLM-guided workflow that:
+
+1. Identifies customized and modified files in your project's toolkit installation
+2. Diffs each change against the toolkit source and assesses generalizability
+3. Lets you select which changes to propose
+4. Applies a 10-point generalizability gate to each change (see below)
+5. Runs the full toolkit test suite to validate correctness
+6. Generates a patch and PR description for submission
+
+Run it in your project:
+
+```text
+/setup-toolkit --contribute
+```
+
+### Manual Workflow
+
+If you prefer to contribute manually (or do not have the skill available):
+
+1. **Identify changes**: Run `toolkit.sh status` to see customized and modified files. Diff each one against the toolkit source in `.claude/toolkit/` to understand what changed.
+
+2. **Verify generalizability**: Review each change against the 10-point checklist below. Changes that reference project-specific paths, tools, or conventions will not be accepted.
+
+3. **Clone the toolkit repo**: Fork or clone the toolkit repository separately.
+
+4. **Apply changes**: Copy your improvements into the cloned toolkit repo, adapting as needed to remain generic.
+
+5. **Run the full test suite**:
+
+   ```bash
+   shellcheck -x -S warning hooks/*.sh lib/*.sh toolkit.sh
+   python3 -m pytest tests/ -v
+   bash tests/test_toolkit_cli.sh
+   bash tests/test_manifest.sh
+   bash tests/test_hooks.sh
+   ```
+
+6. **Open a PR**: Submit a pull request with a clear description of the changes, why they are useful across projects, and how they were tested.
+
+### The Generalizability Requirement
+
+Contributions from consuming projects must meet a very high bar for generalizability. Every change is evaluated against a 10-point checklist:
+
+**Hard requirements** (all must pass):
+
+- **No project paths** -- no references to project-specific directories or file paths
+- **No project tool references** -- no references to project-specific tools or binaries
+- **No project conventions** -- no project-specific coding conventions or patterns
+- **No project defaults** -- no project-specific default values baked in
+- **Config-driven variability** -- anything that varies between projects must be configurable via `toolkit.toml`
+- **Agent/skill genericness** -- agent prompts and skills must use generic language and placeholders
+- **Hook uses `_config.sh`** -- hooks must read all configuration from `_config.sh` variables
+
+**Quality requirements** (all must pass):
+
+- **Backward compatible** -- existing configurations and workflows must continue to work
+- **Follows existing patterns** -- the change matches the style and conventions of the surrounding code
+- **Clear purpose** -- the change has a well-defined, broadly useful purpose
+
+Changes that fail any hard requirement will be rejected with specific guidance on what to fix. If a change contains a mix of generic and project-specific content, extract only the generic parts.
