@@ -67,7 +67,7 @@ Address 47 findings from a 4-agent deep review (Senior Architect, DX Prototyper,
 
 ### 1.1 Add `set -euo pipefail` consistency audit
 
-**Files to modify**: All 16 hooks in `hooks/`
+**Files to modify**: All hook `.sh` files in `hooks/` (excludes `_config.sh` which is a sourced library, and `smart-context.py` which is Python)
 
 Hooks intentionally omit strict mode so they degrade gracefully (exit 0 on error). However, they should still use `set -u` (undefined variable check) to catch typos. The approach:
 
@@ -83,7 +83,7 @@ Hooks intentionally omit strict mode so they degrade gracefully (exit 0 on error
 
 ### 1.2 Fix command injection via unquoted variables
 
-**Files to modify**: `hooks/guard-destructive.sh`, `hooks/auto-approve-safe.sh`, `hooks/post-edit-lint.sh`, `hooks/task-completed-gate.sh`, `hooks/guard-sensitive-write.sh`, `hooks/classify-error.sh`
+**Files to modify**: `hooks/guard-destructive.sh`, `hooks/auto-approve-safe.sh`, `hooks/post-edit-lint.sh`, `hooks/task-completed-gate.sh`, `hooks/guard-sensitive-writes.sh`, `hooks/classify-error.sh`
 
 Audit every hook for unquoted `$VARIABLE` usage in command contexts:
 
@@ -192,7 +192,7 @@ Edge cases:
 - [ ] All 16 hooks have `set -u` or documented exception
 - [ ] All unquoted variables in command contexts are fixed
 - [ ] `shellcheck -x -S warning hooks/*.sh` passes
-- [ ] `tests/test_hooks.sh` exists with 20+ test cases
+- [ ] `tests/test_hooks.sh` exists with 20+ test cases (30+ after M3 adds migration tests)
 - [ ] All hook tests pass
 - [ ] Existing Python tests still pass: `python3 -m pytest tests/ -v`
 
@@ -237,8 +237,10 @@ def flatten(data: dict, prefix: str = "TOOLKIT") -> list[tuple[str, str]]:
 - All writes to shared files (manifest.json, config cache, session state) must use atomic write pattern: write to temp file, then `mv`
 - Add advisory locking for manifest updates using `flock` where available
 
+Use a local `_atomic_write` helper inline in each file for M2 (before `lib/hook-utils.sh` exists). In M3, consolidate into the shared `lib/hook-utils.sh`:
+
 ```bash
-# lib/hook-utils.sh (new, created in M3)
+# Inline atomic write pattern (used directly in M2, extracted to hook-utils.sh in M3)
 _atomic_write() {
   local target="$1"
   local content="$2"
@@ -252,7 +254,7 @@ For manifest.sh, the pattern is already used in some places (line 466-467 of too
 
 ### 2.3 Protect guard configuration from AI manipulation
 
-**Files to modify**: `hooks/guard-sensitive-write.sh`
+**Files to modify**: `hooks/guard-sensitive-writes.sh`
 
 Add protection for toolkit configuration files themselves:
 
@@ -276,7 +278,7 @@ esac
 
 ### 2.5 Add audit logging for guard decisions
 
-**Files to create**: Guard logging in `hooks/guard-destructive.sh`, `hooks/guard-sensitive-write.sh`
+**Files to create**: Guard logging in `hooks/guard-destructive.sh`, `hooks/guard-sensitive-writes.sh`
 
 ```bash
 # Append to audit log (append-only, not affected by guards)
@@ -424,7 +426,7 @@ hook_info() { echo "[toolkit:$(basename "$0" .sh)] $*" >&2; }
 
 ### 3.2 Migrate hooks to use shared utilities
 
-**Files to modify**: `hooks/guard-destructive.sh`, `hooks/guard-sensitive-write.sh`, `hooks/auto-approve-safe.sh`
+**Files to modify**: `hooks/guard-destructive.sh`, `hooks/guard-sensitive-writes.sh`, `hooks/auto-approve-safe.sh`
 
 Replace duplicated `INPUT=$(cat)` + jq parsing + `deny()` helper with calls to `hook_read_input` and `hook_deny`. Keep the hooks focused on their matching logic only.
 
@@ -439,12 +441,7 @@ Replace duplicated `INPUT=$(cat)` + jq parsing + `deny()` helper with calls to `
 
 **Files to modify**: All `.sh` files
 
-Standardize to:
-- `#!/usr/bin/env bash` for scripts that are executed directly
-- `#!/usr/bin/env bash` for hooks (they're executed by Claude Code)
-- No shebang for `lib/*.sh` files (they're sourced, not executed) — actually keep it for safety
-
-Pick `#!/usr/bin/env bash` consistently everywhere.
+Use `#!/usr/bin/env bash` consistently in all `.sh` files — scripts, hooks, and libraries alike. Libraries are sourced but keeping the shebang ensures they fail safely if accidentally executed directly.
 
 ### 3.4 Add bash version compatibility check
 
@@ -736,26 +733,41 @@ The current array dedup (lines 238-247) correctly deduplicates. Verify edge case
 
 **Addresses**: H2, H10, M10, L8
 
-**Dependency**: Executes `streamline-bootstrap-setup.md` milestones M0-M3
+**Dependency**: `streamline-bootstrap-setup.md` milestones M0-M4 (all now implemented)
 
-**PR scope**: Covered by the referenced plan, plus additions below
+**PR scope**: 6.1 complete (separate PRs); remaining work is 6.2-6.4 below
 
-### 6.1 Execute streamline-bootstrap-setup plan
+### 6.1 Execute streamline-bootstrap-setup plan — COMPLETE
 
-Follow the milestones defined in `docs/plans/streamline-bootstrap-setup.md`:
+All milestones from `docs/plans/streamline-bootstrap-setup.md` have been implemented:
 
-- **M0**: Create `detect-project.py` for auto-detection
-- **M1**: Simplify `bootstrap.sh` to git-only operations
-- **M2**: Rewrite `/setup-toolkit` skill as comprehensive orchestrator
-- **M3**: Update CLAUDE.md template + docs
+- [x] **M0**: `detect-project.py` — auto-detects stacks, commands, dirs, toolkit state; 88 new pytest tests
+- [x] **M1**: `bootstrap.sh` simplified — removed ~200 lines of TOML generation, flags now optional, added `--repair`
+- [x] **M2**: `/setup-toolkit` skill rewritten — comprehensive 9-phase orchestrator (527 lines) with state detection, project discovery, command validation, user confirmation, config generation, CLAUDE.md creation, settings generation, end-to-end verification, and commit
+- [x] **M3**: `BOOTSTRAP_PROMPT.md` created — self-contained prompt for copy-paste into Claude Code; README updated with Quick Start section
+- [x] **M4**: `templates/CLAUDE.md.template` updated — `{{LINT_COMMAND}}`, `{{TEST_COMMAND}}`, `{{FORMAT_COMMAND}}`, `{{RUN_COMMAND}}` placeholders replacing hardcoded `make` commands; CHANGELOG updated
+
+**New files created by this work**:
+
+- `detect-project.py` (~400 lines)
+- `tests/test_detect_project.py` (~800 lines, 88 tests)
+- `BOOTSTRAP_PROMPT.md`
+
+**Impact on hardening findings**:
+
+- H2 (Too many onboarding steps): Resolved — single bootstrap prompt from zero, `/setup-toolkit` for existing projects
+- H10 (Cognitive load): Partially addressed — `/setup-toolkit` handles complexity automatically
+- M10 (README too long): Partially addressed — Quick Start added, but README still 400+ lines
 
 ### 6.2 Split README into quick-start + reference
 
-**Files to modify**: `README.md`
+**Files to modify**: `README.md` (currently 403 lines)
 **Files to create**: `docs/reference.md`, `docs/concepts.md`
 
-- `README.md`: Trim to <200 lines — installation, quick-start (5-minute guide), link to detailed docs
-- `docs/reference.md`: Full configuration reference, all options, all hooks, all stacks
+The README now has a Quick Start section (added by bootstrap-setup M3), but at 403 lines it still exceeds the 200-line target. Move detailed content to docs:
+
+- `README.md`: Trim to <200 lines — keep Quick Start, prerequisites, link to detailed docs
+- `docs/reference.md`: Full configuration reference (all `toolkit.toml` options, all hooks, all stacks, all CLI commands)
 - `docs/concepts.md`: Mental model explainer — what are hooks, agents, skills, rules, manifest, stacks (2-minute read)
 
 ### 6.3 Add CONTRIBUTING.md
@@ -800,15 +812,17 @@ cmd_explain() {
 
 ### Exit Criteria
 
-- [ ] `detect-project.py` exists and works
-- [ ] `bootstrap.sh` simplified per streamline plan
-- [ ] `/setup-toolkit` skill rewritten per streamline plan
+- [x] `detect-project.py` exists and works (completed in bootstrap-setup M0)
+- [x] `bootstrap.sh` simplified per streamline plan (completed in bootstrap-setup M1)
+- [x] `/setup-toolkit` skill rewritten per streamline plan (completed in bootstrap-setup M2)
+- [x] `BOOTSTRAP_PROMPT.md` created with Quick Start in README (completed in bootstrap-setup M3)
+- [x] `CLAUDE.md.template` updated with command placeholders (completed in bootstrap-setup M4)
 - [ ] README.md under 200 lines with quick-start focus
 - [ ] `docs/reference.md` has full configuration reference
 - [ ] `docs/concepts.md` explains mental model
 - [ ] `CONTRIBUTING.md` exists
 - [ ] `toolkit.sh explain` command works
-- [ ] All tests pass
+- [ ] All tests pass (214+ pytest tests)
 
 ---
 
@@ -925,7 +939,7 @@ M4 (CLI Modularization)     ←─── independent, can parallel with M3
   ↓
 M5 (Validation & Diagnostics)
   ↓
-M6 (DX & Onboarding)        ←─── incorporates streamline-bootstrap-setup plan
+M6 (DX & Onboarding)        ←─── 6.1 DONE; 6.2-6.4 are docs/CLI (can parallel with M4/M5)
   ↓
 M7 (Polish)
 ```
@@ -933,7 +947,7 @@ M7 (Polish)
 M1 → M2 → M3 are sequential (each builds on the previous).
 M4 can start in parallel after M1.
 M5 can start after M3 or M4 (whichever finishes last).
-M6 depends on M5 (needs doctor/dry-run for the setup flow).
+M6.1 is already complete (bootstrap-setup plan implemented). M6.2-6.4 are docs and CLI additions — they can proceed in parallel with M4/M5 since they have no code dependencies on those milestones.
 M7 is the final polish pass.
 
 ## Risks & Mitigations
@@ -944,7 +958,7 @@ M7 is the final polish pass.
 | Modularizing toolkit.sh introduces bugs | CLI integration tests already exist; run before/after |
 | Security hardening is too aggressive | Each guard change is tested with hook tests; dry-run mode provides safety net |
 | Config cache hardening rejects valid configs | Schema validation runs in warning mode first; only errors block |
-| Bootstrap simplification breaks existing users | Old flags kept as optional backward-compatible args |
+| Bootstrap simplification breaks existing users | Old flags kept as optional backward-compatible args (already implemented and verified) |
 
 ## Evaluation Criteria
 
@@ -953,8 +967,8 @@ The plan is complete when:
 1. **Zero critical findings remain**: C1-C4 all resolved
 2. **Hook test coverage**: 30+ test cases covering all guard hooks
 3. **CLI modular**: toolkit.sh under 150 lines, each command in its own file
-4. **Onboarding**: New project setup takes under 5 minutes with `/setup-toolkit`
-5. **All tests pass**: Python (126+), bash hooks (30+), CLI integration, manifest
+4. **Onboarding**: New project setup takes under 5 minutes with `/setup-toolkit` (already achieved via bootstrap-setup)
+5. **All tests pass**: Python (214+), bash hooks (30+), CLI integration, manifest
 6. **Shellcheck clean**: All `.sh` files pass with no warnings
 
 ---
