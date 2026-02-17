@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.0] - 2026-02-16
+
+### Added
+
+- **Audit logging**: Guard hooks (`guard-destructive.sh`, `guard-sensitive-writes.sh`) now log all DENY decisions to `.claude/guard-audit.log` with timestamp, hook name, and reason
+- **Config file protection**: `guard-sensitive-writes.sh` blocks direct AI writes to `.claude/settings.json`, `.claude/toolkit.toml`, and `.claude/toolkit-cache.env` (both absolute and relative paths)
+- **TOML type validation**: `validate_schema()` now enforces type checks for `str`, `int`, `list`, and `dict` fields instead of silently accepting mismatches
+- **Env var name validation**: Config cache generation validates that all generated bash variable names match `^[A-Z_][A-Z0-9_]*$`, rejecting keys that could produce unsafe or injectable variable names
+- **Control character rejection**: TOML values containing control characters (except `\n` and `\t`) are now rejected, including CR (0x0d) which can enable log injection attacks
+- **46 new security tests**: env key validation (12), control char rejection (12), key injection (11), type validation (9), file permissions (1), plus shift-out test
+
+### Fixed
+
+- **Security**: All shared file writes (manifest, config cache, session state) now use atomic write pattern (temp file + `mv`) to prevent corruption from concurrent access
+- **Security**: Generated files (`toolkit-cache.env`, `settings.json`) now have 0600 permissions via `umask 077` and `os.chmod()`
+- **Security**: `mktemp` in `pre-compact.sh` now fails cleanly instead of falling back to predictable `/tmp/toolkit_*_$$` paths
+
 ## [1.2.0] - 2026-02-16
 
 ### Added

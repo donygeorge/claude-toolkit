@@ -46,6 +46,19 @@ _warn() { echo "  [warn] $*" >&2; }
 _error() { echo "  [error] $*" >&2; }
 _ok() { echo "  [ok] $*"; }
 
+_atomic_write() {
+  # Write content (from $2 or stdin) to $1 atomically via temp file + mv
+  local target="$1"
+  local content="${2:-}"
+  local tmp="${target}.tmp.$$"
+  if [[ -n "$content" ]]; then
+    printf '%s\n' "$content" > "$tmp"
+  else
+    cat > "$tmp"
+  fi
+  mv "$tmp" "$target"
+}
+
 _require_jq() {
   if ! command -v jq &>/dev/null; then
     _error "jq is required. Install with: brew install jq"
@@ -368,10 +381,11 @@ cmd_init() {
         project_hash=$(_file_hash "$agent_file")
         if [[ "$toolkit_hash" == "$project_hash" ]]; then
           # Content matches — mark as copy-managed
-          jq --arg name "$agent_name" \
+          local updated_manifest
+          updated_manifest=$(jq --arg name "$agent_name" \
             '.agents[$name].status = "copy-managed"' \
-            "$MANIFEST_PATH" > "${MANIFEST_PATH}.tmp"
-          mv "${MANIFEST_PATH}.tmp" "$MANIFEST_PATH"
+            "$MANIFEST_PATH")
+          _atomic_write "$MANIFEST_PATH" "$updated_manifest"
         fi
       fi
     fi
@@ -464,8 +478,9 @@ cmd_update() {
   merge_hash=$(git -C "$PROJECT_DIR" rev-parse HEAD 2>/dev/null || echo "unknown")
 
   if [[ -f "$MANIFEST_PATH" ]]; then
-    jq --arg hash "$merge_hash" '.last_subtree_merge = $hash' "$MANIFEST_PATH" > "${MANIFEST_PATH}.tmp"
-    mv "${MANIFEST_PATH}.tmp" "$MANIFEST_PATH"
+    local updated_manifest
+    updated_manifest=$(jq --arg hash "$merge_hash" '.last_subtree_merge = $hash' "$MANIFEST_PATH")
+    _atomic_write "$MANIFEST_PATH" "$updated_manifest"
   fi
 
   # Refresh symlinks
@@ -496,8 +511,9 @@ cmd_update() {
   if [[ -f "$MANIFEST_PATH" ]]; then
     local new_version
     new_version=$(cat "${TOOLKIT_DIR}/VERSION" 2>/dev/null | tr -d '[:space:]' || echo "unknown")
-    jq --arg v "$new_version" '.toolkit_version = $v' "$MANIFEST_PATH" > "${MANIFEST_PATH}.tmp"
-    mv "${MANIFEST_PATH}.tmp" "$MANIFEST_PATH"
+    local updated_manifest
+    updated_manifest=$(jq --arg v "$new_version" '.toolkit_version = $v' "$MANIFEST_PATH")
+    _atomic_write "$MANIFEST_PATH" "$updated_manifest"
   fi
 
   echo ""
@@ -945,6 +961,10 @@ cmd_generate_settings_inner() {
   fi
 
   # Build and run the generate-settings command
+  # Set restrictive umask for generated settings files
+  local old_umask
+  old_umask=$(umask)
+  umask 077
   # shellcheck disable=SC2086
   python3 "${TOOLKIT_DIR}/generate-settings.py" \
     --base "${TOOLKIT_DIR}/templates/settings-base.json" \
@@ -952,9 +972,11 @@ cmd_generate_settings_inner() {
     $project_args \
     --output "${CLAUDE_DIR}/settings.json" \
     $mcp_args || {
+    umask "$old_umask"
     _error "Failed to generate settings.json"
     return 1
   }
+  umask "$old_umask"
   _ok "Generated settings.json"
 
   if [[ -n "$mcp_args" ]]; then

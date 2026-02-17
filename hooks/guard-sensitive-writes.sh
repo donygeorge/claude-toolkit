@@ -24,9 +24,21 @@ fi
 # Skip if guards are disabled
 if [ "${TOOLKIT_GUARD_ENABLED:-true}" = "false" ]; then exit 0; fi
 
+# --- audit log helper ---
+_audit_log() {
+  local decision="$1"
+  local reason="$2"
+  local log_dir="${CLAUDE_PROJECT_DIR:-.}/.claude"
+  local log_file="${log_dir}/guard-audit.log"
+  if [ -d "$log_dir" ]; then
+    printf '%s %s %s: %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$decision" "$(basename "$0")" "$reason" >> "$log_file" 2>/dev/null || true
+  fi
+}
+
 # --- deny helper ---
 deny() {
   local REASON="$1"
+  _audit_log "DENY" "$REASON"
   if command -v jq >/dev/null 2>&1; then
     jq -n --arg reason "$REASON" \
       '{hookSpecificOutput:{hookEventName:"PreToolUse",permissionDecision:"deny",permissionDecisionReason:$reason}}'
@@ -38,6 +50,17 @@ deny() {
   fi
   exit 0
 }
+
+# =============================================================================
+# 0. Toolkit config files — must be managed via toolkit.sh, not direct AI writes
+# =============================================================================
+# Match both absolute paths (*/.claude/...) and relative paths (.claude/...)
+case "$FILE_PATH" in
+  */.claude/settings.json | */.claude/toolkit.toml | */.claude/toolkit-cache.env | \
+  .claude/settings.json | .claude/toolkit.toml | .claude/toolkit-cache.env)
+    deny "Direct modification of toolkit config blocked — use 'toolkit.sh generate-settings'"
+    ;;
+esac
 
 # Normalize: strip trailing slashes, resolve to basename for extension checks
 BASENAME=$(basename "$FILE_PATH")

@@ -28,6 +28,19 @@ _timestamp() {
   date -u +"%Y-%m-%dT%H:%M:%SZ"
 }
 
+_atomic_write() {
+  # Write content (from $2 or stdin) to $1 atomically via temp file + mv
+  local target="$1"
+  local content="${2:-}"
+  local tmp="${target}.tmp.$$"
+  if [[ -n "$content" ]]; then
+    printf '%s\n' "$content" > "$tmp"
+  else
+    cat > "$tmp"
+  fi
+  mv "$tmp" "$target"
+}
+
 _toolkit_version() {
   local version_file="${TOOLKIT_ROOT}/VERSION"
   if [[ -f "$version_file" ]]; then
@@ -139,7 +152,7 @@ manifest_init() {
       rules: $rules
     }')
 
-  echo "$manifest" > "$manifest_path"
+  _atomic_write "$manifest_path" "$manifest"
   echo "Manifest created: $manifest_path"
   echo "  Agents: $(echo "$agents_json" | jq 'length')"
   echo "  Skills: $(echo "$skills_json" | jq 'length')"
@@ -192,13 +205,13 @@ manifest_customize() {
     return 1
   fi
 
-  # Update manifest
+  # Update manifest (atomic write)
   local updated
   updated=$(jq --arg section "$section" --arg key "$key" --arg ts "$timestamp" \
     '.[$section][$key].status = "customized" | .[$section][$key].customized_at = $ts' \
     "$manifest_path")
 
-  echo "$updated" > "$manifest_path"
+  _atomic_write "$manifest_path" "$updated"
   echo "Marked as customized: $section/$key (at $timestamp)"
 }
 

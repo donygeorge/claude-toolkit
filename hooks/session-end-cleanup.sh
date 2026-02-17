@@ -8,6 +8,14 @@ set -u
 # shellcheck source=_config.sh
 source "$(dirname "$0")/_config.sh"
 
+_atomic_write() {
+  # Write content (from stdin) to $1 atomically via temp file + mv
+  local target="$1"
+  local tmp="${target}.tmp.$$"
+  cat > "$tmp"
+  mv "$tmp" "$target"
+}
+
 PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(cd "$(dirname "$0")/../.." && pwd)}"
 
 # Clean compact state file
@@ -25,8 +33,7 @@ if [ -d "$MEMORY_DIR" ]; then
       TAIL_LINES=$((MAX_MEMORY_LINES - 55))
       # Guard against negative/zero TAIL_LINES when MAX_MEMORY_LINES is small
       [ "$TAIL_LINES" -lt 10 ] && TAIL_LINES=10
-      { head -5 "$MEM_FILE"; echo ""; echo "<!-- Auto-truncated from $LINE_COUNT lines -->"; echo ""; tail -"$TAIL_LINES" "$MEM_FILE"; } > "$MEM_FILE.tmp"
-      mv "$MEM_FILE.tmp" "$MEM_FILE"
+      { head -5 "$MEM_FILE"; echo ""; echo "<!-- Auto-truncated from $LINE_COUNT lines -->"; echo ""; tail -"$TAIL_LINES" "$MEM_FILE"; } | _atomic_write "$MEM_FILE"
     fi
   done
 fi
@@ -37,8 +44,7 @@ HOOK_LOG="$PROJECT_DIR/.claude/hook-log.jsonl"
 if [ -f "$HOOK_LOG" ]; then
   LINE_COUNT=$(wc -l < "$HOOK_LOG" | tr -d ' ')
   if [ "$LINE_COUNT" -gt "$MAX_LOG_LINES" ]; then
-    tail -"$MAX_LOG_LINES" "$HOOK_LOG" > "$HOOK_LOG.tmp"
-    mv "$HOOK_LOG.tmp" "$HOOK_LOG"
+    tail -"$MAX_LOG_LINES" "$HOOK_LOG" | _atomic_write "$HOOK_LOG"
   fi
 fi
 

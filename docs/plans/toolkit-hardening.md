@@ -314,17 +314,17 @@ Currently `validate_schema()` checks for unknown keys but is lenient on type mis
 
 ### Exit Criteria
 
-- [ ] Config cache generation rejects unsafe variable names
-- [ ] Control characters in TOML values are rejected
-- [ ] All shared file writes use atomic write pattern
-- [ ] Guard hooks log decisions to `guard-audit.log`
-- [ ] Settings/config files protected from direct AI writes
-- [ ] Temp files use `mktemp` with cleanup traps
-- [ ] Generated files have 0600 permissions
-- [ ] TOML type validation catches mismatches
-- [ ] New tests added for injection attempts
-- [ ] All existing tests pass
-- [ ] `shellcheck -x -S warning hooks/*.sh` passes
+- [x] Config cache generation rejects unsafe variable names
+- [x] Control characters in TOML values are rejected
+- [x] All shared file writes use atomic write pattern
+- [x] Guard hooks log decisions to `guard-audit.log`
+- [x] Settings/config files protected from direct AI writes
+- [x] Temp files use `mktemp` with cleanup traps
+- [x] Generated files have 0600 permissions
+- [x] TOML type validation catches mismatches
+- [x] New tests added for injection attempts
+- [x] All existing tests pass (259 pytest + 50 hook + 46 CLI + 19 manifest)
+- [x] `shellcheck -x -S warning hooks/*.sh` passes
 
 ---
 

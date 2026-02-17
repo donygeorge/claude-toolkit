@@ -25,6 +25,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import re
 import sys
 import tomllib
 from pathlib import Path
@@ -104,9 +106,51 @@ def validate_schema(data: dict, schema: dict, path: str = "") -> list[str]:
                 errors.append(
                     f"Expected table for '{full_key}', got {type(value).__name__}"
                 )
-        # Leaf type checks (str, int, list) -- lenient: don't reject mismatches
-        # since TOML typing is already enforced by the parser.
+        elif expected is str:
+            if not isinstance(value, str):
+                errors.append(
+                    f"Expected string for '{full_key}', got {type(value).__name__}"
+                )
+        elif expected is int:
+            if not isinstance(value, int) or isinstance(value, bool):
+                errors.append(
+                    f"Expected integer for '{full_key}', got {type(value).__name__}"
+                )
+        elif expected is list:
+            if not isinstance(value, list):
+                errors.append(
+                    f"Expected list for '{full_key}', got {type(value).__name__}"
+                )
     return errors
+
+
+# ---------------------------------------------------------------------------
+# Security: env var name and value validation
+# ---------------------------------------------------------------------------
+
+# Control characters except \n (0x0A) and \t (0x09).
+# Covers 0x00-0x08, 0x0b-0x0d (VT, FF, CR), 0x0e-0x1f, 0x7f.
+# CR (0x0d) is rejected because it can enable log/line injection attacks.
+_CONTROL_CHAR_RE = re.compile(
+    r"[\x00-\x08\x0b-\x0d\x0e-\x1f\x7f]"
+)
+
+
+def _validate_env_key(key: str) -> bool:
+    """Ensure generated env var name is safe for bash."""
+    return bool(re.match(r"^[A-Z_][A-Z0-9_]*$", key))
+
+
+def _check_control_chars(value: str, key: str) -> str | None:
+    """Return an error string if *value* contains unsafe control characters."""
+    match = _CONTROL_CHAR_RE.search(value)
+    if match:
+        char_hex = f"0x{ord(match.group()):02x}"
+        return (
+            f"Value for '{key}' contains control character {char_hex} "
+            f"— only \\n and \\t are allowed"
+        )
+    return None
 
 
 def _escape_for_shell(value: str) -> str:
@@ -120,24 +164,42 @@ def _escape_for_shell(value: str) -> str:
 
 
 def flatten(data: dict, prefix: str = "TOOLKIT") -> list[tuple[str, str]]:
-    """Flatten nested dict into (KEY, shell-safe-value) pairs."""
+    """Flatten nested dict into (KEY, shell-safe-value) pairs.
+
+    Raises ``ValueError`` if a generated env var name is unsafe for bash
+    or if a string value contains disallowed control characters.
+    """
     entries: list[tuple[str, str]] = []
     for key, value in data.items():
         # Normalise key: replace hyphens with underscores, uppercase
         norm_key = key.replace("-", "_").upper()
         full_key = f"{prefix}_{norm_key}"
 
+        if not _validate_env_key(full_key):
+            raise ValueError(
+                f"Unsafe variable name generated: '{full_key}' from key '{key}'"
+            )
+
         if isinstance(value, dict):
             entries.extend(flatten(value, full_key))
         elif isinstance(value, list):
             # Serialize arrays as compact JSON
             json_str = json.dumps(value, separators=(",", ":"))
+            # Check each string element for control characters
+            for item in value:
+                if isinstance(item, str):
+                    err = _check_control_chars(item, full_key)
+                    if err:
+                        raise ValueError(err)
             entries.append((full_key, f"'{_escape_for_shell(json_str)}'"))
         elif isinstance(value, bool):
             entries.append((full_key, f"'{str(value).lower()}'"))
         elif isinstance(value, int):
             entries.append((full_key, f"'{value}'"))
         elif isinstance(value, str):
+            err = _check_control_chars(value, full_key)
+            if err:
+                raise ValueError(err)
             entries.append((full_key, f"'{_escape_for_shell(value)}'"))
         else:
             # Fallback: stringify
@@ -201,7 +263,16 @@ def main() -> int:
 
         if args.output:
             out_path = Path(args.output)
-            out_path.write_text(content)
+            # Atomic write with restrictive permissions (0600)
+            tmp_path = out_path.with_suffix(".tmp." + str(os.getpid()))
+            old_umask = os.umask(0o077)
+            try:
+                tmp_path.write_text(content)
+                os.replace(str(tmp_path), str(out_path))
+            finally:
+                os.umask(old_umask)
+            # Ensure final file has 0600 permissions
+            os.chmod(str(out_path), 0o600)
             print(f"Generated: {out_path}", file=sys.stderr)
         else:
             sys.stdout.write(content)

@@ -16,10 +16,10 @@ cd "$PROJECT_DIR" || exit 0
 PROJECT_NAME="$TOOLKIT_PROJECT_NAME"
 
 # Get source directories and extensions from config
-# Use a temp file with cleanup trap for safety
-TMPFILE_RECENT=$(mktemp /tmp/toolkit_recent.XXXXXX 2>/dev/null || echo "/tmp/toolkit_recent_$$")
-TMPFILE_STATE=$(mktemp /tmp/toolkit_state.XXXXXX 2>/dev/null || echo "/tmp/toolkit_state_$$")
-TMPFILE_RULES=$(mktemp /tmp/toolkit_rules.XXXXXX 2>/dev/null || echo "/tmp/toolkit_rules_$$")
+# Use mktemp for safe temp files with cleanup trap
+TMPFILE_RECENT=$(mktemp "${TMPDIR:-/tmp}/toolkit_recent.XXXXXX") || exit 0
+TMPFILE_STATE=$(mktemp "${TMPDIR:-/tmp}/toolkit_state.XXXXXX") || { rm -f "$TMPFILE_RECENT"; exit 0; }
+TMPFILE_RULES=$(mktemp "${TMPDIR:-/tmp}/toolkit_rules.XXXXXX") || { rm -f "$TMPFILE_RECENT" "$TMPFILE_STATE"; exit 0; }
 trap 'rm -f "$TMPFILE_RECENT" "$TMPFILE_STATE" "$TMPFILE_RULES"' EXIT
 
 RECENT_FILES=""
@@ -130,6 +130,8 @@ RULES
 # Output to stdout (injected into conversation)
 generate_output
 
-# Save state for post-compact-reinject.sh
+# Save state for post-compact-reinject.sh (atomic write)
 STATE_FILE="$PROJECT_DIR/.claude/compact-state.txt"
-generate_output > "$STATE_FILE" 2>/dev/null
+STATE_TMP="${STATE_FILE}.tmp.$$"
+generate_output > "$STATE_TMP" 2>/dev/null
+mv "$STATE_TMP" "$STATE_FILE" 2>/dev/null || true
