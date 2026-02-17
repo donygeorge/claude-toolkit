@@ -175,10 +175,10 @@ Add a text-based pipeline diagram showing how skills connect and standalone skil
 
 **Exit Criteria**:
 
-- [ ] README.md contains a "## Skill Workflow" section
-- [ ] Section shows brainstorm → plan → implement → verify pipeline
-- [ ] Section lists standalone skills (solve, fix, refine, review, commit, gemini)
-- [ ] Diagram is text-based (not Mermaid) for universal rendering
+- [x] README.md contains a "## Skill Workflow" section
+- [x] Section shows brainstorm → plan → implement → verify pipeline
+- [x] Section lists standalone skills (solve, fix, refine, review, commit, gemini)
+- [x] Diagram is text-based (not Mermaid) for universal rendering
 
 ### M5: Add Auto-Flow Flags
 

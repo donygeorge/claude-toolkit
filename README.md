@@ -85,6 +85,28 @@ git commit -m "Add claude-toolkit"
 
 </details>
 
+## Skill Workflow
+
+Skills form a pipeline from ideation through verification. Each stage feeds its output to the next, or you can enter the pipeline at any point.
+
+```text
+  /brainstorm  -->  /plan  -->  /implement  -->  /verify
+   (ideas)        (plan)      (code)          (validate)
+```
+
+**Standalone skills** -- use independently at any time:
+
+| Skill | Purpose |
+| ------- | --------- |
+| `/solve` | GitHub issue workflow |
+| `/fix` | Standalone bug fix |
+| `/refine` | Iterative improvement |
+| `/review-suite` | Multi-agent code review |
+| `/commit` | Auto-commit changes |
+| `/gemini` | Second opinion |
+| `/conventions` | View coding conventions |
+| `/setup-toolkit` | Project onboarding |
+
 ## CLI Commands
 
 The toolkit ships with a CLI at `.claude/toolkit/toolkit.sh`:
