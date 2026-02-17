@@ -223,9 +223,35 @@ FOR each milestone in remaining_milestones:
 END FOR
 ```
 
-#### Step 2b: Completion Verification (Clean-Room Agent)
+#### Step 2b: Completion Verification (`/verify --quick`)
 
-After all milestones complete, spawn a fresh agent with ZERO implementation context to verify every exit criterion independently. Up to 2 fix rounds if gaps found.
+After all milestones complete, invoke `/verify --quick` against the plan file to verify every exit criterion independently. The verify skill runs its own verification gate, rationalization prevention, and fix-or-ask workflow -- do not duplicate that logic here.
+
+```text
+1. Invoke: /verify <plan-file> --quick
+2. The verify skill will:
+   - Run test and lint commands through its verification gate
+   - Check every plan-level exit criterion with evidence
+   - Fix unambiguous issues directly
+   - Ask the user about ambiguous issues
+3. IF verify reports FAIL:
+   - Review the failing criteria
+   - Fix issues (max 2 rounds of fix-and-reverify)
+4. IF verify reports PASS after fixes (or on first run):
+   - Proceed to Step 2c
+```
+
+> **Adversarial framing**: The implementer finished suspiciously quickly. Verify everything independently. Assume nothing carried over from milestone work is trustworthy -- re-check it from scratch.
+
+**Forbidden language in verification output** -- these phrases indicate unverified claims:
+
+- "should work"
+- "probably fine"
+- "seems correct"
+- "looks good"
+- "I believe this is correct"
+
+If you catch yourself writing any of these, STOP and run the actual check instead.
 
 #### Step 2c: Final Sweep
 
@@ -247,7 +273,7 @@ Report milestones completed, commits created, reviews passed, tests added.
 
 When spawning a milestone orchestrator via Task(), read that file and inject its contents as the prompt, replacing the placeholder variables.
 
-Key phases in the template (12 phases total):
+Key phases in the template (13 phases total):
 
 - Phase 0: Prerequisites (git clean)
 - Phase 1: Parse milestone from plan
@@ -258,6 +284,7 @@ Key phases in the template (12 phases total):
 - Phase 6: UI verification
 - Phase 7: Codex review (mandatory, max 3 iterations)
 - Phase 8: Reviewer agent (mandatory, max 2 iterations)
+- Phase 8b: Spec compliance verification (invoke `/verify --quick`)
 - Phase 9: Documentation updates
 - Phase 10: Exit criteria verification
 - Phase 11: Commit with `git commit -F <file>` (not heredoc)

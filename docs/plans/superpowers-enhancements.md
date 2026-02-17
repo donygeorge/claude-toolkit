@@ -118,11 +118,11 @@ This reuses the verify skill's gate function, rationalization table, and fix-or-
 
 **Exit Criteria**:
 
-- [ ] Step 2b in SKILL.md references `/verify --quick` for plan-level verification
-- [ ] Phase 8b added to milestone-template.md between Phase 8 and Phase 9
-- [ ] Phase 8b invokes the verify skill in quick mode (not a separate custom agent)
-- [ ] Adversarial framing and forbidden language list present
-- [ ] No project-specific content added
+- [x] Step 2b in SKILL.md references `/verify --quick` for plan-level verification
+- [x] Phase 8b added to milestone-template.md between Phase 8 and Phase 9
+- [x] Phase 8b invokes the verify skill in quick mode (not a separate custom agent)
+- [x] Adversarial framing and forbidden language list present
+- [x] No project-specific content added
 
 ---
 

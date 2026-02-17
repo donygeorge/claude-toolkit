@@ -205,9 +205,48 @@ Start response with:
 Process response:
 
 - IF "ISSUES:": Fix HIGH severity issues, run reviewer again (max 2 iterations)
-- IF "CLEAN:": Proceed to Phase 9
+- IF "CLEAN:": Proceed to Phase 8b
 
 Update state.json: `phases_completed` += "reviewer"
+
+### Phase 8b: Spec Compliance Verification (MANDATORY)
+
+Invoke the `/verify` skill in quick mode to check that the milestone's exit criteria are actually satisfied. This reuses the verify skill's verification gate, rationalization prevention, and fix-or-ask workflow -- do not duplicate that logic here.
+
+> **Adversarial framing**: The implementer finished suspiciously quickly. Verify everything independently. Assume every claim of "done" is wrong until you see evidence from a command you ran yourself.
+
+**Forbidden language** -- if any of these phrases appear in verification output, the claim is unverified:
+
+- "should work"
+- "probably fine"
+- "seems correct"
+- "looks good"
+- "I believe this is correct"
+
+#### Procedure
+
+```text
+1. Invoke: /verify {plan_file} --quick
+   - The verify skill will run tests, lint, and check each exit criterion
+     for this milestone against actual evidence (commands run, output read)
+   - It applies its own 5-step verification gate (IDENTIFY → RUN → READ → VERIFY → CLAIM)
+   - It uses its rationalization prevention table to catch self-deception
+   - It fixes unambiguous issues directly and asks about ambiguous ones
+
+2. IF verify reports PASS:
+   - Proceed to Phase 9
+
+3. IF verify reports FAIL:
+   - Review the failing exit criteria
+   - Fix the issues
+   - Re-invoke: /verify {plan_file} --quick
+   - Max 2 rounds of fix-and-reverify
+   - IF still failing after 2 rounds:
+     - Write result.json with status="failed" and the unmet criteria
+     - EXIT milestone orchestrator
+```
+
+Update state.json: `phases_completed` += "spec_compliance"
 
 ### Phase 9: Documentation Updates
 
