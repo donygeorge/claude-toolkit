@@ -191,12 +191,12 @@ Add `--auto-plan` to brainstorm and `--auto-implement` to plan. Both spawn fresh
 
 **Exit Criteria**:
 
-- [ ] brainstorm/SKILL.md flags table includes `--auto-plan` with description and default "off"
-- [ ] brainstorm/SKILL.md Phase 8 includes auto-flow step that spawns `Task(subagent_type: general-purpose)` with plan skill prompt
-- [ ] brainstorm/SKILL.md auto-flow displays manual instruction when flag is not set
-- [ ] plan/SKILL.md has a Flags section with `--auto-implement` flag
-- [ ] plan/SKILL.md auto-flow spawns Task agent with implement skill prompt
-- [ ] Both auto-flow prompts instruct the agent to read the skill file (clean context, no session state)
+- [x] brainstorm/SKILL.md flags table includes `--auto-plan` with description and default "off"
+- [x] brainstorm/SKILL.md Phase 8 includes auto-flow step that spawns `Task(subagent_type: general-purpose)` with plan skill prompt
+- [x] brainstorm/SKILL.md auto-flow displays manual instruction when flag is not set
+- [x] plan/SKILL.md has a Flags section with `--auto-implement` flag
+- [x] plan/SKILL.md auto-flow spawns Task agent with implement skill prompt
+- [x] Both auto-flow prompts instruct the agent to read the skill file (clean context, no session state)
 
 ### M6: Add Skill Defaults to toolkit.toml
 

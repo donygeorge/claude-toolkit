@@ -1,7 +1,7 @@
 ---
 name: brainstorm
 description: Use when exploring a new idea, technology choice, or design problem before planning.
-argument-hint: '"topic" [--quick] [--depth shallow|normal|deep] [--gemini]'
+argument-hint: '"topic" [--quick] [--depth shallow|normal|deep] [--gemini] [--auto-plan]'
 user-invocable: true
 model: opus
 ---
@@ -37,6 +37,7 @@ defaults:
 /explore "dark mode implementation"            # Alias for /brainstorm
 /brainstorm "state management" --gemini        # Include Gemini second opinion
 /brainstorm "API redesign" --no-commit         # Generate doc without committing
+/brainstorm "data pipeline" --auto-plan        # Auto-spawn /plan after brainstorm
 ```
 
 ### Natural Language
@@ -57,6 +58,7 @@ defaults:
 | `--depth <level>` | `shallow` / `normal` / `deep` | `normal` |
 | `--gemini` | Include a Gemini second-opinion persona in the team | off |
 | `--no-commit` | Generate the idea doc but do not commit it | off |
+| `--auto-plan` | After brainstorm completes, automatically spawn `/plan` skill with the generated idea doc | off |
 
 ## Depth Modes
 
@@ -85,7 +87,7 @@ defaults:
 
 **Before doing ANY research:**
 
-1. Parse the topic from the user's input. Extract any flags (`--quick`, `--depth`, `--gemini`, `--no-commit`).
+1. Parse the topic from the user's input. Extract any flags (`--quick`, `--depth`, `--gemini`, `--no-commit`, `--auto-plan`).
 2. Slugify the topic for file naming: lowercase, hyphens, no special characters (e.g., "Real-Time Updates" → `real-time-updates`).
 3. Check if `docs/ideas/<topic-slug>.md` already exists. If so, ask: "An existing idea doc was found. Resume and extend it, or start fresh?"
 4. Ask **Checkpoint 1** questions. Use two rounds of AskUserQuestion (up to 7 questions total). Reduce questions if the topic is already very specific and clear.
@@ -409,10 +411,27 @@ mcp__codex__codex:
 **Recommended**: A2: <name> (Medium confidence)
 **Research personas used**: 3 (the-pragmatist, the-innovator, the-architect)
 **Codex iterations**: 4 of 5
-
-To create an implementation plan from this idea:
-  /plan <topic-slug>
 ```
+
+5. **Auto-flow to /plan** (if `--auto-plan` flag is set):
+
+   IF `--auto-plan` is set:
+
+   Spawn a fresh Task agent with clean context to run the plan skill. The agent must read the skill file itself — do not pass session state or synthesis context.
+
+   ```text
+   Task:
+     subagent_type: "general-purpose"
+     prompt: |
+       Read the skill file at skills/plan/SKILL.md, then execute /plan <topic-slug>.
+       The brainstorm idea doc is at docs/ideas/<topic-slug>.md — the plan skill
+       will auto-detect it during Phase 0.
+       Start fresh — do not assume any context from a previous session.
+   ```
+
+   ELSE (flag not set):
+
+   Display: `Next step: Run /plan <topic-slug> to create an implementation plan`
 
 ---
 

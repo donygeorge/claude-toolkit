@@ -1,7 +1,7 @@
 ---
 name: plan
 description: Use when a feature or change needs a detailed implementation plan before building.
-argument-hint: "<feature-name>"
+argument-hint: "<feature-name> [--auto-implement]"
 user-invocable: true
 ---
 
@@ -31,6 +31,7 @@ defaults:
 /plan <feature-name>           # Plan a new feature
 /plan user-notifications       # Example: plan notifications feature
 /plan refactor-auth-system     # Example: plan a refactor
+/plan user-notifications --auto-implement  # Auto-spawn /implement after plan
 ```
 
 ### Natural Language
@@ -40,6 +41,13 @@ defaults:
 "create a plan for user preferences"
 "help me plan the dark mode implementation"
 ```
+
+## Flags
+
+| Flag | Description | Default |
+| ---- | ----------- | ------- |
+| `<feature-name>` | Required. The feature or change to plan | -- |
+| `--auto-implement` | After plan is finalized, automatically spawn `/implement` skill with the generated plan | off |
 
 ## Critical Rules (READ FIRST)
 
@@ -150,7 +158,24 @@ After codex feedback loop completes, optionally run:
 1. Incorporate agent feedback
 2. Update plan status to "In Review"
 3. Present final plan to user with summary of what was planned
-4. **Do NOT start implementing** — tell the user to run `/implement docs/plans/<feature-name>.md` when ready
+4. **Auto-flow to /implement** (if `--auto-implement` flag is set):
+
+   IF `--auto-implement` is set:
+
+   Spawn a fresh Task agent with clean context to run the implement skill. The agent must read the skill file itself — do not pass session state or planning context.
+
+   ```text
+   Task:
+     subagent_type: "general-purpose"
+     prompt: |
+       Read the skill file at skills/implement/SKILL.md, then execute /implement with
+       the plan at docs/plans/<feature-name>.md.
+       Start fresh — do not assume any context from a previous session.
+   ```
+
+   ELSE (flag not set):
+
+   Display: `Next step: Run /implement docs/plans/<feature-name>.md to execute the plan`
 
 ## Codex Feedback Loop
 
