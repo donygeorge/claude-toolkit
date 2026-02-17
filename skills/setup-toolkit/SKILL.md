@@ -571,6 +571,26 @@ List the changed files. **Ask the user**: commit or stash changes first, or proc
 
 **Do NOT proceed until the user confirms.**
 
+#### Step U0.4: Check toolkit remote
+
+```bash
+git remote get-url claude-toolkit 2>/dev/null
+```
+
+If the remote does not exist, inform the user:
+
+> The git remote `claude-toolkit` is not configured. This is required for updates.
+>
+> Please provide the toolkit repository URL so I can add it.
+
+If the user provides a URL:
+
+```bash
+git remote add claude-toolkit <url>
+```
+
+**Do NOT proceed until the remote is configured.**
+
 ---
 
 ### Phase U1: Fetch & Preview
@@ -597,13 +617,28 @@ Read the current toolkit version:
 cat .claude/toolkit/VERSION
 ```
 
+If the VERSION file does not exist or is empty, display the current version as "unknown" and note this to the user.
+
 Display a version comparison to the user:
 
 > **Current version**: [current_version]
 > **Available versions**: [list of tags, newest first]
 > **Latest release**: [newest tag]
 
-If `--update` was called with a specific version (e.g., `--update v1.3.0`), confirm that the requested version exists in the tag list.
+If no tags are found (the tag list is empty), inform the user:
+
+> No release tags found in the toolkit remote. Options:
+>
+> 1. Update to the latest `main` branch (may include unreleased changes)
+> 2. Abort the update
+
+If the user chooses main, use `claude-toolkit/main` as the target ref instead of a version tag.
+
+If `--update` was called with a specific version (e.g., `--update v1.3.0`), confirm that the requested version exists in the tag list. If the requested version is not found:
+
+> Version `[requested_version]` was not found. Available versions are: [list]. Would you like to choose from these, update to the latest release, or abort?
+
+**Do NOT proceed with a non-existent version.**
 
 #### Step U1.3: Show CHANGELOG entries
 
@@ -614,6 +649,8 @@ cat .claude/toolkit/CHANGELOG.md
 ```
 
 Extract and display only the entries between the current and target versions. Summarize key changes (new features, bug fixes, breaking changes).
+
+If CHANGELOG.md does not exist, inform the user and continue without change summaries.
 
 #### Step U1.4: Preview drift for customized files
 
@@ -656,7 +693,15 @@ bash .claude/toolkit/toolkit.sh update [version]
 
 Replace `[version]` with the user's chosen version (e.g., `v1.3.0`), or omit for the latest release.
 
-#### Step U2.2: Check for conflicts
+#### Step U2.2: Check if already up to date
+
+If the update command succeeds with a message like "Already up to date" and no files changed:
+
+> The toolkit is already at the target version. No changes were made.
+
+**Skip phases U3-U5 and end the update flow.**
+
+#### Step U2.3: Check for conflicts
 
 If the update command fails, check for merge conflicts:
 
@@ -674,7 +719,7 @@ If there are conflicted files, present them to the user:
 
 If the user chooses automatic resolution:
 
-1. For each conflicted file, read the file and analyze the conflict markers
+1. For each conflicted file, check if it is a binary file (`file <path>`). Binary files cannot be merged textually -- offer "keep ours" (`git checkout --ours`) or "take theirs" (`git checkout --theirs`) and **ask the user** which to keep. For text files, read the file and analyze the conflict markers
 2. Show the proposed resolution (which side to keep, or how to merge)
 3. **Ask the user to confirm** the resolution for each file before applying
 4. After resolving, mark the file as resolved: `git add [resolved_file]`
@@ -748,7 +793,7 @@ Retry up to 3 times.
 Check that the manifest file exists and is valid:
 
 ```bash
-python3 -c "import json; json.load(open('toolkit-manifest.json'))"
+python3 -c "import json; json.load(open('.claude/toolkit-manifest.json'))"
 ```
 
 If missing or invalid, re-initialize:
@@ -824,13 +869,23 @@ For each customized file that has upstream changes (drift), help the user decide
 
 #### Step U4.1: Detect drift
 
+First, check for customized files:
+
 ```bash
 bash .claude/toolkit/toolkit.sh status
 ```
 
-Identify all customized files with drift (where the toolkit source has changed since the file was customized).
+Then, for each customized file reported by status, manually check for drift by comparing the manifest's recorded `toolkit_hash` against the current toolkit source hash:
 
-If no drift is detected, skip to Phase U5.
+```bash
+shasum -a 256 .claude/toolkit/<source_path>
+```
+
+If the hash differs from what the manifest records, there is drift -- the toolkit source changed since the file was customized.
+
+Note: For skills, compare each file in the skill directory individually, as the drift checker may not cover skills automatically.
+
+If no drift is detected for any customized file, skip to Phase U5.
 
 #### Step U4.2: Analyze each drifted file
 
@@ -874,7 +929,8 @@ Based on the user's choice:
 **Keep customization**: No file changes needed. Update the manifest to record the new toolkit hash (so drift is no longer reported for the current version):
 
 ```bash
-# Update manifest hash for this file to suppress future drift warnings
+NEW_HASH=$(shasum -a 256 .claude/toolkit/<source_path> | cut -d' ' -f1)
+# Use jq to update the toolkit_hash for this file's entry in .claude/toolkit-manifest.json
 ```
 
 **Merge upstream changes**: Perform an intelligent merge of the user's customizations with the upstream changes. Show the merged result to the user and **ask for confirmation** before writing the file. If the merge is ambiguous, present options and let the user decide.
@@ -918,15 +974,24 @@ Present the summary to the user:
 
 #### Step U5.3: Stage and commit
 
-Stage all changed files individually. Do NOT use `git add .` or `git add -A`.
+Before staging, check if there are actually changes to commit:
+
+```bash
+git status --porcelain
+```
+
+If there are no changes (output is empty), all update changes were captured in the subtree merge commit. No additional commit is needed -- skip to the summary output and inform the user.
+
+If there are changes, stage all changed files individually. Do NOT use `git add .` or `git add -A`.
 
 ```bash
 git add .claude/toolkit/
 git add .claude/settings.json
-git add .claude/toolkit-cache.env
 git add .mcp.json
-git add toolkit-manifest.json
+git add .claude/toolkit-manifest.json
 ```
+
+Note: `toolkit-cache.env` is typically in `.gitignore` and should NOT be staged.
 
 Also stage any files that were modified during drift resolution (agents, rules, skills).
 
@@ -976,6 +1041,8 @@ Find all customized and modified files that could potentially be contributed ups
 bash .claude/toolkit/toolkit.sh status
 ```
 
+If `toolkit.sh status` reports that the manifest is missing, inform the user and offer to initialize it with `bash .claude/toolkit/toolkit.sh init --force`. Note that after initializing, all files will be marked as "managed" with no customizations recorded -- the user would need to re-customize files first.
+
 Review the output. Identify two categories of candidate files:
 
 1. **Customized files**: Files marked as "customized" in the manifest (the user explicitly took ownership via `toolkit.sh customize`)
@@ -996,6 +1063,14 @@ diff -u .claude/toolkit/<source_path> .claude/<installed_path>
 ```
 
 For agents and rules, the toolkit source is in `.claude/toolkit/agents/` or `.claude/toolkit/rules/`. For skills, the toolkit source is in `.claude/toolkit/skills/<skill_name>/`.
+
+Before diffing, verify the installed file actually exists on disk. If a customized file was deleted, skip it and inform the user it needs to be restored.
+
+If the diff is empty (the customized file is identical to the toolkit source), skip it:
+
+> `[file_path]` is marked as customized but is identical to the toolkit source. No changes to contribute.
+
+Remove empty-diff files from the candidate list.
 
 #### Step C0.3: Analyze and present candidates
 
@@ -1101,6 +1176,14 @@ If any hard requirement fails, inform the user with specific guidance:
 
 **Ask the user** which option they prefer. If they choose to revise, suggest specific modifications that would make the change pass the gate, then re-evaluate.
 
+#### Step C1.4: Check for remaining candidates
+
+After evaluating all candidates, if every file was skipped or failed the gate (none passed), inform the user:
+
+> All selected candidates failed the generalizability gate. There are no generic changes to contribute at this time. Consider making changes more config-driven and trying again.
+
+**Stop the contribute flow here.** Do not proceed to C2.
+
 ---
 
 ### Phase C2: Prepare Clean Changes
@@ -1172,10 +1255,10 @@ For each approved file (with divergence resolved), apply the changes to the tool
 # Copy the approved changes to .claude/toolkit/<source_path>
 ```
 
-After applying all changes, show the final prepared changes:
+After applying all changes, show the final prepared changes. Note: `.claude/toolkit` is a subtree, not a separate repository -- always run git commands from the project root:
 
 ```bash
-cd .claude/toolkit && git diff
+git diff -- .claude/toolkit/
 ```
 
 > **Prepared changes for contribution**:
@@ -1185,6 +1268,8 @@ cd .claude/toolkit && git diff
 > ```
 >
 > Please review these changes. Are they ready for validation?
+
+If the diff is empty, the changes may not have been applied correctly. Investigate before proceeding.
 
 **Wait for user confirmation before proceeding to validation.**
 
@@ -1200,34 +1285,36 @@ Run the FULL toolkit test suite against the modified toolkit source. ALL checks 
 shellcheck -x -S warning .claude/toolkit/hooks/*.sh .claude/toolkit/lib/*.sh .claude/toolkit/toolkit.sh
 ```
 
+Note: Run all tests from the project root using paths to the toolkit directory. Do NOT `cd` into the subtree, as bash tests use git operations that need the project-level `.git`.
+
 #### Step C3.2: Python tests
 
 ```bash
-cd .claude/toolkit && python3 -m pytest tests/ -v
+python3 -m pytest .claude/toolkit/tests/ -v
 ```
 
 #### Step C3.3: CLI integration tests
 
 ```bash
-cd .claude/toolkit && bash tests/test_toolkit_cli.sh
+bash .claude/toolkit/tests/test_toolkit_cli.sh
 ```
 
 #### Step C3.4: Manifest integration tests
 
 ```bash
-cd .claude/toolkit && bash tests/test_manifest.sh
+bash .claude/toolkit/tests/test_manifest.sh
 ```
 
 #### Step C3.5: Hook tests
 
 ```bash
-cd .claude/toolkit && bash tests/test_hooks.sh
+bash .claude/toolkit/tests/test_hooks.sh
 ```
 
 #### Step C3.6: Settings determinism
 
 ```bash
-cd .claude/toolkit && python3 -m pytest tests/test_generate_settings.py -v
+python3 -m pytest .claude/toolkit/tests/test_generate_settings.py -v
 ```
 
 #### Step C3.7: Edge case verification
@@ -1253,6 +1340,7 @@ If ANY check fails, inform the user:
 > **Validation failed**: [list of failed checks with details]
 >
 > Options:
+>
 > 1. **Investigate** the failure and attempt to fix it
 > 2. **Adjust** the contribution to avoid the failing test
 > 3. **Abort** the contribution
@@ -1267,11 +1355,13 @@ Generate the contribution artifacts and guide the user through the submission wo
 
 #### Step C4.1: Generate patch
 
-Create a patch file from the validated changes:
+Create a patch file from the validated changes. The patch must have paths relative to the toolkit root (not the project root), so strip the `.claude/toolkit/` prefix:
 
 ```bash
-cd .claude/toolkit && git diff > /tmp/toolkit-contribution.patch
+git diff -- .claude/toolkit/ | sed 's|a/.claude/toolkit/|a/|g; s|b/.claude/toolkit/|b/|g' > /tmp/toolkit-contribution.patch
 ```
+
+If a previous patch exists at that path, inform the user and offer to save to an alternative path (e.g., `/tmp/toolkit-contribution-<timestamp>.patch`).
 
 #### Step C4.2: Write contribution description
 
@@ -1342,23 +1432,26 @@ git push origin contribute/<brief-description>
 # Then open a PR from your fork to the upstream repo
 ```
 
-**Direct push workflow**:
+**Direct push workflow** (uses `git subtree push` to extract and push):
 
 ```bash
-# 1. Navigate to the toolkit subtree
-cd .claude/toolkit
+# Option A: Use git subtree push
+git subtree push --prefix=.claude/toolkit claude-toolkit contribute/<brief-description>
+# Then open a PR on the toolkit repo
 
-# 2. Create a branch
+# Option B: Clone the toolkit repo and apply the patch
+TOOLKIT_URL=$(git remote get-url claude-toolkit)
+git clone "$TOOLKIT_URL" /tmp/toolkit-direct-push
+cd /tmp/toolkit-direct-push
 git checkout -b contribute/<brief-description>
-
-# 3. Changes are already applied -- commit them
+git apply /tmp/toolkit-contribution.patch
 git add -A
 git commit -m "<contribution title>"
-
-# 4. Push to remote
-git push claude-toolkit contribute/<brief-description>
+git push origin contribute/<brief-description>
 # Then open a PR on the toolkit repo
 ```
+
+Note: Do NOT `cd .claude/toolkit && git checkout -b` -- the subtree is not a standalone repository and git branch operations would affect the project repo.
 
 #### Step C4.5: Ask user to review
 
