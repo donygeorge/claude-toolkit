@@ -189,12 +189,12 @@ Edge cases:
 
 ### Exit Criteria
 
-- [ ] All 16 hooks have `set -u` or documented exception
-- [ ] All unquoted variables in command contexts are fixed
-- [ ] `shellcheck -x -S warning hooks/*.sh` passes
-- [ ] `tests/test_hooks.sh` exists with 20+ test cases (30+ after M3 adds migration tests)
-- [ ] All hook tests pass
-- [ ] Existing Python tests still pass: `python3 -m pytest tests/ -v`
+- [x] All 16 hooks have `set -u` or documented exception (`_config.sh` excluded as sourced library)
+- [x] All unquoted variables in command contexts are fixed
+- [x] `shellcheck -x -S warning hooks/*.sh` passes
+- [x] `tests/test_hooks.sh` exists with 50 test cases (20+ minimum met)
+- [x] All hook tests pass
+- [x] Existing Python tests still pass: `python3 -m pytest tests/ -v` (214 passed)
 
 ---
 

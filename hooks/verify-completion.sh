@@ -1,6 +1,10 @@
 #!/bin/bash
 # Stop hook: Advisory check for uncommitted changes
 # Non-blocking (always exit 0)
+#
+# set -u: Catch undefined variable bugs. No set -e/-o pipefail — hooks must
+# degrade gracefully (exit 0 on unexpected errors rather than propagating failure).
+set -u
 
 # shellcheck source=_config.sh
 source "$(dirname "$0")/_config.sh"

@@ -2,6 +2,10 @@
 # SubagentStop hook: Validate agent output quality before accepting results
 # Checks that agents produced meaningful evidence appropriate to their role.
 # In deep/thorough mode: critical failures block (exit 2). In smoke mode: warnings only.
+#
+# set -u: Catch undefined variable bugs. No set -e/-o pipefail — hooks must
+# degrade gracefully (exit 0 on unexpected errors rather than propagating failure).
+set -u
 
 # shellcheck source=_config.sh
 source "$(dirname "$0")/_config.sh"

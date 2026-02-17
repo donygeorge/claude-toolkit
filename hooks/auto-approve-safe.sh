@@ -6,6 +6,10 @@
 #   approve()            — One-time approval (asked again next time)
 #
 # NEVER auto-approve: npx, curl, git commit/add/push
+#
+# set -u: Catch undefined variable bugs. No set -e/-o pipefail — hooks must
+# degrade gracefully (exit 0 on unexpected errors rather than propagating failure).
+set -u
 
 # shellcheck source=_config.sh
 source "$(dirname "$0")/_config.sh"

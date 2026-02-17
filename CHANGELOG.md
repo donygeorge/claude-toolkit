@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.0] - 2026-02-16
+
+### Added
+
+- **Hook test framework**: `tests/test_hooks.sh` with 50 integration tests covering guard-destructive (14 tests), auto-approve-safe (12 tests), guard-sensitive-writes (8 tests), edge cases (8 tests), subagent network blocking (2 tests), database file protection (3 tests), and error classification (3 tests)
+
+### Fixed
+
+- **Security**: Add `set -u` (undefined variable check) to all 15 hook scripts to catch silent undefined variable bugs; each hook includes a rationale comment explaining why `set -e`/`set -o pipefail` are intentionally omitted
+- **Security**: Escape JSON output in `deny()` fallback paths (when jq unavailable) in `guard-destructive.sh` and `guard-sensitive-writes.sh`
+- **Security**: Add path validation in `post-edit-lint.sh` to reject absolute paths outside the project directory
+- **Security**: Add `${VAR:-}` defaults for environment variables that may be unset (`CLAUDE_SUBAGENT_TYPE`, `CI`, `GITHUB_ACTIONS`, `JENKINS_HOME`, `DISPLAY`, `WAYLAND_DISPLAY`)
+- **Security**: Add `--` to `grep -qE` calls that use config-sourced patterns to prevent option injection
+- **Bug**: Fix `CRITICAL_PATHS` default in `guard-destructive.sh` — literal single quotes in regex prevented matching (e.g., `rm -rf src/` was not blocked)
+- **Bug**: Fix `DB_PATTERN` default in `guard-sensitive-writes.sh` — same literal single quotes bug
+- Document intentional word splitting in `task-completed-gate.sh` lint/test command execution
+
 ## [1.1.0] - 2026-02-16
 
 ### Added

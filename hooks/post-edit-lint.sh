@@ -1,6 +1,10 @@
 #!/bin/bash
 # PostToolUse hook: Auto-format and lint files after edits
 # Supports configurable linters per file extension via toolkit.toml
+#
+# set -u: Catch undefined variable bugs. No set -e/-o pipefail — hooks must
+# degrade gracefully (exit 0 on unexpected errors rather than propagating failure).
+set -u
 
 # shellcheck source=_config.sh
 source "$(dirname "$0")/_config.sh"
@@ -20,7 +24,14 @@ FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // empty' 2>/dev/null)
 [ -z "$FILE_PATH" ] && exit 0
 # Reject suspicious paths (traversal, absolute paths outside project)
 case "$FILE_PATH" in
-  *..*) exit 0 ;;
+  *..*) exit 0 ;;  # Directory traversal
+  /*)                # Absolute path — must be under project dir
+    PROJECT_DIR_CHECK="${CLAUDE_PROJECT_DIR:-$(cd "$(dirname "$0")/../.." && pwd)}"
+    case "$FILE_PATH" in
+      "${PROJECT_DIR_CHECK}"/*) ;; # OK — under project
+      *) exit 0 ;;                 # Outside project — skip
+    esac
+    ;;
 esac
 [ -f "$FILE_PATH" ] || exit 0
 

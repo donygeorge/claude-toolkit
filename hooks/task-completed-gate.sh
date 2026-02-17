@@ -2,6 +2,10 @@
 # TaskCompleted hook: Quality gate — blocks task completion if lint/tests fail
 # Exit 0 = allow task completion
 # Exit 2 = block with stderr feedback (agent must fix before completing)
+#
+# set -u: Catch undefined variable bugs. No set -e/-o pipefail — hooks must
+# degrade gracefully (exit 0 on unexpected errors rather than propagating failure).
+set -u
 
 # shellcheck source=_config.sh
 source "$(dirname "$0")/_config.sh"
@@ -81,6 +85,8 @@ if [ -n "$TOOLKIT_HOOKS_TASK_COMPLETED_GATES_LINT_CMD" ]; then
     fi
 
     if command -v "$(echo "$LINT_CMD" | awk '{print $1}')" >/dev/null 2>&1 || [ -x "$(echo "$LINT_CMD" | awk '{print $1}')" ]; then
+      # Word splitting on $LINT_CMD is intentional — config values like
+      # ".venv/bin/ruff check --quiet" must split into command + arguments.
       # shellcheck disable=SC2086
       if ! LINT_OUTPUT=$(echo "$MATCHING_FILES" | xargs $LINT_CMD 2>&1); then
         echo "Task cannot be completed: lint errors found. Fix lint issues and retry." >&2
@@ -122,6 +128,7 @@ if [ -n "$TOOLKIT_HOOKS_TASK_COMPLETED_GATES_TESTS_CMD" ]; then
     fi
 
     if [ "$CAN_RUN" = "true" ]; then
+      # Word splitting on $TESTS_CMD is intentional — see lint gate comment above.
       # shellcheck disable=SC2086
       if ! TEST_OUTPUT=$(timeout "$TESTS_TIMEOUT" $TESTS_CMD 2>&1); then
         echo "Task cannot be completed: tests failing." >&2

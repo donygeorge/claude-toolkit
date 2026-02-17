@@ -2,6 +2,10 @@
 # PreCompact hook: Output working state context that survives compaction
 # Hook output is injected into conversation after compact completes
 # Also saves state to compact-state.txt for post-compact-reinject.sh
+#
+# set -u: Catch undefined variable bugs. No set -e/-o pipefail — hooks must
+# degrade gracefully (exit 0 on unexpected errors rather than propagating failure).
+set -u
 
 # shellcheck source=_config.sh
 source "$(dirname "$0")/_config.sh"

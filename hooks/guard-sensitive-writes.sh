@@ -1,6 +1,10 @@
 #!/bin/bash
 # PreToolUse hook: Block Write/Edit to sensitive project files
 # Prevents accidental modification of secrets, credentials, and critical configs.
+#
+# set -u: Catch undefined variable bugs. No set -e/-o pipefail — hooks must
+# degrade gracefully (exit 0 on unexpected errors rather than propagating failure).
+set -u
 
 # shellcheck source=_config.sh
 source "$(dirname "$0")/_config.sh"
@@ -27,7 +31,10 @@ deny() {
     jq -n --arg reason "$REASON" \
       '{hookSpecificOutput:{hookEventName:"PreToolUse",permissionDecision:"deny",permissionDecisionReason:$reason}}'
   else
-    printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"%s"}}\n' "$REASON"
+    # Escape quotes and backslashes for JSON safety when jq is unavailable
+    local SAFE_REASON
+    SAFE_REASON=$(printf '%s' "$REASON" | sed 's/\\/\\\\/g; s/"/\\"/g')
+    printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"%s"}}\n' "$SAFE_REASON"
   fi
   exit 0
 }
@@ -84,8 +91,8 @@ fi
 # 6. Database files
 # =============================================================================
 # Database file protection (configurable via toolkit.toml, with safe default)
-DB_PATTERN="${TOOLKIT_HOOKS_GUARD_DATABASE_PATTERN:-'(^|/)data/.*\.(db|sqlite|sqlite3)$'}"
-if echo "$FILE_PATH" | grep -qE "$DB_PATTERN"; then
+DB_PATTERN="${TOOLKIT_HOOKS_GUARD_DATABASE_PATTERN:-(^|/)data/.*\.(db|sqlite|sqlite3)$}"
+if echo "$FILE_PATH" | grep -qE -- "$DB_PATTERN"; then
   deny "Blocked direct write to database file — use migrations or SQL commands"
 fi
 

@@ -1,6 +1,10 @@
 #!/bin/bash
 # SessionStart(compact) hook: Re-inject critical context AFTER compaction
 # Reads state saved by pre-compact.sh
+#
+# set -u: Catch undefined variable bugs. No set -e/-o pipefail — hooks must
+# degrade gracefully (exit 0 on unexpected errors rather than propagating failure).
+set -u
 
 # shellcheck source=_config.sh
 source "$(dirname "$0")/_config.sh"

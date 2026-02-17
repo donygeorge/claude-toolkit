@@ -6,6 +6,10 @@
 #   macOS:  Uses osascript (AppleScript)
 #   Linux:  Uses notify-send (if available)
 #   CI/headless: No-op (when $CI is set or no display available)
+#
+# set -u: Catch undefined variable bugs. No set -e/-o pipefail — hooks must
+# degrade gracefully (exit 0 on unexpected errors rather than propagating failure).
+set -u
 
 # shellcheck source=_config.sh
 source "$(dirname "$0")/_config.sh"
@@ -19,7 +23,7 @@ APP_NAME="$TOOLKIT_NOTIFICATIONS_APP_NAME"
 [ -z "$MESSAGE" ] && exit 0
 
 # CI/headless detection: skip notifications silently
-if [ -n "$CI" ] || [ -n "$GITHUB_ACTIONS" ] || [ -n "$JENKINS_HOME" ]; then
+if [ -n "${CI:-}" ] || [ -n "${GITHUB_ACTIONS:-}" ] || [ -n "${JENKINS_HOME:-}" ]; then
   exit 0
 fi
 
@@ -38,7 +42,7 @@ fi
 # --- Linux ---
 if [ "$(uname -s)" = "Linux" ]; then
   # Skip if no display server available
-  if [ -z "$DISPLAY" ] && [ -z "$WAYLAND_DISPLAY" ]; then
+  if [ -z "${DISPLAY:-}" ] && [ -z "${WAYLAND_DISPLAY:-}" ]; then
     exit 0
   fi
   if command -v notify-send >/dev/null 2>&1; then

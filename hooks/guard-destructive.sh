@@ -1,6 +1,10 @@
 #!/bin/bash
 # PreToolUse hook: Block destructive commands for safe autonomous operation
 # Uses JSON hookSpecificOutput with permissionDecision for structured deny/allow.
+#
+# set -u: Catch undefined variable bugs. No set -e/-o pipefail — hooks must
+# degrade gracefully (exit 0 on unexpected errors rather than propagating failure).
+set -u
 
 # shellcheck source=_config.sh
 source "$(dirname "$0")/_config.sh"
@@ -38,7 +42,10 @@ deny() {
         '{hookSpecificOutput:{hookEventName:"PreToolUse",permissionDecision:"deny",permissionDecisionReason:$reason}}'
     fi
   else
-    printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"%s"}}\n' "$REASON"
+    # Escape quotes and backslashes for JSON safety when jq is unavailable
+    local SAFE_REASON
+    SAFE_REASON=$(printf '%s' "$REASON" | sed 's/\\/\\\\/g; s/"/\\"/g')
+    printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"%s"}}\n' "$SAFE_REASON"
   fi
   exit 0
 }
@@ -84,9 +91,9 @@ if echo "$COMMAND" | grep -qE '\brm\s+(-[a-zA-Z]*r[a-zA-Z]*\s+-[a-zA-Z]*f|-[a-zA
 fi
 
 # Critical paths for rm -rf protection (configurable via toolkit.toml, with safe defaults)
-CRITICAL_PATHS="${TOOLKIT_HOOKS_GUARD_CRITICAL_PATHS:-'(src|app|lib|\.claude|\.git|tests|data|scripts|config)(/|$|\s)'}"
+CRITICAL_PATHS="${TOOLKIT_HOOKS_GUARD_CRITICAL_PATHS:-(src|app|lib|\.claude|\.git|tests|data|scripts|config)(/|$|\s)}"
 if echo "$COMMAND" | grep -qE '\brm\s+(-[a-zA-Z]*r[a-zA-Z]*f|-[a-zA-Z]*f[a-zA-Z]*r|-[a-zA-Z]*r[a-zA-Z]*\s+-[a-zA-Z]*f|-[a-zA-Z]*f[a-zA-Z]*\s+-[a-zA-Z]*r|--recursive)\b'; then
-  if echo "$COMMAND" | grep -qE "$CRITICAL_PATHS"; then
+  if echo "$COMMAND" | grep -qE -- "$CRITICAL_PATHS"; then
     deny "rm -rf on critical path blocked — would destroy essential project files" \
          "Critical paths: src/, app/, lib/, .claude/, .git/, tests/, data/, scripts/, config/"
   fi
@@ -170,6 +177,7 @@ fi
 # =============================================================================
 # Block network in review subagents (names configurable via toolkit.toml)
 REVIEW_AGENTS="${TOOLKIT_HOOKS_GUARD_REVIEW_AGENTS:-reviewer|qa|security|ux|pm|docs|architect|commit-check}"
+CLAUDE_SUBAGENT_TYPE="${CLAUDE_SUBAGENT_TYPE:-}"
 if [ -n "$CLAUDE_SUBAGENT_TYPE" ]; then
   # shellcheck disable=SC2254
   case "$CLAUDE_SUBAGENT_TYPE" in
