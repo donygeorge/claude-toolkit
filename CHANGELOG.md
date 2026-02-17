@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.7.0] - 2026-02-16
+
+### Added
+
+- **Documentation split**: Trimmed `README.md` from 403 to 138 lines with quick-start focus; moved detailed content to `docs/reference.md` (full configuration reference for all CLI commands, toolkit.toml options, hooks, agents, skills, stacks) and `docs/concepts.md` (2-minute mental model explainer covering hooks, agents, skills, rules, stacks, manifest, config system)
+- **CONTRIBUTING.md**: Contributor guide covering how to add new hooks, agents, skills, and stacks, plus testing requirements, shellcheck requirements, and the generic-by-default philosophy
+- **Explain command**: `toolkit.sh explain [topic]` provides plain-language explanations of toolkit concepts; topics: overview, hooks, agents, skills, rules, config, stacks
+- **10 new CLI tests**: explain command tests covering all 7 topics, unknown topic handling, and help output integration
+
+### Changed
+
+- **Help output**: Updated to show `explain` command with examples
+- **CLAUDE.md**: Updated project structure (added docs/, cmd-explain.sh), documentation table, and CLI command reference
+
 ## [1.6.0] - 2026-02-16
 
 ### Added

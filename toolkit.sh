@@ -5,7 +5,7 @@
 #   .claude/toolkit/toolkit.sh <subcommand> [options]
 #
 # Subcommands:
-#   init, update, customize, status, validate, generate-settings, help
+#   init, update, customize, status, validate, generate-settings, explain, help
 
 set -euo pipefail
 
@@ -111,6 +111,8 @@ source "${TOOLKIT_DIR}/lib/cmd-status.sh"
 source "${TOOLKIT_DIR}/lib/cmd-validate.sh"
 # shellcheck source=lib/cmd-doctor.sh
 source "${TOOLKIT_DIR}/lib/cmd-doctor.sh"
+# shellcheck source=lib/cmd-explain.sh
+source "${TOOLKIT_DIR}/lib/cmd-explain.sh"
 # shellcheck source=lib/cmd-help.sh
 source "${TOOLKIT_DIR}/lib/cmd-help.sh"
 
@@ -147,6 +149,7 @@ main() {
     validate)           cmd_validate ;;
     generate-settings)  cmd_generate_settings ;;
     doctor)             cmd_doctor ;;
+    explain)            cmd_explain "$@" ;;
     help|--help|-h)     cmd_help ;;
     *)
       _error "Unknown command: $cmd"

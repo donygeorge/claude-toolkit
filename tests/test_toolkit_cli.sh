@@ -653,6 +653,47 @@ test_doctor() {
 }
 
 # ============================================================================
+# Test: explain command
+# ============================================================================
+
+test_explain() {
+  echo ""
+  echo "=== Test: explain ==="
+
+  local project_dir
+  project_dir=$(setup_test_project)
+  local toolkit_sh="${project_dir}/.claude/toolkit/toolkit.sh"
+
+  # explain with no args shows overview
+  assert_output_contains "explain overview" "Claude Toolkit" bash "$toolkit_sh" explain
+  assert_exit_code "explain exits 0" 0 bash "$toolkit_sh" explain
+
+  # explain hooks
+  assert_output_contains "explain hooks" "guard-destructive" bash "$toolkit_sh" explain hooks
+
+  # explain agents
+  assert_output_contains "explain agents" "reviewer.md" bash "$toolkit_sh" explain agents
+
+  # explain skills
+  assert_output_contains "explain skills" "/implement" bash "$toolkit_sh" explain skills
+
+  # explain rules
+  assert_output_contains "explain rules" "git-protocol" bash "$toolkit_sh" explain rules
+
+  # explain config
+  assert_output_contains "explain config" "toolkit.toml" bash "$toolkit_sh" explain config
+
+  # explain stacks
+  assert_output_contains "explain stacks" "python" bash "$toolkit_sh" explain stacks
+
+  # explain unknown topic fails
+  assert_exit_code "explain unknown topic exits 1" 1 bash "$toolkit_sh" explain nonexistent
+
+  # help output mentions explain
+  assert_output_contains "help shows explain" "explain" bash "$toolkit_sh" help
+}
+
+# ============================================================================
 # Run all tests
 # ============================================================================
 
@@ -676,6 +717,7 @@ test_init_dry_run
 test_init_dry_run_global_flag
 test_generate_settings_dry_run
 test_doctor
+test_explain
 
 echo ""
 echo "==============================="

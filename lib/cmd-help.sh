@@ -16,6 +16,7 @@ cmd_help() {
   echo "  validate                          Check toolkit health"
   echo "  doctor                            Comprehensive health check"
   echo "  generate-settings                 Regenerate settings.json and .mcp.json"
+  echo "  explain [topic]                   Explain toolkit concepts"
   echo "  help                              Show this help"
   echo ""
   echo "Global flags:"
@@ -31,4 +32,6 @@ cmd_help() {
   echo "  $0 status                   # Show current status"
   echo "  $0 validate                 # Check for issues"
   echo "  $0 generate-settings        # Regenerate config files"
+  echo "  $0 explain hooks            # Learn about hooks"
+  echo "  $0 explain config           # Learn about configuration"
 }

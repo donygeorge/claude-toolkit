@@ -38,6 +38,7 @@ bash toolkit.sh validate                  # Health check (symlinks, settings, ho
 bash toolkit.sh doctor                    # Comprehensive health check (tools, config, hooks)
 bash toolkit.sh generate-settings         # Regenerate settings.json + .mcp.json
 bash toolkit.sh customize <file>          # Take ownership of managed file
+bash toolkit.sh explain [topic]            # Explain toolkit concepts
 bash toolkit.sh help                      # Show usage
 ```
 
@@ -45,7 +46,7 @@ bash toolkit.sh help                      # Show usage
 
 ```text
 .
-├── toolkit.sh                   # CLI entry point (thin dispatcher, ~137 lines)
+├── toolkit.sh                   # CLI entry point (thin dispatcher)
 ├── generate-settings.py         # Three-tier JSON merge (base + stacks + project)
 ├── generate-config-cache.py     # TOML to bash env cache
 ├── hooks/                       # Hook scripts (16 files)
@@ -103,7 +104,12 @@ bash toolkit.sh help                      # Show usage
 │   ├── cmd-validate.sh          # Validate subcommand
 │   ├── cmd-doctor.sh            # Doctor subcommand (comprehensive health check)
 │   ├── cmd-generate-settings.sh # Generate-settings subcommand
+│   ├── cmd-explain.sh           # Explain subcommand (topic-based help)
 │   └── cmd-help.sh              # Help subcommand
+├── docs/                        # Documentation
+│   ├── reference.md             # Full configuration reference
+│   ├── concepts.md              # Mental model explainer (2-minute read)
+│   └── plans/                   # Implementation plans
 ├── mcp/                         # MCP templates
 │   └── base.mcp.json            # Base MCP server config
 └── tests/                       # Test suite
@@ -131,8 +137,8 @@ These rules apply to ALL work in this toolkit.
 
 ### Core CLI & Config
 
-- `toolkit.sh` — Thin CLI dispatcher (~137 lines): path resolution, helpers, sources `lib/cmd-*.sh` modules
-- `lib/cmd-*.sh` — Modular subcommand files (init, update, customize, status, validate, generate-settings, help)
+- `toolkit.sh` — Thin CLI dispatcher: path resolution, helpers, sources `lib/cmd-*.sh` modules
+- `lib/cmd-*.sh` — Modular subcommand files (init, update, customize, status, validate, doctor, generate-settings, explain, help)
 - `generate-settings.py` — Three-tier JSON merge (base + stack overlays + project overrides)
 - `generate-config-cache.py` — TOML to bash env cache (used by `_config.sh`)
 - `lib/manifest.sh` — Manifest tracking functions (read, update, check customizations)
@@ -303,7 +309,10 @@ Hooks and scripts read from:
 
 | File | Purpose |
 |------|---------|
-| `README.md` | Full usage guide, configuration reference, architecture |
+| `README.md` | Quick start guide and project overview |
+| `docs/reference.md` | Full configuration reference (CLI, hooks, agents, skills, stacks) |
+| `docs/concepts.md` | Mental model explainer (2-minute read) |
+| `CONTRIBUTING.md` | Development guide and contribution guidelines |
 | `CHANGELOG.md` | Version history and release notes |
 | `CLAUDE.md` (this file) | AI assistant context and development guide |
 | `smart-context/README.md` | Smart-context framework documentation |

@@ -817,12 +817,12 @@ cmd_explain() {
 - [x] `/setup-toolkit` skill rewritten per streamline plan (completed in bootstrap-setup M2)
 - [x] `BOOTSTRAP_PROMPT.md` created with Quick Start in README (completed in bootstrap-setup M3)
 - [x] `CLAUDE.md.template` updated with command placeholders (completed in bootstrap-setup M4)
-- [ ] README.md under 200 lines with quick-start focus
-- [ ] `docs/reference.md` has full configuration reference
-- [ ] `docs/concepts.md` explains mental model
-- [ ] `CONTRIBUTING.md` exists
-- [ ] `toolkit.sh explain` command works
-- [ ] All tests pass (214+ pytest tests)
+- [x] README.md under 200 lines with quick-start focus
+- [x] `docs/reference.md` has full configuration reference
+- [x] `docs/concepts.md` explains mental model
+- [x] `CONTRIBUTING.md` exists
+- [x] `toolkit.sh explain` command works
+- [x] All tests pass (286 pytest + 50 hook + 67 CLI + 27 manifest)
 
 ---
 

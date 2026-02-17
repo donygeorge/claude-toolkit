@@ -1,0 +1,228 @@
+# Contributing to claude-toolkit
+
+Thank you for your interest in contributing. This guide covers how to add new components, testing requirements, and the project's design philosophy.
+
+## Development Setup
+
+```bash
+git clone <repo-url>
+cd claude-toolkit
+python3 -m venv .venv
+source .venv/bin/activate
+pip install pytest
+```
+
+Requirements: bash 4.0+, jq, Python 3.11+, git, shellcheck.
+
+## Running Tests
+
+All tests must pass before submitting changes.
+
+```bash
+# Python unit tests
+python3 -m pytest tests/ -v
+
+# Shell script linting
+shellcheck -x -S warning hooks/*.sh lib/*.sh toolkit.sh
+
+# Hook integration tests
+bash tests/test_hooks.sh
+
+# CLI integration tests
+bash tests/test_toolkit_cli.sh
+
+# Manifest integration tests
+bash tests/test_manifest.sh
+```
+
+## Design Philosophy: Generic by Default
+
+Everything in this toolkit is designed to work across any project. This is the single most important rule:
+
+- **Agent prompts** must contain no project-specific tool references, file paths, or conventions
+- **Skills** must use generic placeholders -- project-specific content is documented for customization
+- **Hooks** must read config from `_config.sh` -- no hardcoded project values
+- **Rules** in `rules/` are generic; stack-specific rules live in `templates/rules/` as templates
+
+If something varies between projects, it belongs in `toolkit.toml` configuration, not hardcoded in scripts.
+
+## Adding a New Hook
+
+Hooks are shell scripts in `hooks/` that Claude Code runs at lifecycle events.
+
+### Steps
+
+1. Create `hooks/my-hook.sh` following this structure:
+
+   ```bash
+   #!/usr/bin/env bash
+   # my-hook.sh -- Brief description
+   #
+   # Event: PreToolUse | PostToolUse | SessionStart | etc.
+   #
+   # Intentionally omits set -e and set -o pipefail so the hook degrades
+   # gracefully (exit 0) on unexpected errors rather than blocking the user.
+   set -u
+
+   source "$(dirname "$0")/_config.sh"
+   source "$(dirname "$0")/../lib/hook-utils.sh"
+
+   # Hook logic here
+   ```
+
+2. Make it executable: `chmod +x hooks/my-hook.sh`
+
+3. Add configuration variables to `hooks/_config.sh` if needed (with sensible defaults via `${VAR:-default}`)
+
+4. Add the hook to `templates/settings-base.json` (or the appropriate stack overlay) so it gets included in generated settings
+
+5. Add tests in `tests/test_hooks.sh` covering:
+   - Normal operation (expected allow/deny behavior)
+   - Edge cases (empty input, missing jq, malformed JSON)
+   - Config-driven behavior (respects `TOOLKIT_*` variables)
+
+6. Run `shellcheck -x -S warning hooks/my-hook.sh`
+
+7. Update `docs/reference.md` with the new hook
+
+### Hook Conventions
+
+- Use `set -u` but NOT `set -e` or `set -o pipefail` (hooks must degrade gracefully)
+- Read stdin for JSON input from Claude Code
+- Use `hook_read_input`, `hook_deny`, `hook_approve` from `lib/hook-utils.sh`
+- Log to stderr only (stdout is reserved for structured JSON responses)
+- Use `hook_warn`, `hook_error`, `hook_info` for consistent message formatting
+- All config values must come from `_config.sh` variables with `${VAR:-default}` fallbacks
+
+## Adding a New Agent
+
+Agents are markdown prompt files in `agents/` that define specialized AI personas.
+
+### Steps
+
+1. Create `agents/my-agent.md` with the agent prompt
+
+2. Keep it generic -- no project-specific tools, paths, or conventions:
+
+   ```markdown
+   # Good (generic)
+   - Run the project's test suite
+   - Check for common security issues
+
+   # Bad (project-specific)
+   - Run `make test-changed`
+   - Check OPENAI_API_KEY in .env
+   ```
+
+3. Add the agent to the `_AGENTS` list in `lib/cmd-init.sh` so it gets symlinked during `init`
+
+4. Create an agent-memory directory entry if appropriate (in `_init_agent_memory` in `lib/cmd-init.sh`)
+
+5. Update `docs/reference.md` with the new agent
+
+## Adding a New Skill
+
+Skills are workflow templates in `skills/<name>/` triggered by slash commands in Claude Code.
+
+### Steps
+
+1. Create `skills/my-skill/SKILL.md` with the workflow instructions
+
+2. Use generic placeholders for project-specific values:
+
+   ```markdown
+   # Good (generic)
+   Run: <project-test-command>
+
+   # Bad (project-specific)
+   Run: make test-changed
+   ```
+
+3. Add the skill directory name to the `_SKILLS` list in `lib/cmd-init.sh`
+
+4. Skills are copied (not symlinked) during `init`, so users can customize them
+
+5. Update `docs/reference.md` with the new skill
+
+## Adding a New Stack
+
+Stacks represent technology profiles (e.g., `python`, `ios`, `typescript`). Adding one requires two pieces.
+
+### Steps
+
+1. Create a settings overlay at `templates/stacks/my-stack.json`:
+
+   ```json
+   {
+     "hooks": [
+       {
+         "event": "PreToolUse",
+         "hooks": [
+           {
+             "type": "command",
+             "command": "bash .claude/toolkit/hooks/my-stack-hook.sh"
+           }
+         ]
+       }
+     ],
+     "permissions": {
+       "deny": ["pattern-specific-to-stack"]
+     }
+   }
+   ```
+
+   This JSON is merged with the base settings when the stack is active.
+
+2. Optionally create rule templates at `templates/rules/my-stack.md.template`:
+
+   These are copied to `.claude/rules/` during `init` when the stack is configured.
+
+3. Register the stack in `generate-settings.py` if any special merge logic is needed (usually not -- the three-tier merge handles it automatically).
+
+4. Add tests in `tests/test_generate_settings.py` to verify the merge produces correct output with the new stack.
+
+5. Update `docs/reference.md` with the new stack and any rule templates it provides.
+
+## Testing Requirements
+
+### Shell Scripts
+
+- All `.sh` files must pass `shellcheck -x -S warning` with zero errors
+- New hooks need integration tests in `tests/test_hooks.sh`
+- CLI changes need tests in `tests/test_toolkit_cli.sh`
+
+### Python
+
+- Use `tomllib` (stdlib) -- no external dependencies except `pytest` for tests
+- `generate-settings.py` output must be deterministic (sorted keys, 2-space indent)
+- Test with `python3 -m pytest tests/ -v`
+- Test fixtures live in `tests/fixtures/`
+
+### What to Test
+
+- Happy path (normal operation)
+- Edge cases (empty input, missing tools, malformed data)
+- Config-driven behavior (respects `toolkit.toml` settings)
+- Backward compatibility (existing configs still work)
+
+## Code Style
+
+- Shell: 2-space indent, `#!/usr/bin/env bash` shebang, `shellcheck` clean
+- Python: 4-space indent, Python 3.11+, no external dependencies
+- Markdown: no trailing whitespace (except in code blocks)
+- See `.editorconfig` for detailed formatting rules
+
+## Commit Guidelines
+
+- Stage specific files (`git add <file>`), not `git add .`
+- Write clear commit messages describing the "why"
+- Update `CHANGELOG.md` for user-facing changes
+- Use `git commit -F <file>` if your message might trigger guard hooks
+
+## Pull Request Process
+
+1. Fork or branch from `main`
+2. Make your changes
+3. Run the full test suite (all five test commands above)
+4. Update documentation (`docs/reference.md`, `CHANGELOG.md`)
+5. Submit a pull request with a clear description
