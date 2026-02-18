@@ -67,6 +67,20 @@ This architecture enables long-running sessions (2-3+ hours) without context exh
 
 ---
 
+## TDD Enforcement
+
+Check the environment variable `$TOOLKIT_SKILLS_IMPLEMENT_TDD_ENFORCEMENT` to determine TDD mode. This variable is set via `toolkit.toml` under `[skills.implement]` key `tdd_enforcement` and defaults to `"off"`.
+
+When spawning each Milestone Orchestrator via Task(), include the appropriate TDD instruction in the prompt based on the enforcement level:
+
+- **strict**: Include in each milestone agent prompt: "You MUST create test files BEFORE writing implementation code. Write failing tests that specify the expected behavior, then implement until tests pass. If you write implementation before tests, STOP and restructure. Violating this order means the milestone has failed."
+- **guided**: Include in each milestone agent prompt: "RECOMMENDED: Write test files before implementation code. This catches bugs earlier and clarifies requirements. Proceed with implementation if tests-first is not feasible for this change."
+- **off** (default): No additional TDD instructions added to milestone prompts. The existing test-first guidance in the milestone template's Phase 4 remains as-is.
+
+> **Configuration**: Set `tdd_enforcement = "strict"` or `tdd_enforcement = "guided"` in `toolkit.toml` under `[skills.implement]` to enable TDD-first mode.
+
+---
+
 ## Aliases
 
 ```yaml
@@ -327,7 +341,7 @@ Report milestones completed, commits created, reviews passed, tests added.
 
 **The full prompt template is in `.claude/skills/implement/milestone-template.md`.**
 
-When spawning a milestone orchestrator via Task(), read that file and inject its contents as the prompt, replacing the placeholder variables.
+When spawning a milestone orchestrator via Task(), read that file and inject its contents as the prompt, replacing the placeholder variables. If `$TOOLKIT_SKILLS_IMPLEMENT_TDD_ENFORCEMENT` is `"strict"` or `"guided"`, prepend the corresponding TDD instruction (see "TDD Enforcement" section above) to the milestone prompt before the Phase 0 section.
 
 Key phases in the template (13 phases total):
 

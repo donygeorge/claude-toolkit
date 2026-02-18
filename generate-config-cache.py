@@ -78,11 +78,41 @@ SCHEMA: dict[str, dict[str, type | dict]] = {
             "hook_log_max_lines": int,
         },
     },
+    "skills": {
+        "implement": {
+            "tdd_enforcement": str,
+        },
+    },
     "notifications": {
         "app_name": str,
         "permission_sound": str,
     },
 }
+
+
+# ---------------------------------------------------------------------------
+# Enum constraints: keys with a restricted set of valid string values.
+# ---------------------------------------------------------------------------
+ENUM_VALUES: dict[str, list[str]] = {
+    "skills.implement.tdd_enforcement": ["strict", "guided", "off"],
+}
+
+
+def _validate_enum_values(data: dict, path: str = "") -> list[str]:
+    """Check that values with enum constraints use allowed values."""
+    errors: list[str] = []
+    for key, value in data.items():
+        full_key = f"{path}.{key}" if path else key
+        if isinstance(value, dict):
+            errors.extend(_validate_enum_values(value, full_key))
+        elif full_key in ENUM_VALUES and isinstance(value, str):
+            allowed = ENUM_VALUES[full_key]
+            if value not in allowed:
+                errors.append(
+                    f"Invalid value for '{full_key}': '{value}' "
+                    f"(allowed: {', '.join(repr(v) for v in allowed)})"
+                )
+    return errors
 
 
 def validate_schema(data: dict, schema: dict, path: str = "") -> list[str]:
@@ -214,6 +244,7 @@ def generate_cache(toml_path: Path) -> str:
         data = tomllib.load(f)
 
     errors = validate_schema(data, SCHEMA)
+    errors.extend(_validate_enum_values(data))
     if errors:
         error_msg = "\n".join(f"  - {e}" for e in errors)
         raise ValueError(f"Schema validation failed for {toml_path}:\n{error_msg}")
@@ -253,6 +284,7 @@ def main() -> int:
             with open(toml_path, "rb") as f:
                 data = tomllib.load(f)
             errors = validate_schema(data, SCHEMA)
+            errors.extend(_validate_enum_values(data))
             if errors:
                 for e in errors:
                     print(f"  - {e}", file=sys.stderr)

@@ -183,9 +183,10 @@ permission_sound = "Blow"
 # gemini_enabled = false          # Include Gemini second-opinion persona
 # auto_plan = false               # Auto-spawn /plan after brainstorm completes
 
-# [skills.implement]
+[skills.implement]
 # codex_iterations = 3            # Max codex review iterations per milestone
 # qa_mode = "smoke"               # QA mode after each milestone: "smoke" or "deep"
+tdd_enforcement = "off"           # TDD mode: "strict", "guided", or "off"
 
 # [skills.refine]
 # max_iterations = 8              # Max evaluate-fix-validate iterations

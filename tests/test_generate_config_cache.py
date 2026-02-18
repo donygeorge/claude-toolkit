@@ -33,8 +33,10 @@ generate_cache = mod.generate_cache
 validate_schema = mod.validate_schema
 flatten = mod.flatten
 SCHEMA = mod.SCHEMA
+ENUM_VALUES = mod.ENUM_VALUES
 _validate_env_key = mod._validate_env_key
 _check_control_chars = mod._check_control_chars
+_validate_enum_values = mod._validate_enum_values
 
 
 # ===================================================================
@@ -763,3 +765,160 @@ class TestFilePermissions:
         assert not (mode & stat.S_IWGRP)  # no group write
         assert not (mode & stat.S_IROTH)  # no other read
         assert not (mode & stat.S_IWOTH)  # no other write
+
+
+# ===================================================================
+# TDD enforcement config key (M4)
+# ===================================================================
+
+
+class TestTddEnforcementConfig:
+    """Tests for the skills.implement.tdd_enforcement config key."""
+
+    def test_schema_has_skills_implement_tdd_enforcement(self):
+        """SCHEMA must include skills.implement.tdd_enforcement as str."""
+        assert "skills" in SCHEMA
+        assert "implement" in SCHEMA["skills"]
+        assert "tdd_enforcement" in SCHEMA["skills"]["implement"]
+        assert SCHEMA["skills"]["implement"]["tdd_enforcement"] is str
+
+    def test_enum_values_defined(self):
+        """ENUM_VALUES must list the 3 valid tdd_enforcement values."""
+        key = "skills.implement.tdd_enforcement"
+        assert key in ENUM_VALUES
+        assert set(ENUM_VALUES[key]) == {"strict", "guided", "off"}
+
+    def test_valid_value_strict(self, tmp_path):
+        """tdd_enforcement = 'strict' should be accepted."""
+        toml_file = tmp_path / "valid.toml"
+        toml_file.write_text(
+            '[skills.implement]\ntdd_enforcement = "strict"\n'
+        )
+        output = generate_cache(toml_file)
+        assert "TOOLKIT_SKILLS_IMPLEMENT_TDD_ENFORCEMENT='strict'" in output
+
+    def test_valid_value_guided(self, tmp_path):
+        """tdd_enforcement = 'guided' should be accepted."""
+        toml_file = tmp_path / "valid.toml"
+        toml_file.write_text(
+            '[skills.implement]\ntdd_enforcement = "guided"\n'
+        )
+        output = generate_cache(toml_file)
+        assert "TOOLKIT_SKILLS_IMPLEMENT_TDD_ENFORCEMENT='guided'" in output
+
+    def test_valid_value_off(self, tmp_path):
+        """tdd_enforcement = 'off' should be accepted."""
+        toml_file = tmp_path / "valid.toml"
+        toml_file.write_text(
+            '[skills.implement]\ntdd_enforcement = "off"\n'
+        )
+        output = generate_cache(toml_file)
+        assert "TOOLKIT_SKILLS_IMPLEMENT_TDD_ENFORCEMENT='off'" in output
+
+    def test_invalid_value_rejected(self, tmp_path):
+        """tdd_enforcement = 'always' should be rejected with a clear error."""
+        toml_file = tmp_path / "invalid.toml"
+        toml_file.write_text(
+            '[skills.implement]\ntdd_enforcement = "always"\n'
+        )
+        with pytest.raises(ValueError, match="Invalid value.*tdd_enforcement.*always"):
+            generate_cache(toml_file)
+
+    def test_invalid_value_error_lists_allowed(self, tmp_path):
+        """Rejection error message should list valid values."""
+        toml_file = tmp_path / "invalid.toml"
+        toml_file.write_text(
+            '[skills.implement]\ntdd_enforcement = "bad"\n'
+        )
+        with pytest.raises(ValueError, match="strict.*guided.*off"):
+            generate_cache(toml_file)
+
+    def test_generated_env_var_name(self, tmp_path):
+        """The generated env var must be TOOLKIT_SKILLS_IMPLEMENT_TDD_ENFORCEMENT."""
+        toml_file = tmp_path / "envvar.toml"
+        toml_file.write_text(
+            '[skills.implement]\ntdd_enforcement = "off"\n'
+        )
+        output = generate_cache(toml_file)
+        assert "TOOLKIT_SKILLS_IMPLEMENT_TDD_ENFORCEMENT=" in output
+
+    def test_default_when_section_missing(self, tmp_path):
+        """Config without [skills.implement] should work (backward compatible)."""
+        toml_file = tmp_path / "minimal.toml"
+        toml_file.write_text('[project]\nname = "test"\n')
+        output = generate_cache(toml_file)
+        # No TOOLKIT_SKILLS line should appear (not set in TOML)
+        assert "TOOLKIT_SKILLS_IMPLEMENT_TDD_ENFORCEMENT" not in output
+
+    def test_backward_compatible_no_skills_section(self, tmp_path):
+        """Existing TOML files without [skills] should still generate valid output."""
+        toml_file = tmp_path / "legacy.toml"
+        toml_file.write_text(textwrap.dedent("""\
+            [project]
+            name = "legacy-project"
+            stacks = ["python"]
+
+            [hooks.setup]
+            python_min_version = "3.11"
+            required_tools = ["ruff"]
+        """))
+        output = generate_cache(toml_file)
+        assert "TOOLKIT_PROJECT_NAME='legacy-project'" in output
+        # No error, no skills-related line
+        assert "TOOLKIT_SKILLS" not in output
+
+    def test_validate_enum_values_accepts_valid(self):
+        """_validate_enum_values returns no errors for valid enum values."""
+        data = {"skills": {"implement": {"tdd_enforcement": "strict"}}}
+        errors = _validate_enum_values(data)
+        assert errors == []
+
+    def test_validate_enum_values_rejects_invalid(self):
+        """_validate_enum_values returns error for invalid enum values."""
+        data = {"skills": {"implement": {"tdd_enforcement": "never"}}}
+        errors = _validate_enum_values(data)
+        assert len(errors) == 1
+        assert "never" in errors[0]
+        assert "tdd_enforcement" in errors[0]
+
+    def test_validate_only_cli_rejects_invalid_enum(self, tmp_path):
+        """CLI --validate-only should reject invalid enum values."""
+        bad = tmp_path / "bad_enum.toml"
+        bad.write_text('[skills.implement]\ntdd_enforcement = "always"\n')
+        result = subprocess.run(
+            [sys.executable, str(SCRIPT), "--validate-only", "--toml", str(bad)],
+            capture_output=True,
+            text=True,
+        )
+        assert result.returncode == 1
+        assert "Invalid value" in result.stderr
+
+    def test_sourceable_tdd_value(self, tmp_path):
+        """Generated cache with tdd_enforcement should be valid bash."""
+        toml_file = tmp_path / "tdd.toml"
+        toml_file.write_text(
+            '[skills.implement]\ntdd_enforcement = "strict"\n'
+        )
+        out = tmp_path / "cache.env"
+        subprocess.run(
+            [
+                sys.executable,
+                str(SCRIPT),
+                "--toml",
+                str(toml_file),
+                "--output",
+                str(out),
+            ],
+            check=True,
+        )
+        result = subprocess.run(
+            [
+                "bash",
+                "-c",
+                f'source "{out}" && echo "$TOOLKIT_SKILLS_IMPLEMENT_TDD_ENFORCEMENT"',
+            ],
+            capture_output=True,
+            text=True,
+        )
+        assert result.returncode == 0
+        assert result.stdout.strip() == "strict"

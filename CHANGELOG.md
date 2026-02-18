@@ -8,6 +8,7 @@ All notable changes to this project will be documented in this file.
 - M1: Standardize Critical Rules sections across all 12 skills
 - M2: Add rationalization prevention tables to solve, refine, review-suite, implement, plan
 - M3: Remove hardcoded years from brainstorm, add model portability notes
+- M4: Add TDD enforcement config (strict/guided/off) for implement skill
 - M5: Add spec-first review preset (reviewer + docs + pm in thorough mode)
 
 ## [1.13.0] - 2026-02-17

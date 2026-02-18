@@ -290,17 +290,17 @@ Check: `$TOOLKIT_SKILLS_IMPLEMENT_TDD_ENFORCEMENT`
 
 **Exit Criteria**:
 
-- [ ] `generate-config-cache.py` SCHEMA has `skills.implement.tdd_enforcement` (type: `str`)
-- [ ] `hooks/_config.sh` has default: `TOOLKIT_SKILLS_IMPLEMENT_TDD_ENFORCEMENT` = `"off"`
-- [ ] `templates/toolkit.toml.example` has commented `tdd_enforcement` under `[skills.implement]`
-- [ ] `skills/implement/SKILL.md` has a "TDD Enforcement" section that reads the config variable
-- [ ] `skills/implement/SKILL.md` milestone agent prompt section includes TDD instructions keyed by enforcement level
-- [ ] `docs/reference.md` documents `tdd_enforcement` with all 3 values
-- [ ] `generate-config-cache.py` rejects invalid values (e.g., `tdd_enforcement = "always"`) with a clear error
-- [ ] `tests/test_generate_config_cache.py` has at least 3 new tests for the config key (valid values + invalid value rejection)
-- [ ] `python3 -m pytest tests/test_generate_config_cache.py -v` passes
-- [ ] Existing `toolkit.toml` files without `[skills.implement]` still work (backward compatible)
-- [ ] Config cache generated from `toolkit.toml.example` includes `TOOLKIT_SKILLS_IMPLEMENT_TDD_ENFORCEMENT`
+- [x] `generate-config-cache.py` SCHEMA has `skills.implement.tdd_enforcement` (type: `str`)
+- [x] `hooks/_config.sh` has default: `TOOLKIT_SKILLS_IMPLEMENT_TDD_ENFORCEMENT` = `"off"`
+- [x] `templates/toolkit.toml.example` has commented `tdd_enforcement` under `[skills.implement]`
+- [x] `skills/implement/SKILL.md` has a "TDD Enforcement" section that reads the config variable
+- [x] `skills/implement/SKILL.md` milestone agent prompt section includes TDD instructions keyed by enforcement level
+- [x] `docs/reference.md` documents `tdd_enforcement` with all 3 values
+- [x] `generate-config-cache.py` rejects invalid values (e.g., `tdd_enforcement = "always"`) with a clear error
+- [x] `tests/test_generate_config_cache.py` has at least 3 new tests for the config key (valid values + invalid value rejection)
+- [x] `python3 -m pytest tests/test_generate_config_cache.py -v` passes
+- [x] Existing `toolkit.toml` files without `[skills.implement]` still work (backward compatible)
+- [x] Config cache generated from `toolkit.toml.example` includes `TOOLKIT_SKILLS_IMPLEMENT_TDD_ENFORCEMENT`
 
 ---
 
