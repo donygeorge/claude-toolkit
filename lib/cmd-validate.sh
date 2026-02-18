@@ -61,7 +61,7 @@ cmd_validate() {
     warnings=$((warnings + 1))
   fi
 
-  # Check all symlinks resolve
+  # Check all symlinks resolve (agents, rules, skills)
   echo ""
   echo "Checking symlinks..."
   local broken_links=0
@@ -73,8 +73,39 @@ cmd_validate() {
       errors=$((errors + 1))
     fi
   done
+  # Check skill symlinks/copies
+  if [[ -d "${CLAUDE_DIR}/skills" ]]; then
+    for link in "${CLAUDE_DIR}"/skills/*/; do
+      [[ -L "${link%/}" ]] || continue
+      if [[ ! -e "$link" ]]; then
+        _error "Broken skill symlink: ${link#${PROJECT_DIR}/}"
+        broken_links=$((broken_links + 1))
+        errors=$((errors + 1))
+      fi
+    done
+  fi
   if [[ $broken_links -eq 0 ]]; then
     _ok "All symlinks resolve"
+  fi
+
+  # Check all toolkit skills are registered in .claude/skills/
+  if [[ -d "${CLAUDE_DIR}/skills" ]] && [[ -d "${TOOLKIT_DIR}/skills" ]]; then
+    echo ""
+    echo "Checking skill registration..."
+    local missing_skills=0
+    for skill_dir in "${TOOLKIT_DIR}"/skills/*/; do
+      [[ -d "$skill_dir" ]] || continue
+      local sname
+      sname=$(basename "$skill_dir")
+      if [[ ! -e "${CLAUDE_DIR}/skills/${sname}" ]] && [[ ! -L "${CLAUDE_DIR}/skills/${sname}" ]]; then
+        _error "Skill '${sname}' exists in toolkit but not registered in .claude/skills/"
+        missing_skills=$((missing_skills + 1))
+        errors=$((errors + 1))
+      fi
+    done
+    if [[ $missing_skills -eq 0 ]]; then
+      _ok "All toolkit skills registered in .claude/skills/"
+    fi
   fi
 
   # Check hooks referenced in settings.json exist and are executable

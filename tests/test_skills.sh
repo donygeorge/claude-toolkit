@@ -206,6 +206,33 @@ fi
 echo ""
 
 # ============================================================================
+# Symlink validation — every skills/*/ directory should have a corresponding
+# entry in .claude/skills/ (symlink or copy). Missing entries mean the skill
+# won't be discoverable by Claude Code.
+# ============================================================================
+echo "--- Skill symlink validation ---"
+
+CLAUDE_SKILLS_DIR="$TOOLKIT_DIR/.claude/skills"
+
+# Only run symlink check in the toolkit repo itself (not consuming projects).
+# In consuming projects, skills are copied by `toolkit.sh init`, not symlinked.
+if [ -f "$TOOLKIT_DIR/toolkit.sh" ] && [ -d "$CLAUDE_SKILLS_DIR" ]; then
+  for skill_dir in "$SKILLS_DIR"/*/; do
+    skill_name=$(basename "$skill_dir")
+    _test "$skill_name: registered in .claude/skills/"
+    if [ -e "$CLAUDE_SKILLS_DIR/$skill_name" ] || [ -L "$CLAUDE_SKILLS_DIR/$skill_name" ]; then
+      _pass
+    else
+      _fail "$skill_name: missing from .claude/skills/ — skill won't be discoverable (run: ln -s ../../skills/$skill_name/ .claude/skills/$skill_name)"
+    fi
+  done
+else
+  echo "  (skipped — not in toolkit repo root or .claude/skills/ not found)"
+fi
+
+echo ""
+
+# ============================================================================
 # Skill quality lint checks
 #
 # These checks validate skill design quality patterns from the skill quality

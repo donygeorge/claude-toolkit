@@ -79,6 +79,16 @@ defaults:
 | **5. Generic skill** | No project-specific content in this file. Persona prompts must be generic. |
 | **6. No time estimates** | Focus on what and why, not when. |
 
+### Rationalization Prevention
+
+| Rationalization | Why It Is Wrong | Correct Behavior |
+| --------------- | --------------- | ---------------- |
+| "The research plan is obvious, skip user approval" | Skipping Phase 2 approval wastes compute on wrong directions and violates Critical Rule #2 | Present the research plan and wait for explicit user approval before spawning agents |
+| "This persona's findings overlap, merge them early" | Premature merging loses dissenting viewpoints that drive the best synthesis | Keep all persona reports separate until the synthesis phase; disagreements are signal, not noise |
+| "The user's topic is clear enough, skip clarification" | Ambiguous scope produces unfocused research across all personas | Ask at least one clarifying question in Phase 0 unless the topic includes explicit constraints |
+| "Three approaches are enough, no need for more" | Anchoring on early approaches misses unconventional options the persona team was designed to surface | Evaluate the persona catalog's full diversity; add approaches if any persona identifies a gap |
+| "Web search returned enough results, skip deeper research" | Surface-level results miss implementation trade-offs that differentiate good from great recommendations | Each persona must cite at least one concrete source with specific findings, not just topic summaries |
+
 ---
 
 ## Execution Flow
