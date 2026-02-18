@@ -638,14 +638,14 @@ Document all skill design principles discovered and applied in M0-M8. This serve
 
 **Exit Criteria**:
 
-- [ ] `docs/skill-design-guide.md` exists
-- [ ] All 8 sections listed above are present
-- [ ] Each section has at least one concrete example from the toolkit's own skills
-- [ ] Before/after examples are included for Description Trap and Critical Rules
-- [ ] Length budgeting table includes all 4 skill types with line targets
-- [ ] Guide references the toolkit's own skills as examples (not external projects)
-- [ ] Guide is under 300 lines (follows its own length budgeting advice)
-- [ ] No project-specific content — grep for "claude-toolkit", "toolkit.sh", "toolkit.toml" returns zero matches in the guide (examples should reference generic "skills/foo/SKILL.md" patterns)
+- [x] `docs/skill-design-guide.md` exists
+- [x] All 8 sections listed above are present
+- [x] Each section has at least one concrete example from the toolkit's own skills
+- [x] Before/after examples are included for Description Trap and Critical Rules
+- [x] Length budgeting table includes all 4 skill types with line targets
+- [x] Guide references the toolkit's own skills as examples (not external projects)
+- [x] Guide is under 300 lines (follows its own length budgeting advice)
+- [x] No project-specific content — grep for "claude-toolkit", "toolkit.sh", "toolkit.toml" returns zero matches in the guide (examples should reference generic "skills/foo/SKILL.md" patterns)
 
 ---
 
