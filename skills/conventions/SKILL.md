@@ -1,6 +1,6 @@
 ---
 name: conventions
-description: Displays coding conventions for the project.
+description: Use when you need to check or reference the project's coding conventions.
 argument-hint: "[domain-name]"
 user-invocable: true
 ---

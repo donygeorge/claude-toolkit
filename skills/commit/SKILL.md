@@ -1,6 +1,6 @@
 ---
 name: commit
-description: Commit uncommitted session changes with an auto-generated message.
+description: Use when the current session has changes ready to commit.
 user-invocable: true
 model: haiku
 allowed-tools:

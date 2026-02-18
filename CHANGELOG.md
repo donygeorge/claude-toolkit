@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+- M0: Fix Description Trap violations in commit and conventions skill descriptions (trigger-condition format)
+
 ## [1.13.0] - 2026-02-17
 
 ### Fixed
