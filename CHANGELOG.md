@@ -5,6 +5,8 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 - M0: Fix Description Trap violations in commit and conventions skill descriptions (trigger-condition format)
+- M1: Standardize Critical Rules sections across all 12 skills
+- M3: Remove hardcoded years from brainstorm, add model portability notes
 
 ## [1.13.0] - 2026-02-17
 

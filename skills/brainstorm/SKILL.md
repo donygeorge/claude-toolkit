@@ -74,7 +74,7 @@ defaults:
 | ---- | ----------- |
 | **1. Research only** | This skill produces idea documents. Do NOT write any implementation code. |
 | **2. Ask before spending compute** | Present the research plan to the user and get approval before spawning any team agents. |
-| **3. Current sources only** | ALWAYS include "2025" or "2026" in WebSearch queries. Discard information older than 2024 unless it represents fundamental principles. |
+| **3. Current sources only** | ALWAYS include the current year in WebSearch queries. Discard information older than 2 years ago unless it represents fundamental principles. |
 | **4. User input is the most valuable signal** | Ask generously at checkpoints. Brainstorming is collaborative — don't guess when you can ask. |
 | **5. Generic skill** | No project-specific content in this file. Persona prompts must be generic. |
 | **6. No time estimates** | Focus on what and why, not when. |
@@ -120,7 +120,7 @@ The orchestrator does quick preliminary research BEFORE spawning any agents. Thi
    - Configuration, dependencies, and patterns
 
 2. **Quick web search** — Run 2-3 WebSearch queries with the current year:
-   - `"<topic> best practices 2025 2026"`
+   - `"<topic> best practices <current-year>"`
    - `"<topic> comparison approaches"`
    - `"<topic> <detected-stack> implementation"` (using stacks from project config)
 
@@ -209,7 +209,7 @@ Task:
    - The topic and candidate approaches to investigate
    - Context from Phase 1 (codebase findings, initial web research)
    - User's answers from Phase 0 (constraints, goals, priorities)
-   - Instruction: "Always include 2025 or 2026 in your WebSearch queries"
+   - Instruction: "Always include the current year in your WebSearch queries"
    - The report format they should follow (see Persona Report Format)
    - Instruction: "Send your report back via SendMessage when complete"
 
@@ -243,7 +243,7 @@ Bias: {persona_bias}
 
 ## Instructions
 1. Research each candidate approach from YOUR persona's perspective.
-2. Always include "2025" or "2026" in your WebSearch queries.
+2. Always include the current year in your WebSearch queries.
 3. Use WebSearch, WebFetch, Read, Grep, Glob, and context7 tools for research.
 4. Structure your report using the Persona Report Format below.
 5. Send your completed report back via SendMessage when done.
@@ -469,7 +469,7 @@ All personas are spawned as `general-purpose` subagent_type (they need WebSearch
 
 **Research focus**:
 
-- Cutting-edge approaches and emerging patterns (2025-2026)
+- Cutting-edge approaches and emerging patterns from the current year
 - Recent conference talks, blog posts, and technical articles
 - New libraries and frameworks gaining traction
 - Where the ecosystem is heading (roadmaps, RFCs, proposals)
@@ -796,7 +796,7 @@ The idea document at `docs/ideas/<topic-slug>.md`:
 
 ## Research Findings
 
-### Industry Trends (2025-2026)
+### Industry Trends
 
 <What is happening in the industry relevant to this topic?>
 

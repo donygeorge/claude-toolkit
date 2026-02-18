@@ -28,6 +28,28 @@ shortcuts:
 
 > **Customization**: Override defaults in `toolkit.toml` under `[skills.review-suite]`. Run `bash toolkit.sh customize skills/review-suite/SKILL.md` to take full ownership of this skill.
 
+## Critical Rules (READ FIRST)
+
+| Rule | Description |
+| ---- | ----------- |
+| **1. Evidence required for high/crit** | High and critical findings without file path, line number, and code snippet are downgraded to medium. |
+| **2. No false positives** | Every finding must reference specific code; do not report hypothetical or speculative issues. |
+| **3. Respect timeouts** | Timed-out agents are marked inconclusive, not passed; never silently drop a timeout. |
+| **4. Scope bundle first** | Always resolve the scope via scope-resolver before launching any review agents. |
+| **5. Deduplicate across agents** | Merge overlapping findings from different agents into a single entry in the review packet. |
+
+### Rationalization Prevention
+
+| Rationalization | Why It Is Wrong | Correct Behavior |
+| --------------- | --------------- | ---------------- |
+| "The code looks clean, no findings expected" | Pre-judging the outcome before running agents defeats the purpose of automated review; even clean-looking code has edge cases | Launch all configured agents on the resolved scope bundle; report whatever they find, including zero findings if that is the genuine result |
+| "This is a style issue, not a bug" | Dismissing findings as style issues allows real quality problems to pass; severity classification is the agent's job, not the orchestrator's | Record the finding with the severity the agent assigned; only downgrade if the evidence rules require it (e.g., high without evidence becomes medium) |
+| "No tests needed for this change" | The reviewer agent's gate criteria require test coverage for new public functions; skipping test review masks coverage gaps | Check the reviewer gate: if new public functions lack tests, mark the gate as failed; report the gap as a finding with `actionable: true` |
+| "The agent timed out, so it probably found nothing" | Timed-out agents are inconclusive, not passing; treating a timeout as a pass hides potential issues | Mark the agent as `timed_out: true` with `gate_passed: null`; report partial findings and flag the timeout in the review packet summary |
+| "This finding overlaps with another agent's finding, skip it" | Overlapping findings from different agents may have different evidence or severity; silent deduplication can lose the stronger evidence | Merge overlapping findings using the highest severity and most complete evidence from either agent; document both agents as sources |
+
+---
+
 ## Usage
 
 ### Short Slash Commands
@@ -132,6 +154,8 @@ shortcuts:
 ## Model Selection
 
 **Note**: Subagents inherit the parent session's model by default. Use `/model sonnet` for cost savings.
+
+**Model portability**: The model names below (haiku, sonnet, opus) represent version-agnostic performance tiers — fastest, balanced, and most capable respectively. As new model versions are released, these tier names remain valid. The table describes which tier each agent needs, not a pinned model version.
 
 | Agent | Smoke Mode | Deep Mode | Rationale |
 | ----- | ---------- | --------- | --------- |

@@ -140,12 +140,12 @@ Rules should be 3-7 entries, domain-specific, in table format. Each rule must be
 
 **Exit Criteria**:
 
-- [ ] All 12 skills have a "Critical Rules (READ FIRST)" section (or "Critical Rules" for utility skills)
-- [ ] Each Critical Rules section has 3-7 entries in table format
-- [ ] Existing Critical Rules sections (verify, implement, plan, brainstorm) are unchanged
-- [ ] New Critical Rules entries are domain-specific — each entry references a concept unique to the skill's domain (human review; no automated check)
-- [ ] No rule entry exceeds one sentence in the Description column
-- [ ] `bash tests/test_skills.sh` passes
+- [x] All 12 skills have a "Critical Rules (READ FIRST)" section (or "Critical Rules" for utility skills)
+- [x] Each Critical Rules section has 3-7 entries in table format
+- [x] Existing Critical Rules sections (verify, implement, plan, brainstorm) are unchanged
+- [x] New Critical Rules entries are domain-specific — each entry references a concept unique to the skill's domain (human review; no automated check)
+- [x] No rule entry exceeds one sentence in the Description column
+- [x] `bash tests/test_skills.sh` passes
 
 ---
 
@@ -216,12 +216,12 @@ Fix hardcoded model names and year references that will break on model upgrades 
 
 **Exit Criteria**:
 
-- [ ] Zero occurrences of "2025" or "2026" in `brainstorm/SKILL.md` (replaced with dynamic year language)
-- [ ] `brainstorm/SKILL.md` instructs agents to "include the current year" in WebSearch queries
-- [ ] `review-suite/SKILL.md` model selection table has a note about model name portability
-- [ ] `model:` frontmatter rationale is documented (in this plan, not in the skill files)
-- [ ] Skills that instruct agents to do web research mention including the current year: `brainstorm/SKILL.md` and `plan/SKILL.md` (the only 2 skills using WebSearch/WebFetch)
-- [ ] `bash tests/test_skills.sh` passes
+- [x] Zero occurrences of "2025" or "2026" in `brainstorm/SKILL.md` (replaced with dynamic year language)
+- [x] `brainstorm/SKILL.md` instructs agents to "include the current year" in WebSearch queries
+- [x] `review-suite/SKILL.md` model selection table has a note about model name portability
+- [x] `model:` frontmatter rationale is documented (in this plan, not in the skill files)
+- [x] Skills that instruct agents to do web research mention including the current year: `brainstorm/SKILL.md` and `plan/SKILL.md` (the only 2 skills using WebSearch/WebFetch)
+- [x] `bash tests/test_skills.sh` passes
 
 ---
 

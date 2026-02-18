@@ -62,6 +62,16 @@ defaults:
 | **5. Thorough evaluation criteria** | Every plan MUST end with specific, testable evaluation criteria |
 | **6. No time estimates** | Focus on what, not when |
 
+### Rationalization Prevention
+
+| Rationalization | Why It Is Wrong | Correct Behavior |
+| --------------- | --------------- | ---------------- |
+| "This milestone is too small to split further" | Milestones without testable exit criteria cannot be verified by `/implement`; even small milestones need explicit checkboxes | Every milestone must have at least 2 testable exit criteria as checkboxes; if a milestone has only 1, it is either too vague or should be merged with an adjacent milestone |
+| "Tests can be added later in a separate milestone" | Deferring tests decouples them from the code they validate; `/implement` runs tests per-milestone and will pass milestones with untested code | Include test requirements in the same milestone as the code they cover; exit criteria should include "tests pass" for each milestone |
+| "The architecture is obvious, skip the research phase" | Skipping codebase exploration leads to plans that conflict with existing patterns, duplicate existing utilities, or miss integration points | Read existing code in Phase 1 to identify conventions, reusable abstractions, and files that need modification before drafting the plan |
+| "The user's requirements are clear enough, skip the clarifying questions" | Unasked questions become wrong assumptions embedded in milestones; fixing wrong assumptions mid-implementation is expensive | Ask ALL clarifying questions in Phase 0 before any research; cover scope boundaries, technical constraints, and priority trade-offs |
+| "This plan is good enough without codex feedback" | Codex feedback catches missing edge cases, over-engineering, and dependency risks that the plan author is blind to | Run the codex feedback loop (up to 10 iterations); only skip if codex is genuinely unavailable, in which case run architect and security agent reviews instead |
+
 ---
 
 ## Execution Flow
@@ -100,7 +110,7 @@ defaults:
 
 2. **External research** (if applicable)
    - If an idea doc was found in Phase 0, skip redundant web research — focus only on implementation-specific questions not covered by the idea doc (e.g., specific API signatures, library installation steps, integration patterns)
-   - If no idea doc, use WebSearch to research best practices
+   - If no idea doc, use WebSearch to research best practices — always include the current year in search queries to get up-to-date results
    - Use WebFetch to get documentation for relevant libraries
    - Use context7 MCP tools for library-specific docs
 
