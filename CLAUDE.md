@@ -79,7 +79,7 @@ bash toolkit.sh help                      # Show usage
 │   ├── review-suite/            # Multi-agent code review
 │   ├── implement/               # Autonomous plan execution
 │   ├── plan/                    # Feature planning
-│   ├── brainstorm/              # Idea exploration with agent teams (alias: explore)
+│   ├── brainstorm/              # Idea exploration with agent teams
 │   ├── solve/                   # GitHub issue workflow
 │   ├── fix/                     # Standalone bug fix
 │   ├── refine/                  # Iterative convergence loop

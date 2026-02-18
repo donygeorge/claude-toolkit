@@ -12,7 +12,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-- **Verify skill documentation**: Document /verify skill in README, CLAUDE.md, and reference docs (13 skills total, 14 including explore alias)
+- **Verify skill documentation**: Document /verify skill in README, CLAUDE.md, and reference docs (13 skills total)
 - **Skill workflow map**: Add skill workflow map to README showing brainstorm -> plan -> implement -> verify pipeline
 - **Brainstorm auto-plan flag**: Add `--auto-plan` flag to brainstorm skill for pipeline continuity
 - **Plan auto-implement flag**: Add `--auto-implement` flag to plan skill for pipeline continuity

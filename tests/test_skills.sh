@@ -165,17 +165,17 @@ echo ""
 # ============================================================================
 echo "--- Skill count validation ---"
 
-_test "Skill directory count equals 14 (13 skills + explore alias)"
+_test "Skill directory count equals 13"
 skill_count=0
 for dir in "$SKILLS_DIR"/*/; do
   if [ -f "${dir}SKILL.md" ]; then
     skill_count=$((skill_count + 1))
   fi
 done
-if [ "$skill_count" -eq 14 ]; then
+if [ "$skill_count" -eq 13 ]; then
   _pass
 else
-  _fail "Expected 14 skills (13 + explore alias), found $skill_count"
+  _fail "Expected 13 skills, found $skill_count"
 fi
 
 echo ""

@@ -17,7 +17,6 @@ Structured idea exploration and research before planning. Spawns a team of perso
 ```yaml
 aliases:
   /brainstorm: /brainstorm
-  /explore: /brainstorm
   /ideate: /brainstorm
 
 defaults:
@@ -36,7 +35,6 @@ defaults:
 /brainstorm "real-time updates"               # Standard brainstorm (normal depth)
 /brainstorm "auth system" --depth deep         # Deep research with more agents
 /brainstorm "caching strategy" --quick         # Quick single-agent exploration
-/explore "dark mode implementation"            # Alias for /brainstorm
 /brainstorm "state management" --gemini        # Include Gemini second opinion
 /brainstorm "API redesign" --no-commit         # Generate doc without committing
 /brainstorm "data pipeline" --auto-plan        # Auto-spawn /plan after brainstorm
