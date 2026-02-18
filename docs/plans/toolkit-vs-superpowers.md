@@ -495,14 +495,14 @@ Create a lint script that checks all `SKILL.md` files for quality patterns ident
 
 **Exit Criteria**:
 
-- [ ] `tests/test_skills.sh` has lint checks for: Description Trap, Critical Rules presence, year references, line count budget, valid frontmatter
-- [ ] All lint checks pass for all skills (after M0-M6 changes are applied)
-- [ ] Description Trap check catches descriptions starting with action verbs
-- [ ] Year reference check catches hardcoded years in skill body text (whole-body grep, WARN severity)
-- [ ] Model name check catches model names in body text (whole-body grep, WARN severity)
-- [ ] Line count check uses soft budgets (WARN, not FAIL) for skills exceeding targets
-- [ ] `bash tests/test_skills.sh` passes with the new lint tests included
-- [ ] Lint tests are documented (comments explaining each check's purpose)
+- [x] `tests/test_skills.sh` has lint checks for: Description Trap, Critical Rules presence, year references, line count budget, valid frontmatter
+- [x] All lint checks pass for all skills (after M0-M6 changes are applied)
+- [x] Description Trap check catches descriptions starting with action verbs
+- [x] Year reference check catches hardcoded years in skill body text (whole-body grep, WARN severity)
+- [x] Model name check catches model names in body text (whole-body grep, WARN severity)
+- [x] Line count check uses soft budgets (WARN, not FAIL) for skills exceeding targets
+- [x] `bash tests/test_skills.sh` passes with the new lint tests included
+- [x] Lint tests are documented (comments explaining each check's purpose)
 
 ---
 
