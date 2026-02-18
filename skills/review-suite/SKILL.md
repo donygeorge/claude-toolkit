@@ -23,6 +23,7 @@ defaults:
 shortcuts:
   thorough: --preset thorough
   pre-merge: --preset pre-merge
+  spec-first: --preset spec-first
   all: --agents all
 ```
 
@@ -61,6 +62,7 @@ shortcuts:
 /review qa:deep            # deep QA on uncommitted
 /review all my-feature     # all 7 agents on feature:my-feature
 /review thorough           # preset:thorough on uncommitted
+/review spec-first         # preset:spec-first for spec compliance checking
 /review architect          # deep architecture analysis (run infrequently)
 /review commit-check       # fast post-commit sanity check on last commit
 ```
@@ -74,6 +76,7 @@ shortcuts:
 /review-suite --agents qa:deep --scope feature:my-feature
 /review-suite --preset thorough
 /review-suite --preset pre-merge
+/review-suite --preset spec-first
 ```
 
 ### Freeform Natural Language
@@ -95,6 +98,9 @@ shortcuts:
 | `thorough` | reviewer, qa, security | thorough |
 | `ux-docs` | ux, docs | smoke |
 | `pre-merge` | all | thorough |
+| `spec-first` | reviewer, docs, pm | thorough |
+
+**When to use `spec-first`**: Use before implementation when working from a detailed spec or plan file. Catches spec drift, missing requirements, and documentation gaps. All 3 agents run in thorough mode focused on specification compliance rather than general code quality.
 
 ## Execution Flow
 

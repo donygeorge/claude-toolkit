@@ -332,13 +332,13 @@ All 3 agents run in thorough mode to catch spec drift.
 
 **Exit Criteria**:
 
-- [ ] `review-suite/SKILL.md` Presets table has a `spec-first` row with agents: reviewer, docs, pm and mode: thorough
-- [ ] Aliases section includes `spec-first: --preset spec-first`
-- [ ] Usage examples include `/review spec-first`
-- [ ] A "When to use" note exists under the `spec-first` preset entry (grep for "spec drift" or "spec compliance" in the file)
-- [ ] Existing presets (default, quick, thorough, ux-docs, pre-merge) are unchanged
-- [ ] `docs/reference.md` presets table includes `spec-first`
-- [ ] `bash tests/test_skills.sh` passes
+- [x] `review-suite/SKILL.md` Presets table has a `spec-first` row with agents: reviewer, docs, pm and mode: thorough
+- [x] Aliases section includes `spec-first: --preset spec-first`
+- [x] Usage examples include `/review spec-first`
+- [x] A "When to use" note exists under the `spec-first` preset entry (grep for "spec drift" or "spec compliance" in the file)
+- [x] Existing presets (default, quick, thorough, ux-docs, pre-merge) are unchanged
+- [x] `docs/reference.md` presets table includes `spec-first`
+- [x] `bash tests/test_skills.sh` passes
 
 ---
 

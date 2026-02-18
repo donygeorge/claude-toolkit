@@ -290,7 +290,7 @@ Skill templates in `.claude/skills/`. These are copied (not symlinked) so they c
 | Skill | Directory | Purpose |
 | ------- | ----------- | --------- |
 | Setup | `setup-toolkit/` | Bootstrap claude-toolkit in a new project (9-phase orchestrator). Flags: `--update [version]` runs an LLM-guided update with pre-flight checks, conflict resolution, drift management, and 10-point post-update validation; `--contribute` runs an LLM-guided contribution workflow with a 10-point generalizability gate, full test validation, and PR submission |
-| Review Suite | `review-suite/` | Multi-agent code review orchestration |
+| Review Suite | `review-suite/` | Multi-agent code review orchestration. Presets: `default` (reviewer/smoke), `quick` (commit-check/smoke), `thorough` (reviewer+qa+security/thorough), `ux-docs` (ux+docs/smoke), `pre-merge` (all/thorough), `spec-first` (reviewer+docs+pm/thorough) |
 | Implement | `implement/` | Autonomous plan execution with milestone agents |
 | Plan | `plan/` | Feature planning with research and review |
 | Brainstorm | `brainstorm/` | Idea exploration with persona-based agent teams, deep research, and approach evaluation. Alias: `/ideate`. Output: `docs/ideas/`. Flags: `--quick` (single-agent), `--depth shallow\|normal\|deep`, `--gemini` (second opinion) |
@@ -316,6 +316,7 @@ Key tunable defaults per skill. Override in `toolkit.toml` under `[skills.<name>
 | brainstorm | `auto_plan` | `false` | Auto-spawn `/plan` after brainstorm |
 | implement | `codex_iterations` | `3` | Max codex review iterations per milestone |
 | implement | `qa_mode` | `"smoke"` | QA mode after each milestone: `"smoke"` or `"deep"` |
+| implement | `tdd_enforcement` | `"off"` | TDD mode: `"strict"` (tests required before code), `"guided"` (tests recommended), or `"off"` (no enforcement) |
 | refine | `max_iterations` | `8` | Max evaluate-fix-validate iterations |
 | refine | `convergence_threshold` | `2` | Max new findings per iteration before plateau |
 | refine | `deferred_drop_after` | `2` | Drop findings deferred N consecutive times |
