@@ -46,6 +46,28 @@ defaults:
 
 > **Note**: `/fix` is a separate skill for standalone bug fixes without GitHub integration. Use `/solve` for GitHub issue workflows.
 
+## Critical Rules (READ FIRST)
+
+| Rule | Description |
+| ---- | ----------- |
+| **1. Root cause before fix** | Identify the root cause of each issue before proposing any code changes. |
+| **2. One issue at a time** | When solving multiple issues, fully complete one before starting the next. |
+| **3. Reference the GitHub issue** | Every commit message must include `Fixes #N` or `Closes #N` for the issue being solved. |
+| **4. Reproduce before fixing** | Confirm the bug exists (visually or via code analysis) before attempting a fix. |
+| **5. Stage only your files** | Use `git add <specific-files>`, never `git add .` or `git add -A`. |
+
+### Rationalization Prevention
+
+| Rationalization | Why It Is Wrong | Correct Behavior |
+| --------------- | --------------- | ---------------- |
+| "The issue is too complex to reproduce" | Skipping reproduction leads to fixes that mask symptoms instead of addressing root causes | Trace the code path statically with Grep/Read; reproduce via CLI or API calls; document the traced path |
+| "This looks like a duplicate of issue #X" | Assumed duplicates may share symptoms but have different root causes; closing prematurely loses a real bug | Verify root cause matches by comparing code paths in both issues; only mark duplicate if the fix for #X provably resolves this issue |
+| "The fix is obvious from the stack trace, skip investigation" | Stack traces show where code failed, not why; the root cause is often upstream of the crash site | Follow the full investigation flow: read the issue, trace the code path, identify the root cause, then plan the fix |
+| "The existing tests pass, so the fix is correct" | Existing tests were written before this bug existed; they may not cover the failing scenario | Write a new test that reproduces the specific bug scenario; verify it fails without the fix and passes with it |
+| "I cannot access the GitHub issue, so I will guess the requirements" | Guessing requirements leads to fixes that do not match what was reported | Use `gh issue view` to fetch the issue; if GitHub is unreachable, stop and ask the user for the issue details |
+
+---
+
 ## Usage
 
 ### Single Issue

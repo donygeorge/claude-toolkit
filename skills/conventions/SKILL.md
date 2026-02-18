@@ -9,6 +9,14 @@ user-invocable: true
 
 Quick reference for project coding conventions. For full details, see `.claude/rules/`.
 
+## Critical Rules
+
+| Rule | Description |
+| ---- | ----------- |
+| **1. Read-only skill** | This skill only displays conventions; it must never create, edit, or delete any files. |
+| **2. Show file paths for full details** | Always display the `.claude/rules/<domain>.md` path so the user can read the full convention file. |
+| **3. Match domain to rules files** | When a domain argument is given, resolve it to the corresponding `.claude/rules/` file; report an error if no match exists. |
+
 ## Usage
 
 ```bash

@@ -40,6 +40,18 @@ Orchestrate post-bootstrap project configuration. Auto-detect stacks and command
 
 ---
 
+## Critical Rules (READ FIRST)
+
+| Rule | Description |
+| ---- | ----------- |
+| **1. Never modify project source code** | This skill configures toolkit files only; it must never edit the consuming project's application code. |
+| **2. Detect before assuming** | Always run `detect-project.py` and validate commands before writing config; never guess stacks or commands. |
+| **3. Verify before committing** | Run `toolkit.sh validate` and confirm all generated files are correct before creating any commit. |
+| **4. Preserve existing customizations** | When reconfiguring, keep user edits to `toolkit.toml` and customized files; ask about conflicts. |
+| **5. One mode at a time** | If multiple mode flags are passed (`--update`, `--doctor`, `--contribute`), reject immediately with an error. |
+
+---
+
 ## Execution Flow
 
 > **Routing**: If more than one of `--update`, `--doctor`, `--contribute`, or `--reconfigure` are passed together, stop immediately and inform the user: "Only one mode flag can be used at a time. Please run `/setup-toolkit` with a single flag." If `--update` was passed, skip the setup phases below and jump directly to the [Update Flow](#update-flow) section. If `--doctor` was passed, skip the setup phases below and jump directly to the [Doctor Flow](#doctor-flow) section. If `--contribute` was passed, skip the setup phases below and jump directly to the [Contribute Flow](#contribute-flow) section.

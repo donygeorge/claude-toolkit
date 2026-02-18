@@ -14,6 +14,17 @@ allowed-tools:
 
 Create a local commit containing only files touched in this session that are currently uncommitted. Does nothing if there are no uncommitted changes from the session.
 
+## Critical Rules
+
+| Rule | Description |
+| ---- | ----------- |
+| **1. Session files only** | Never commit files you did not touch in this session; cross-reference conversation history with `git status`. |
+| **2. Never `git add .`** | Always stage specific files by name; bulk staging risks committing unrelated changes. |
+| **3. Use `-F` for messages** | Write the commit message to a temp file and use `git commit -F` to avoid shell escaping and guard hook issues. |
+| **4. No push, no amend, no force** | Only create new local commits; never push, amend, or use `--force`/`--no-verify`. |
+
+---
+
 ## Workflow
 
 ### Step 1: Identify Uncommitted Changes

@@ -24,6 +24,18 @@ Systematic bug fix workflow: root-cause, fix, validate, scan for similar issues,
 
 > **Customization**: Override defaults in `toolkit.toml` under `[skills.fix]`. Run `bash toolkit.sh customize skills/fix/SKILL.md` to take full ownership of this skill.
 
+## Critical Rules (READ FIRST)
+
+| Rule | Description |
+| ---- | ----------- |
+| **1. Root cause before fix** | Identify the root cause through investigation and evidence before proposing any code change. |
+| **2. Reproduce before fixing** | Confirm the bug exists (run it, read the trace, or analyze the code path) before writing a fix. |
+| **3. Scan for similar patterns** | After fixing the bug, search the codebase for the same anti-pattern in other locations. |
+| **4. Single hypothesis at a time** | Test one fix hypothesis, verify it, then move on; never apply multiple speculative changes at once. |
+| **5. 3-fix escalation** | After 3 failed fix attempts, stop and ask the user for guidance instead of attempting a 4th. |
+
+---
+
 ## Workflow
 
 ### Step 1: Systematic Debugging (4 Phases)

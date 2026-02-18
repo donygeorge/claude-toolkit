@@ -8,6 +8,14 @@ user-invocable: false
 
 Resolves user intent (feature name, diff range, or "uncommitted") into a Scope Bundle for review agents.
 
+## Critical Rules
+
+| Rule | Description |
+| ---- | ----------- |
+| **1. Return valid Scope Bundle JSON** | Output must always be a complete JSON object matching the Scope Bundle schema; never return partial or prose output. |
+| **2. Never modify files** | This skill is read-only; it resolves scope but must not create, edit, or delete any files. |
+| **3. Fail fast on ambiguous scope** | If the scope key cannot be resolved to files, return an error immediately instead of guessing. |
+
 ## Aliases
 
 - `scope-resolver`

@@ -181,12 +181,12 @@ Keep tables concise: 3-5 entries per skill, focused on the most dangerous ration
 
 **Exit Criteria**:
 
-- [ ] 5 additional skills have rationalization prevention tables: solve, refine, review-suite, implement, plan
-- [ ] Total skills with rationalization prevention: 8/12 (up from 3/12)
-- [ ] Each new table has 3-5 entries with all 3 columns (Rationalization, Why It Is Wrong, Correct Behavior)
-- [ ] implement/SKILL.md has a full rationalization table (replacing or supplementing the forbidden language section)
-- [ ] No table entry is generic — each references a skill-specific artifact, tool, or concept (human review)
-- [ ] `bash tests/test_skills.sh` passes
+- [x] 5 additional skills have rationalization prevention tables: solve, refine, review-suite, implement, plan
+- [x] Total skills with rationalization prevention: 8/12 (up from 3/12)
+- [x] Each new table has 3-5 entries with all 3 columns (Rationalization, Why It Is Wrong, Correct Behavior)
+- [x] implement/SKILL.md has a full rationalization table (replacing or supplementing the forbidden language section)
+- [x] No table entry is generic — each references a skill-specific artifact, tool, or concept (human review)
+- [x] `bash tests/test_skills.sh` passes
 
 ---
 

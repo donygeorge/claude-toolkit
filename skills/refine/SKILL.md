@@ -37,6 +37,28 @@ defaults:
 
 > **Customization**: Override defaults in `toolkit.toml` under `[skills.refine]`. Run `bash toolkit.sh customize skills/refine/SKILL.md` to take full ownership of this skill.
 
+## Critical Rules (READ FIRST)
+
+| Rule | Description |
+| ---- | ----------- |
+| **1. Converge, don't expand** | Each iteration must reduce the finding count; never introduce scope creep during refinement. |
+| **2. Measure improvement per iteration** | Track new findings and fixes quantitatively; stop when the convergence threshold is met. |
+| **3. Stop when converged** | Honor convergence signals (clean eval, plateau, max iterations); do not run extra iterations. |
+| **4. Fresh agents per phase** | Always spawn new Task() agents for Evaluate and Fix phases to prevent context contamination. |
+| **5. Commit per iteration** | Create one commit per iteration so each improvement step is independently revertible. |
+
+### Rationalization Prevention
+
+| Rationalization | Why It Is Wrong | Correct Behavior |
+| --------------- | --------------- | ---------------- |
+| "Good enough for now" | Stopping before convergence signals are met leaves known issues unfixed; the threshold exists for a reason | Check the convergence criteria: clean eval, plateau detection, or max iterations; only stop when one of these signals fires |
+| "Diminishing returns, let us stop early" | Subjective judgment of diminishing returns bypasses the quantitative plateau detection that tracks findings per iteration | Let the plateau detector decide: if the last 2 iterations produced fewer than `convergence_threshold` new findings, the system will stop automatically |
+| "This finding is a false positive" | Dismissing findings without verification hides real issues; the evaluator agent flagged it for a reason | Investigate the finding: read the code, check the context; if genuinely false, defer it with a documented reason so the deferred findings lifecycle tracks it |
+| "The fix is too risky to make in this iteration" | Deferring everything avoids making progress; if all findings are deferred, the loop terminates without improvement | Attempt the fix; if validation fails after 3 attempts, revert and defer that specific finding; do not pre-emptively skip fixes |
+| "The scope should be expanded to fix this properly" | Expanding scope during refinement causes scope creep and prevents convergence; scope evolution has a per-iteration limit of 10 files | Fix what is within the current scope; if related files need attention, let the scope evolution mechanism add them within its limits (max 10 per iteration, 30 total) |
+
+---
+
 ## Usage
 
 ```bash

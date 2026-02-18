@@ -55,6 +55,16 @@ This architecture enables long-running sessions (2-3+ hours) without context exh
 | **6. One commit per milestone** | Never batch multiple milestones in one commit |
 | **7. Update plan file live** | Mark exit criteria complete as milestones finish |
 
+### Rationalization Prevention
+
+| Rationalization | Why It Is Wrong | Correct Behavior |
+| --------------- | --------------- | ---------------- |
+| "This milestone is trivial, I will implement it inline instead of spawning a Task agent" | Inline implementation violates the two-tier architecture; the Plan Executor cannot write files and must not accumulate implementation context | Spawn a Milestone Orchestrator via Task() for every milestone, regardless of perceived complexity |
+| "The codex review found nothing important, skip the remaining iterations" | Codex feedback is cumulative; later iterations often catch cross-cutting issues that early iterations miss | Run all configured codex iterations (default 3); only stop early if the response starts with "SOLID:" |
+| "The tests pass, so the milestone is complete" | Passing tests verify existing behavior but do not confirm exit criteria are met; exit criteria may require new files, documentation, or architectural changes | Verify every exit criterion from the plan independently after tests pass; use `/verify --quick` for spec compliance |
+| "I will batch these two small milestones into one commit" | Batching violates one-commit-per-milestone; it makes rollback impossible for individual milestones and corrupts plan_state.json tracking | Create exactly one commit per milestone; update plan_state.json after each commit |
+| "The QA agent will catch any issues, skip the self-review" | QA runs smoke-mode checks by default; it does not replace the codex review or the milestone's own verification steps | Run codex review, then QA agent, then verify exit criteria; each step catches different categories of issues |
+
 ---
 
 ## Aliases
