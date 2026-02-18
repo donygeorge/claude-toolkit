@@ -10,7 +10,7 @@ Claude Code supports [hooks](https://docs.anthropic.com/en/docs/claude-code/hook
 
 - **16 configurable hooks** covering safety, quality, and automation
 - **10 agent prompts** for code review, QA, security, architecture, Gemini relay, and more
-- **12 skill templates** for review, planning, implementation, verification, setup, and bug fixing
+- **15 skill templates** for review, planning, implementation, verification, toolkit management, and bug fixing
 - **Config-driven**: One `toolkit.toml` file controls everything
 - **Three-tier settings**: Base defaults + stack overlays + project overrides
 - **Manifest tracking**: Know which files are managed vs customized
@@ -36,7 +36,7 @@ Toolkit repo: https://github.com/donygeorge/claude-toolkit.git
    git fetch claude-toolkit
    git subtree add --squash --prefix=.claude/toolkit claude-toolkit main
    bash .claude/toolkit/toolkit.sh init --from-example
-2. Read and follow .claude/skills/setup-toolkit/SKILL.md (the /setup-toolkit skill)
+2. Read and follow .claude/skills/toolkit-setup/SKILL.md (the /toolkit-setup skill)
    to detect stacks, validate commands, generate toolkit.toml, create CLAUDE.md, and commit.
 ```
 
@@ -50,7 +50,7 @@ If you prefer a shell script, run from your project root:
 bash /path/to/claude-toolkit/bootstrap.sh --name my-project --stacks python
 ```
 
-Then open Claude Code and run `/setup-toolkit` to auto-detect and validate your configuration.
+Then open Claude Code and run `/toolkit-setup` to auto-detect and validate your configuration.
 
 ### Manual Setup
 
@@ -72,9 +72,9 @@ bash .claude/toolkit/toolkit.sh init --from-example
 # Edit .claude/toolkit.toml to match your project
 ```
 
-#### 3. Run /setup-toolkit in Claude Code
+#### 3. Run /toolkit-setup in Claude Code
 
-Open Claude Code in your project and run `/setup-toolkit`. Claude will detect your stacks, validate commands, and generate the full configuration.
+Open Claude Code in your project and run `/toolkit-setup`. Claude will detect your stacks, validate commands, and generate the full configuration.
 
 #### 4. Commit
 
@@ -104,7 +104,10 @@ Skills form a pipeline from ideation through verification. Each stage feeds its 
 | `/review-suite` | Multi-agent code review |
 | `/commit` | Auto-commit changes |
 | `/conventions` | View coding conventions |
-| `/setup-toolkit` | Project onboarding |
+| `/toolkit-setup` | Project setup and configuration |
+| `/toolkit-update` | Toolkit version updates |
+| `/toolkit-doctor` | Health evaluation and optimization |
+| `/toolkit-contribute` | Upstream improvements to toolkit |
 
 ## CLI Commands
 

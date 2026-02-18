@@ -10,6 +10,7 @@ All notable changes to this project will be documented in this file.
 - M3: Remove hardcoded years from brainstorm, add model portability notes
 - M4: Add TDD enforcement config (strict/guided/off) for implement skill
 - M5: Add spec-first review preset (reviewer + docs + pm in thorough mode)
+- M6: Split setup-toolkit into 4 focused skills (toolkit-setup, toolkit-update, toolkit-doctor, toolkit-contribute)
 
 ## [1.13.0] - 2026-02-17
 

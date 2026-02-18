@@ -289,7 +289,10 @@ Skill templates in `.claude/skills/`. These are copied (not symlinked) so they c
 
 | Skill | Directory | Purpose |
 | ------- | ----------- | --------- |
-| Setup | `setup-toolkit/` | Bootstrap claude-toolkit in a new project (9-phase orchestrator). Flags: `--update [version]` runs an LLM-guided update with pre-flight checks, conflict resolution, drift management, and 10-point post-update validation; `--contribute` runs an LLM-guided contribution workflow with a 10-point generalizability gate, full test validation, and PR submission |
+| Toolkit Setup | `toolkit-setup/` | Set up or reconfigure the toolkit for a project (9-phase orchestrator: state detection, project discovery, command validation, config generation, CLAUDE.md creation, settings generation, verification, commit) |
+| Toolkit Update | `toolkit-update/` | Update the toolkit to a new version with pre-flight checks, conflict resolution, drift management, 10-point post-update validation, and rollback support |
+| Toolkit Doctor | `toolkit-doctor/` | Deep health evaluation and optimization: configuration coherence, live command testing, dependency audits, CLAUDE.md analysis, optimization opportunities, hook health testing |
+| Toolkit Contribute | `toolkit-contribute/` | Upstream generic improvements back to the toolkit repo with a 10-point generalizability gate, full test validation, and PR submission workflow |
 | Review Suite | `review-suite/` | Multi-agent code review orchestration. Presets: `default` (reviewer/smoke), `quick` (commit-check/smoke), `thorough` (reviewer+qa+security/thorough), `ux-docs` (ux+docs/smoke), `pre-merge` (all/thorough), `spec-first` (reviewer+docs+pm/thorough) |
 | Implement | `implement/` | Autonomous plan execution with milestone agents |
 | Plan | `plan/` | Feature planning with research and review |

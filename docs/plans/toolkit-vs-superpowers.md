@@ -427,24 +427,24 @@ user-invocable: true
 
 **Exit Criteria**:
 
-- [ ] 4 new skill directories exist: `skills/toolkit-setup/`, `skills/toolkit-update/`, `skills/toolkit-doctor/`, `skills/toolkit-contribute/`
-- [ ] Each new skill has a `SKILL.md` with valid YAML frontmatter (name, description, user-invocable: true)
-- [ ] Each new skill has a "Critical Rules (READ FIRST)" section with 3-5 rules
-- [ ] Each new skill description uses trigger-condition format ("Use when...")
-- [ ] `skills/setup-toolkit/` directory is removed
-- [ ] Total skill count updated in CLAUDE.md (was 12, now 15: 11 existing + 4 new - 1 removed)
-- [ ] `docs/reference.md` skills table updated with 4 new entries, setup-toolkit removed
-- [ ] No cross-references to `setup-toolkit` remain (grep returns zero matches, excluding CHANGELOG, plan files, and idea docs)
-- [ ] `bootstrap.sh` and `BOOTSTRAP_PROMPT.md` reference new skill names
-- [ ] `CONTRIBUTING.md` references new skill names
-- [ ] `lib/cmd-explain.sh` references new skill names
-- [ ] `bash tests/test_skills.sh` passes with updated skill count
-- [ ] Each new skill includes an "Error Handling" section (grep for "## Error Handling" or "### Error Handling" in each new SKILL.md)
-- [ ] No content is lost — verified by phase mapping:
-  - [ ] `toolkit-setup` contains Phase 0-8 (state detection through commit)
-  - [ ] `toolkit-update` contains Phase U0-U5 (pre-flight through summary) + rollback section
-  - [ ] `toolkit-doctor` contains Phase H0-H7 (baseline through summary) + severity system
-  - [ ] `toolkit-contribute` contains Phase C0-C5 (identify through summary) + generalizability checklist
+- [x] 4 new skill directories exist: `skills/toolkit-setup/`, `skills/toolkit-update/`, `skills/toolkit-doctor/`, `skills/toolkit-contribute/`
+- [x] Each new skill has a `SKILL.md` with valid YAML frontmatter (name, description, user-invocable: true)
+- [x] Each new skill has a "Critical Rules (READ FIRST)" section with 3-5 rules
+- [x] Each new skill description uses trigger-condition format ("Use when...")
+- [x] `skills/setup-toolkit/` directory is removed
+- [x] Total skill count updated in CLAUDE.md (was 12, now 15: 11 existing + 4 new - 1 removed)
+- [x] `docs/reference.md` skills table updated with 4 new entries, setup-toolkit removed
+- [x] No cross-references to `setup-toolkit` remain (grep returns zero matches, excluding CHANGELOG, plan files, and idea docs)
+- [x] `bootstrap.sh` and `BOOTSTRAP_PROMPT.md` reference new skill names
+- [x] `CONTRIBUTING.md` references new skill names
+- [x] `lib/cmd-explain.sh` references new skill names
+- [x] `bash tests/test_skills.sh` passes with updated skill count
+- [x] Each new skill includes an "Error Handling" section (grep for "## Error Handling" or "### Error Handling" in each new SKILL.md)
+- [x] No content is lost — verified by phase mapping:
+  - [x] `toolkit-setup` contains Phase 0-8 (state detection through commit)
+  - [x] `toolkit-update` contains Phase U0-U5 (pre-flight through summary) + rollback section
+  - [x] `toolkit-doctor` contains Phase H0-H7 (baseline through summary) + severity system
+  - [x] `toolkit-contribute` contains Phase C0-C5 (identify through summary) + generalizability checklist
 
 ---
 

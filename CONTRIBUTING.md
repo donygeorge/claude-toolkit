@@ -267,9 +267,9 @@ Custom hook scripts should follow the same conventions as toolkit hooks (source 
 
 If you are using claude-toolkit in a project and have made improvements to hooks, agents, skills, or rules that could benefit all users, you can contribute those changes back upstream.
 
-### Primary Workflow: `/setup-toolkit --contribute`
+### Primary Workflow: `/toolkit-contribute`
 
-The easiest way to contribute is through the `/setup-toolkit --contribute` skill. It provides an LLM-guided workflow that:
+The easiest way to contribute is through the `/toolkit-contribute` skill. It provides an LLM-guided workflow that:
 
 1. Identifies customized and modified files in your project's toolkit installation
 2. Diffs each change against the toolkit source and assesses generalizability
@@ -281,7 +281,7 @@ The easiest way to contribute is through the `/setup-toolkit --contribute` skill
 Run it in your project:
 
 ```text
-/setup-toolkit --contribute
+/toolkit-contribute
 ```
 
 ### Manual Workflow

@@ -10,7 +10,7 @@ A shareable, configurable collection of Claude Code hooks, agents, skills, and r
 
 - 16 configurable hooks (guards, quality gates, lifecycle, automation)
 - 10 agent prompts (reviewer, qa, security, ux, pm, docs, architect, commit-check, plan, gemini)
-- 12 skill templates (review, implement, plan, brainstorm, solve, fix, refine, verify, conventions, scope-resolver, setup, commit)
+- 15 skill templates (review, implement, plan, brainstorm, solve, fix, refine, verify, conventions, scope-resolver, toolkit-setup, toolkit-update, toolkit-doctor, toolkit-contribute, commit)
 - Three-tier settings merge (base + stacks + project)
 - Manifest tracking for managed vs customized files
 - Config-driven via `toolkit.toml`
@@ -76,7 +76,7 @@ bash toolkit.sh help                      # Show usage
 │   ├── commit-check.md          # Lightweight post-commit check
 │   ├── plan.md                  # Feature planning agent
 │   └── gemini.md                # Gemini CLI relay for second opinions
-├── skills/                      # Skill templates (12 directories, each has SKILL.md)
+├── skills/                      # Skill templates (15 directories, each has SKILL.md)
 │   ├── review-suite/            # Multi-agent code review
 │   ├── implement/               # Autonomous plan execution
 │   ├── plan/                    # Feature planning
@@ -86,7 +86,10 @@ bash toolkit.sh help                      # Show usage
 │   ├── refine/                  # Iterative convergence loop
 │   ├── conventions/             # View coding conventions
 │   ├── scope-resolver/          # Feature scope resolver
-│   ├── setup-toolkit/           # Project onboarding orchestrator
+│   ├── toolkit-setup/           # Project onboarding and configuration
+│   ├── toolkit-update/          # Toolkit version updates
+│   ├── toolkit-doctor/          # Deep health evaluation and optimization
+│   ├── toolkit-contribute/      # Upstream generic improvements
 │   ├── verify/                  # Post-implementation verification (deep + quick modes)
 │   └── commit/                  # Auto-commit session changes
 ├── rules/                       # Generic rules (symlinked to projects)

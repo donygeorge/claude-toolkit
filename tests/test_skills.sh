@@ -165,17 +165,17 @@ echo ""
 # ============================================================================
 echo "--- Skill count validation ---"
 
-_test "Skill directory count at least 12 (toolkit base)"
+_test "Skill directory count at least 15 (toolkit base)"
 skill_count=0
 for dir in "$SKILLS_DIR"/*/; do
   if [ -f "${dir}SKILL.md" ]; then
     skill_count=$((skill_count + 1))
   fi
 done
-if [ "$skill_count" -ge 12 ]; then
+if [ "$skill_count" -ge 15 ]; then
   _pass
 else
-  _fail "Expected at least 12 skills (toolkit base), found $skill_count"
+  _fail "Expected at least 15 skills (toolkit base), found $skill_count"
 fi
 
 echo ""
