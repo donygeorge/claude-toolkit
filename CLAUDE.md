@@ -9,8 +9,8 @@ A shareable, configurable collection of Claude Code hooks, agents, skills, and r
 **Key Capabilities**:
 
 - 16 configurable hooks (guards, quality gates, lifecycle, automation)
-- 9 agent prompts (reviewer, qa, security, ux, pm, docs, architect, commit-check, plan)
-- 13 skill templates (review, implement, plan, brainstorm, solve, fix, refine, verify, conventions, scope-resolver, gemini, setup, commit)
+- 10 agent prompts (reviewer, qa, security, ux, pm, docs, architect, commit-check, plan, gemini)
+- 12 skill templates (review, implement, plan, brainstorm, solve, fix, refine, verify, conventions, scope-resolver, setup, commit)
 - Three-tier settings merge (base + stacks + project)
 - Manifest tracking for managed vs customized files
 - Config-driven via `toolkit.toml`
@@ -65,7 +65,7 @@ bash toolkit.sh help                      # Show usage
 │   ├── verify-completion.sh     # Uncommitted change warnings
 │   ├── notify.sh                # Platform-aware notifications
 │   └── smart-context.py         # Keyword-based context loading
-├── agents/                      # Generic agent prompts (9 files)
+├── agents/                      # Generic agent prompts (10 files)
 │   ├── reviewer.md              # Adversarial code review
 │   ├── qa.md                    # Test execution and validation
 │   ├── security.md              # Secrets, SAST, dependency scan
@@ -74,8 +74,9 @@ bash toolkit.sh help                      # Show usage
 │   ├── docs.md                  # Documentation accuracy
 │   ├── architect.md             # Deep architecture analysis
 │   ├── commit-check.md          # Lightweight post-commit check
-│   └── plan.md                  # Feature planning agent
-├── skills/                      # Skill templates (13 directories, each has SKILL.md)
+│   ├── plan.md                  # Feature planning agent
+│   └── gemini.md                # Gemini CLI relay for second opinions
+├── skills/                      # Skill templates (12 directories, each has SKILL.md)
 │   ├── review-suite/            # Multi-agent code review
 │   ├── implement/               # Autonomous plan execution
 │   ├── plan/                    # Feature planning
@@ -85,7 +86,6 @@ bash toolkit.sh help                      # Show usage
 │   ├── refine/                  # Iterative convergence loop
 │   ├── conventions/             # View coding conventions
 │   ├── scope-resolver/          # Feature scope resolver
-│   ├── gemini/                  # Second opinion from Google
 │   ├── setup-toolkit/           # Project onboarding orchestrator
 │   ├── verify/                  # Post-implementation verification (deep + quick modes)
 │   └── commit/                  # Auto-commit session changes

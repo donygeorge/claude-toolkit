@@ -20,6 +20,8 @@ All notable changes to this project will be documented in this file.
 - **Skill defaults in toolkit.toml**: Add skill defaults documentation to toolkit.toml.example with commented `[skills.*]` sections
 - **Skill defaults reference**: Add Skill Defaults subsection to docs/reference.md
 - **Skill test infrastructure**: Add `tests/test_skills.sh` with 75 assertions validating frontmatter, structural sections, companion files, skill count, and timestamp consistency
+- **Gemini agent**: Move Gemini from standalone skill to reusable agent prompt (`agents/gemini.md`); brainstorm `--gemini` flag now references the agent
+- **Doctor MCP checks**: Add npm/npx, Gemini CLI, and Codex MCP availability checks to `toolkit.sh doctor`
 
 ### Improved
 

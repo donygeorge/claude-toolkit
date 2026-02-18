@@ -9,8 +9,8 @@ Claude Code supports [hooks](https://docs.anthropic.com/en/docs/claude-code/hook
 **Key features:**
 
 - **16 configurable hooks** covering safety, quality, and automation
-- **9 agent prompts** for code review, QA, security, architecture, and more
-- **13 skill templates** for review, planning, implementation, verification, setup, and bug fixing
+- **10 agent prompts** for code review, QA, security, architecture, Gemini relay, and more
+- **12 skill templates** for review, planning, implementation, verification, setup, and bug fixing
 - **Config-driven**: One `toolkit.toml` file controls everything
 - **Three-tier settings**: Base defaults + stack overlays + project overrides
 - **Manifest tracking**: Know which files are managed vs customized
@@ -103,7 +103,6 @@ Skills form a pipeline from ideation through verification. Each stage feeds its 
 | `/refine` | Iterative improvement |
 | `/review-suite` | Multi-agent code review |
 | `/commit` | Auto-commit changes |
-| `/gemini` | Second opinion |
 | `/conventions` | View coding conventions |
 | `/setup-toolkit` | Project onboarding |
 

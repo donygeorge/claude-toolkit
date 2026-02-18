@@ -343,6 +343,38 @@ cmd_doctor() {
     _info "rsync not found (used by tests)"
   fi
 
+  # ---- 14. MCP server dependencies ----
+  echo ""
+  echo "Checking MCP server dependencies..."
+  if command -v npx &>/dev/null; then
+    _ok "npx found (required for MCP servers: context7, playwright)"
+  else
+    _warn "npx not found — MCP servers (context7, playwright) will not work"
+    _info "  Fix: Install Node.js (https://nodejs.org) or run: brew install node"
+    warnings=$((warnings + 1))
+  fi
+  checks=$((checks + 1))
+
+  # ---- 15. Optional integrations ----
+  echo ""
+  echo "Checking optional integrations..."
+  if command -v gemini &>/dev/null; then
+    _ok "Gemini CLI found (used by agents/gemini.md and brainstorm --gemini)"
+  else
+    _info "Gemini CLI not found (optional — install: npm install -g @google/gemini-cli)"
+  fi
+
+  local mcp_json="${PROJECT_DIR}/.mcp.json"
+  if [[ -f "$mcp_json" ]]; then
+    if jq -e '.mcpServers.codex' "$mcp_json" &>/dev/null; then
+      _ok "Codex MCP configured in .mcp.json"
+    else
+      _info "Codex MCP not configured (optional — add to .mcp.json for code review in skills)"
+    fi
+  else
+    _info "No .mcp.json found (run 'generate-settings' to create)"
+  fi
+
   # ---- Summary ----
   echo ""
   echo "==============================="

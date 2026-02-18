@@ -593,17 +593,28 @@ FUNCTION select_personas(domains, approaches, depth, flags):
 
 ### Gemini Consultant
 
-The gemini-consultant is not a persona — it is a special agent that invokes the Gemini CLI for an external model's perspective. It follows the same pattern as the `/gemini` skill:
+The gemini-consultant is not a persona — it is a special agent that invokes the Gemini CLI for an external model's perspective. It uses the `agents/gemini.md` agent prompt.
 
-```bash
-gemini -p "<prompt with topic, approaches, and synthesis so far>" --output-format text
-```
+Spawn via Task:
 
-Invoke this as a single Task (subagent_type: `general-purpose`) that runs the Gemini CLI via Bash and returns the response. The prompt should ask Gemini to:
+```text
+Task(
+  subagent_type: "general-purpose",
+  prompt: "Read agents/gemini.md for instructions on invoking the Gemini CLI.
 
+Your task: Get Gemini's second opinion on this brainstorming topic.
+
+Topic: {topic}
+Approaches identified so far: {approach_list}
+
+Ask Gemini to:
 - Critique the approach list
 - Suggest alternatives the team may have missed
 - Provide a contrarian take on the recommended approach
+
+Return Gemini's full response."
+)
+```
 
 If the `gemini` CLI is not installed, skip with a log message: "Gemini CLI not found — skipping second opinion."
 

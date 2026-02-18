@@ -279,6 +279,7 @@ Generic agent prompts in `.claude/agents/`. These are symlinked from the toolkit
 | Architect | `architect.md` | Deep architecture analysis, patterns, resiliency |
 | Commit Check | `commit-check.md` | Lightweight post-commit sanity check |
 | Plan | `plan.md` | Feature planning with research and scope analysis |
+| Gemini | `gemini.md` | Relay agent for Gemini CLI second opinions (requires `gemini` CLI) |
 
 ---
 
@@ -300,7 +301,6 @@ Skill templates in `.claude/skills/`. These are copied (not symlinked) so they c
 | Scope Resolver | `scope-resolver/` | Resolve feature scopes for review targeting |
 | Commit | `commit/` | Commit uncommitted session changes with auto-generated message |
 | Verify | `verify/` | Post-implementation verification with deep and quick modes. Deep mode includes edge case scanning and clean-room agent review; quick mode checks spec compliance (tests, lint, exit criteria) |
-| Gemini | `gemini/` | Second opinion from Google's model |
 
 ### Skill Defaults
 

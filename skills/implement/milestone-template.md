@@ -162,9 +162,9 @@ IF no UI changes: Skip this phase entirely.
 
 Update state.json: `phases_completed` += "ui_verification"
 
-### Phase 7: Codex Review (MANDATORY -- NO EXCEPTIONS)
+### Phase 7: Codex Review
 
-**STOP. You MUST call mcp__codex__codex before proceeding.**
+**If `mcp__codex__codex` is available**, call it for review. If the Codex MCP is not configured, skip this phase with a log message and proceed to Phase 8 with extra self-review diligence.
 
 Get changed files and call codex for review:
 

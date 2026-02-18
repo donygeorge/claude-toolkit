@@ -86,7 +86,6 @@ cmd_explain() {
       echo "  /refine         -- Iterative evaluate-fix-validate convergence loop"
       echo "  /conventions    -- View coding conventions for a domain"
       echo "  /scope-resolver -- Resolve feature scopes for review targeting"
-      echo "  /gemini         -- Second opinion from Google's model"
       echo ""
       echo "Skills are copied (not symlinked) during init, so you can customize them."
       echo "To mark a skill as customized: toolkit.sh customize skills/<name>/SKILL.md"
