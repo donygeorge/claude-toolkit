@@ -560,16 +560,16 @@ def run_pressure_test(skill_name, scenario_prompt, forbidden_patterns, required_
 
 **Exit Criteria**:
 
-- [ ] `tests/pressure/` directory exists with README and 5 test files
-- [ ] `tests/pressure/README.md` documents: how to run, expected cost, how to add new tests
-- [ ] Each test file defines at least 1 pressure scenario
-- [ ] Each test checks for forbidden rationalization patterns
-- [ ] Each test checks for required compliance patterns (evidence of following Critical Rules)
-- [ ] Tests can be run manually: `python3 tests/pressure/test_implement_resistance.py`
-- [ ] Tests gracefully skip with a clear message if Codex MCP is not configured (detection: check if `codex` CLI is on PATH via `shutil.which("codex")`; if absent, print "SKIP: codex not installed" and exit 0)
-- [ ] Tests are NOT included in the automated test suite — `conftest.py` skips all tests unless `--run-pressure` is passed
-- [ ] `python3 -m pytest tests/ -v` does NOT run pressure tests (verify skip)
-- [ ] Framework supports adding new pressure tests by following the template
+- [x] `tests/pressure/` directory exists with README and 5 test files
+- [x] `tests/pressure/README.md` documents: how to run, expected cost, how to add new tests
+- [x] Each test file defines at least 1 pressure scenario
+- [x] Each test checks for forbidden rationalization patterns
+- [x] Each test checks for required compliance patterns (evidence of following Critical Rules)
+- [x] Tests can be run manually: `python3 tests/pressure/test_implement_resistance.py`
+- [x] Tests gracefully skip with a clear message if Codex MCP is not configured (detection: check if `codex` CLI is on PATH via `shutil.which("codex")`; if absent, print "SKIP: codex not installed" and exit 0)
+- [x] Tests are NOT included in the automated test suite — `conftest.py` skips all tests unless `--run-pressure` is passed
+- [x] `python3 -m pytest tests/ -v` does NOT run pressure tests (verify skip)
+- [x] Framework supports adding new pressure tests by following the template
 
 ---
 
