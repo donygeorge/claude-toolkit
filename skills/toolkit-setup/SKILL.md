@@ -21,9 +21,14 @@ Orchestrate post-bootstrap project configuration. Auto-detect stacks and command
 ## When to Use
 
 - **After bootstrap**: First-time configuration after the toolkit subtree is installed
-- **After updating toolkit**: To pick up new skills, agents, or config options
 - **After stack changes**: When the project adds or removes a technology stack
 - **Reconfigure**: To re-detect everything from scratch, overriding previous detections
+
+**When NOT to use** (the skill will detect these and redirect):
+
+- To update the toolkit version → use `/toolkit-update` instead
+- To diagnose issues → use `/toolkit-doctor` instead
+- To regenerate settings after editing toolkit.toml → run `bash .claude/toolkit/toolkit.sh generate-settings`
 
 ## Flags
 
@@ -145,7 +150,39 @@ If the user wants to see what changed, suggest they check the toolkit CHANGELOG:
 cat .claude/toolkit/CHANGELOG.md
 ```
 
-#### Step 0.5: Handle --reconfigure flag
+#### Step 0.5: Detect fully-configured toolkit (early exit)
+
+If ALL of the following are true, the toolkit is already fully set up:
+
+- `subtree_exists` is true
+- `toml_exists` is true AND `toml_is_example` is false
+- `settings_generated` is true
+- `missing_skills` is empty
+- `missing_agents` is empty
+- `broken_symlinks` is empty
+- `.claude/manifest.json` exists
+
+AND `--reconfigure` was NOT passed, then **stop here** and tell the user:
+
+> The toolkit is already fully configured for this project. No setup changes needed.
+>
+> **If you want to:**
+> - **Update to a newer toolkit version**: use `/toolkit-update`
+> - **Diagnose issues or optimize config**: use `/toolkit-doctor`
+> - **Re-detect stacks and commands from scratch**: use `/toolkit-setup --reconfigure`
+> - **Regenerate settings after editing toolkit.toml**: run `bash .claude/toolkit/toolkit.sh generate-settings`
+
+Then run a quick validation to confirm health:
+
+```bash
+bash .claude/toolkit/toolkit.sh validate
+```
+
+If validation passes, report the result and **stop**. Do not proceed to Phase 1.
+
+If validation reports warnings or errors, report them and offer to fix (follow the fix steps in Phase 6.2). After fixes, **stop** — do not re-run the full setup flow.
+
+#### Step 0.6: Handle --reconfigure flag
 
 If `--reconfigure` was passed, skip the state-based shortcuts above and proceed directly to Phase 1 for full re-detection. Existing `toolkit.toml` values will be preserved where they differ from detected defaults (you will ask the user about conflicts in Phase 4).
 
