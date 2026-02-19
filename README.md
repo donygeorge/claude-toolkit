@@ -1,5 +1,7 @@
 # claude-toolkit
 
+![CI](https://github.com/donygeorge/claude-toolkit/actions/workflows/ci.yml/badge.svg) ![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg) ![Version](https://img.shields.io/badge/version-1.14.0-green.svg)
+
 A shareable, configurable collection of Claude Code hooks, agents, skills, and rules for safe, autonomous AI-assisted development.
 
 ## What is this?

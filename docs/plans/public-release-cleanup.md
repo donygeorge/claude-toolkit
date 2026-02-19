@@ -155,9 +155,9 @@ Add CI status, license, and version badges to the top of README.md. **Depends on
 
 **Exit Criteria**:
 
-- [ ] README.md has 3 badges on the line after the title
-- [ ] Badge URLs are correct and use the right repo path
-- [ ] Markdown renders correctly (no broken syntax)
+- [x] README.md has 3 badges on the line after the title
+- [x] Badge URLs are correct and use the right repo path
+- [x] Markdown renders correctly (no broken syntax)
 
 ### M5: Final Verification
 
