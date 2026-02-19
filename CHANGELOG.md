@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.14.0] - 2026-02-18
+
 - M0: Fix Description Trap violations in commit and conventions skill descriptions (trigger-condition format)
 - M1: Standardize Critical Rules sections across all 12 skills
 - M2: Add rationalization prevention tables to solve, refine, review-suite, implement, plan
