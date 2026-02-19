@@ -120,9 +120,9 @@ Remove internal plan files and the competitive brainstorm from the tree.
 
 **Exit Criteria**:
 
-- [ ] Only `public-release-cleanup.md` remains in `docs/plans/`
-- [ ] Only `public-release-cleanup.md` remains in `docs/ideas/`
-- [ ] `git status` shows the 7 files as deleted
+- [x] Only `public-release-cleanup.md` remains in `docs/plans/`
+- [x] Only `public-release-cleanup.md` remains in `docs/ideas/`
+- [x] `git status` shows the 7 files as deleted
 
 ### M3: Expand CI Coverage
 
