@@ -10,7 +10,7 @@ The smart-context hook automatically loads relevant context based on the user's 
 2. **Domain context**: Keyword-matched files from a context directory (e.g., `docs/context/`)
 3. **Caching**: File content cached with mtime-based TTL to reduce I/O
 4. **Size limiting**: Context capped to prevent overwhelming the model
-5. **Active state**: Detects in-progress plan/refine sessions
+5. **Active state**: Detects in-progress plan/loop sessions
 
 ## Quick Start
 
@@ -49,7 +49,7 @@ SKILL_COMMANDS = [
     (r"^/fix\b", ".claude/skills/fix/SKILL.md"),
     (r"^/plan\b", ".claude/skills/plan/SKILL.md"),
     (r"^/review\b", ".claude/skills/review-suite/SKILL.md"),
-    (r"^/refine\b", ".claude/skills/refine/SKILL.md"),
+    (r"^/loop\b", ".claude/skills/loop/SKILL.md"),
 ]
 
 # Files to always include (regardless of keywords)
@@ -108,7 +108,7 @@ You can also use the framework's components individually:
 - `score_relevance(keywords, prompt)` - Score keyword matches
 - `load_domain_context(context_dir, prompt, ...)` - Load matching context files
 - `detect_skill_command(prompt, cwd, commands)` - Detect slash commands
-- `detect_active_state(cwd)` - Find active plan/refine sessions
+- `detect_active_state(cwd)` - Find active plan/loop sessions
 - `format_project_header(cwd, project_name)` - Format version/branch header
 
 ## Domain Context Files

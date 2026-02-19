@@ -86,7 +86,7 @@ cmd_explain() {
       echo "  /plan           -- Feature planning with research and review"
       echo "  /solve          -- GitHub issue workflow (fetch, reproduce, fix, commit)"
       echo "  /fix            -- Standalone bug fix without GitHub issue"
-      echo "  /refine         -- Iterative evaluate-fix-validate convergence loop"
+      echo "  /loop           -- Iterative evaluate-fix-validate convergence loop"
       echo "  /conventions    -- View coding conventions for a domain"
       echo "  /scope-resolver -- Resolve feature scopes for review targeting"
       echo ""

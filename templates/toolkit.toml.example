@@ -145,7 +145,7 @@ source_dirs = ["app", "src"]
 # File extensions to include when scanning for recent changes
 source_extensions = ["*.py"]
 
-# Directories checked for active orchestration state (implement/solve/refine)
+# Directories checked for active orchestration state (implement/solve/loop)
 state_dirs = ["artifacts"]
 
 # ---------------------------------------------------------------------------
@@ -188,14 +188,14 @@ permission_sound = "Blow"
 # qa_mode = "smoke"               # QA mode after each milestone: "smoke" or "deep"
 tdd_enforcement = "off"           # TDD mode: "strict", "guided", or "off"
 
-# [skills.refine]
+# [skills.loop]
 # max_iterations = 8              # Max evaluate-fix-validate iterations
 # convergence_threshold = 2       # Max new findings per iteration before plateau
 # deferred_drop_after = 2         # Drop findings deferred N consecutive times
 
 # [skills.plan]
 # output_dir = "docs/plans"       # Directory for plan documents
-# feedback_iterations = 10        # Max codex feedback iterations
+# codex_iterations = 10           # Max codex feedback iterations
 # auto_implement = false          # Auto-spawn /implement after plan finalization
 
 # [skills.fix]

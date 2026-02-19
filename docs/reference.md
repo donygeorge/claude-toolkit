@@ -299,7 +299,7 @@ Skill templates in `.claude/skills/`. These are copied (not symlinked) so they c
 | Brainstorm | `brainstorm/` | Idea exploration with persona-based agent teams, deep research, and approach evaluation. Alias: `/ideate`. Output: `docs/ideas/`. Flags: `--quick` (single-agent), `--depth shallow\|normal\|deep`, `--gemini` (second opinion) |
 | Solve | `solve/` | GitHub issue workflow (fetch, reproduce, fix, commit) |
 | Fix | `fix/` | Standalone bug fix without GitHub issue |
-| Refine | `refine/` | Iterative evaluate-fix-validate convergence loop |
+| Loop | `loop/` | Iterative evaluate-fix-validate convergence loop |
 | Conventions | `conventions/` | View coding conventions for a domain |
 | Scope Resolver | `scope-resolver/` | Resolve feature scopes for review targeting |
 | Commit | `commit/` | Commit uncommitted session changes with auto-generated message |
@@ -320,11 +320,11 @@ Key tunable defaults per skill. Override in `toolkit.toml` under `[skills.<name>
 | implement | `codex_iterations` | `3` | Max codex review iterations per milestone |
 | implement | `qa_mode` | `"smoke"` | QA mode after each milestone: `"smoke"` or `"deep"` |
 | implement | `tdd_enforcement` | `"off"` | TDD mode: `"strict"` (tests required before code), `"guided"` (tests recommended), or `"off"` (no enforcement) |
-| refine | `max_iterations` | `8` | Max evaluate-fix-validate iterations |
-| refine | `convergence_threshold` | `2` | Max new findings per iteration before plateau |
-| refine | `deferred_drop_after` | `2` | Drop findings deferred N consecutive times |
+| loop | `max_iterations` | `8` | Max evaluate-fix-validate iterations |
+| loop | `convergence_threshold` | `2` | Max new findings per iteration before plateau |
+| loop | `deferred_drop_after` | `2` | Drop findings deferred N consecutive times |
 | plan | `output_dir` | `"docs/plans"` | Directory for plan documents |
-| plan | `feedback_iterations` | `10` | Max codex feedback iterations |
+| plan | `codex_iterations` | `10` | Max codex feedback iterations |
 | plan | `auto_implement` | `false` | Auto-spawn `/implement` after plan finalization |
 | fix | `scan_cap` | `20` | Max similar-pattern matches to collect |
 | fix | `max_fix_attempts` | `3` | Fix attempts before escalating to user |

@@ -173,7 +173,7 @@ defaults:
 {
   "plan_file": "docs/plans/my-feature.md",
   "plan_name": "my-feature",
-  "started_at": "2026-01-28T10:00:00Z",
+  "started_at": "<ISO-timestamp>",
   "current_milestone": "M2",
   "milestones": [
     {
@@ -182,8 +182,8 @@ defaults:
       "status": "completed",
       "current_phase": "Phase 11",
       "phases_completed": ["Phase 0", "Phase 1", "Phase 2", "Phase 3", "Phase 4", "Phase 5", "Phase 6", "Phase 7", "Phase 8", "Phase 8b", "Phase 9", "Phase 10", "Phase 11"],
-      "started_at": "2026-01-28T10:00:00Z",
-      "completed_at": "2026-01-28T10:45:00Z",
+      "started_at": "<ISO-timestamp>",
+      "completed_at": "<ISO-timestamp>",
       "commit": "abc123",
       "reviewer_passed": true,
       "qa_passed": true,

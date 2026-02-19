@@ -443,7 +443,7 @@ git checkout -b contribute/<brief-description>
 git apply /tmp/toolkit-contribution.patch
 
 # 5. Commit
-git add -A
+git add <list of changed files>
 git commit -m "<contribution title>"
 
 # 6. Push and open PR
@@ -465,7 +465,7 @@ git clone "$TOOLKIT_URL" /tmp/toolkit-direct-push
 cd /tmp/toolkit-direct-push
 git checkout -b contribute/<brief-description>
 git apply /tmp/toolkit-contribution.patch
-git add -A
+git add <list of changed files>
 git commit -m "<contribution title>"
 git push origin contribute/<brief-description>
 # Then open a PR on the toolkit repo

@@ -48,7 +48,7 @@ RECENT_FILES=$(cat "$TMPFILE_RECENT" 2>/dev/null)
 # Get uncommitted changes
 GIT_STATUS=$(git status --porcelain 2>/dev/null | head -10)
 
-# Check for active orchestration state (implement/solve/refine)
+# Check for active orchestration state (implement/solve/loop)
 ACTIVE_STATE=""
 
 while read -r STATE_DIR; do
@@ -63,13 +63,13 @@ while read -r STATE_DIR; do
       fi
     fi
   fi
-  if [ -d "$STATE_DIR/refine" ]; then
-    LATEST_REFINE=$(ls -t "$STATE_DIR"/refine/*/*/state.json 2>/dev/null | head -1)
-    if [ -n "$LATEST_REFINE" ] && command -v jq >/dev/null 2>&1; then
-      REFINE_SCOPE=$(jq -r '.scope // empty' "$LATEST_REFINE" 2>/dev/null)
-      REFINE_ITER=$(jq -r '.current_iteration // empty' "$LATEST_REFINE" 2>/dev/null)
-      if [ -n "$REFINE_SCOPE" ]; then
-        echo "Active refine: $LATEST_REFINE (scope: $REFINE_SCOPE, iteration: $REFINE_ITER)"
+  if [ -d "$STATE_DIR/loop" ]; then
+    LATEST_LOOP=$(ls -t "$STATE_DIR"/loop/*/*/state.json 2>/dev/null | head -1)
+    if [ -n "$LATEST_LOOP" ] && command -v jq >/dev/null 2>&1; then
+      LOOP_SCOPE=$(jq -r '.scope // empty' "$LATEST_LOOP" 2>/dev/null)
+      LOOP_ITER=$(jq -r '.current_iteration // empty' "$LATEST_LOOP" 2>/dev/null)
+      if [ -n "$LOOP_SCOPE" ]; then
+        echo "Active loop: $LATEST_LOOP (scope: $LOOP_SCOPE, iteration: $LOOP_ITER)"
       fi
     fi
   fi

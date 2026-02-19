@@ -133,10 +133,10 @@ for skill_md in "$SKILLS_DIR"/*/SKILL.md; do
   skill_name=$(basename "$(dirname "$skill_md")")
 
   _test "$skill_name: has structural section"
-  if grep -qE "^## (Usage|Workflow|Execution Flow|Two Modes|Two-Tier Architecture|Overview)" "$skill_md"; then
+  if grep -qE "^## (Usage|Internal Usage|Workflow|Execution Flow|Two Modes|Two-Tier Architecture|Overview)" "$skill_md"; then
     _pass
   else
-    _fail "$skill_name: missing structural section (Usage, Workflow, Execution Flow, Two Modes, Two-Tier Architecture, or Overview)"
+    _fail "$skill_name: missing structural section (Usage, Internal Usage, Workflow, Execution Flow, Two Modes, Two-Tier Architecture, or Overview)"
   fi
 done
 
@@ -307,7 +307,7 @@ echo ""
 #
 # Judgment-heavy skills should have a "Rationalization" section to prevent the
 # agent from rationalizing shortcuts. Skills that make complex judgment calls
-# (solve, refine, review-suite, implement, plan, verify, fix) are checked.
+# (solve, loop, review-suite, implement, plan, verify, fix) are checked.
 #
 # Exempt: utility skills (commit, conventions, scope-resolver) and toolkit
 # management skills (toolkit-setup, toolkit-update, toolkit-doctor,
@@ -316,7 +316,7 @@ echo ""
 echo "--- Lint: Rationalization prevention (WARN) ---"
 
 # Skills that should have rationalization prevention
-JUDGMENT_SKILLS="solve refine review-suite implement plan verify fix"
+JUDGMENT_SKILLS="solve loop review-suite implement plan verify fix"
 
 for skill_md in "$SKILLS_DIR"/*/SKILL.md; do
   skill_name=$(basename "$(dirname "$skill_md")")
@@ -350,9 +350,10 @@ echo ""
 #
 # Categories:
 #   - utility (<150): commit, conventions, scope-resolver
-#   - workflow (<350): fix, solve, toolkit-setup, toolkit-update,
-#                      toolkit-doctor, toolkit-contribute
-#   - orchestration (<600): implement, verify, plan, review-suite, refine
+#   - workflow (<350): fix, solve
+#   - orchestration (<600): implement, verify, plan, review-suite, loop,
+#                           toolkit-setup, toolkit-update, toolkit-doctor,
+#                           toolkit-contribute
 #   - multi-mode (<1000): brainstorm
 # ============================================================================
 echo "--- Lint: Line count budget (WARN) ---"
@@ -367,11 +368,11 @@ for skill_md in "$SKILLS_DIR"/*/SKILL.md; do
       budget=150
       category="utility"
       ;;
-    fix|solve|toolkit-setup|toolkit-update|toolkit-doctor|toolkit-contribute)
+    fix|solve)
       budget=350
       category="workflow"
       ;;
-    implement|verify|plan|review-suite|refine)
+    implement|verify|plan|review-suite|loop|toolkit-setup|toolkit-update|toolkit-doctor|toolkit-contribute)
       budget=600
       category="orchestration"
       ;;

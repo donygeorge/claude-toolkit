@@ -88,10 +88,9 @@ defaults:
 
 When multiple issues are specified:
 
-- Issues are analyzed together for efficiency
-- Code fixes are combined where logical
-- A single commit is created with references to all issues
-- QA and review agents run once on all changes
+- Issues are analyzed together for context, but fixed one at a time
+- Each issue gets its own commit with `Fixes #N` reference
+- QA and review agents run after the final issue is fixed
 
 ## Arguments
 

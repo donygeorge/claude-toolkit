@@ -20,7 +20,7 @@ aliases:
 
 defaults:
   output_dir: docs/plans
-  feedback_iterations: 10
+  codex_iterations: 10
 ```
 
 > **Customization**: Override defaults in `toolkit.toml` under `[skills.plan]`. Run `bash toolkit.sh customize skills/plan/SKILL.md` to take full ownership of this skill.
@@ -159,11 +159,27 @@ After the initial plan is created, iterate with codex for feedback:
 
 ### Phase 3: Agent Reviews
 
-After codex feedback loop completes, optionally run:
+After codex feedback loop completes, run agent reviews for plans that involve architecture changes, security-sensitive areas, or user-facing features. Skip for simple refactors or documentation-only plans.
 
-- Architecture review (architect agent)
-- Security review (security agent)
-- Product review (pm agent)
+For each applicable agent, spawn via Task tool with the plan file as context:
+
+```text
+Task:
+  subagent_type: "general-purpose"
+  prompt: |
+    Read the agent prompt at .claude/agents/<agent>.md.
+    Review the plan at docs/plans/<feature-name>.md for issues
+    within your domain. Report findings as a numbered list with
+    severity (high/medium/low). If no issues, state "No findings."
+```
+
+| Agent | When to Run | Focus |
+| ----- | ----------- | ----- |
+| architect | Plans with new components, data flow changes, or cross-cutting concerns | Structural soundness, pattern consistency, scalability risks |
+| security | Plans touching auth, data handling, APIs, or user input | Threat surface, missing validation, secret management |
+| pm | Plans with user-facing changes or new features | Completeness, edge cases, user impact |
+
+Incorporate agent findings into the plan. For high-severity findings, update milestones or add exit criteria. For medium/low, add them to the Risks section.
 
 ### Phase 4: Finalize Plan
 

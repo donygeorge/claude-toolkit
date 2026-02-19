@@ -512,10 +512,10 @@ If there are no changes (output is empty), all update changes were captured in t
 If there are changes, stage all changed files individually. Do NOT use `git add .` or `git add -A`.
 
 ```bash
-git add .claude/toolkit/
 git add .claude/settings.json
 git add .mcp.json
 git add .claude/toolkit-manifest.json
+# Stage specific changed files within .claude/toolkit/ individually
 ```
 
 Note: `toolkit-cache.env` is typically in `.gitignore` and should NOT be staged.

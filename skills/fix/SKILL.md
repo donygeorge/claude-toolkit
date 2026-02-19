@@ -96,7 +96,7 @@ Skip the reproducing test for:
 - Bugs that are obvious and unlikely to recur
 - Cases where the test would just duplicate the implementation
 
-### Step 3: Validate the Fix
+### Step 2: Validate the Fix
 
 1. **Run tests**:
 
@@ -110,12 +110,12 @@ Skip the reproducing test for:
 2. **If tests fail**, fix them -- determine if the test was wrong or if the fix introduced a regression
 3. **If the change touches shared code**, run the full test suite
 
-### Step 4: Verify Changes Take Effect
+### Step 3: Verify Changes Take Effect
 
 - Verify the application picks up the changes (auto-reload, rebuild, etc.)
 - If database models changed: warn user about potential schema changes
 
-### Step 5: Scan for Similar Patterns
+### Step 4: Scan for Similar Patterns
 
 **Scan scope strategy**:
 
@@ -132,7 +132,7 @@ Skip the reproducing test for:
 2. **Fix any similar issues found** (within the 20-match cap)
 3. **If no similar issues exist**, skip this step
 
-### Step 6: Add Tests (Decision Tree)
+### Step 5: Add Tests (Decision Tree)
 
 Use this decision tree to determine whether to add a test:
 
@@ -153,7 +153,7 @@ Is the fix a typo, import correction, or config change?
         └── NO (one-off, unlikely to recur) → Do NOT add a test. Stop.
 ```
 
-### Step 7: Commit
+### Step 6: Commit
 
 Stage only files you touched and commit:
 
@@ -178,20 +178,6 @@ After completing all steps, provide:
 - **Files changed**: <list>
 - **Commit**: <hash>
 ```
-
-## Rationalization Prevention
-
-Catch yourself when you think any of these:
-
-| Rationalization | Response |
-| ------- | -------- |
-| "Quick fix for now, investigate later" | Investigate NOW. Quick fixes become permanent. |
-| "Just try changing X and see if it works" | That's guessing, not debugging. Identify root cause first. |
-| "I don't fully understand but this might work" | If you don't understand, you can't verify the fix. |
-| "One more fix attempt" (when already tried 2+) | After 3 failed fixes, question the architecture. |
-| "The fix works in my test, ship it" | Run the FULL test suite. Edge cases exist. |
-| "This is probably unrelated" | Verify it's unrelated. Assumptions hide root causes. |
-| "Let me just revert and try something else" | Document what failed and WHY before reverting. |
 
 ## Rules
 

@@ -138,7 +138,7 @@ shortcuts:
 
    **Directory Creation**: Use the Write tool directly - it auto-creates parent directories.
    Do NOT use `mkdir` with command substitution like `$(date ...)` as this causes permission prompts.
-   Generate the run_id timestamp in your response (e.g., `20260131-142530`) rather than via shell.
+   Generate the run_id timestamp in your response (e.g., `YYYYMMDD-HHMMSS`) rather than via shell.
 
 7. **Report Results**
    - Summary: findings count by severity
@@ -302,7 +302,7 @@ The `review_packet.json` artifact uses this structure:
 
 ```json
 {
-  "run_id": "20260131-142530",
+  "run_id": "<YYYYMMDD-HHMMSS>",
   "scope": "feature:my-feature",
   "commit_hash": "abc1234",
   "agents_run": ["reviewer", "qa", "security"],

@@ -1,5 +1,5 @@
 ---
-name: refine
+name: loop
 description: Use when existing code needs iterative quality improvement.
 argument-hint: '"scope or description" [--resume] [--max-iterations N]'
 user-invocable: true
@@ -16,7 +16,7 @@ allowed-tools:
   - mcp__plugin_playwright_playwright__*
 ---
 
-# Refine Skill
+# Loop Skill
 
 Iterative evaluate-fix-validate convergence loop. Evaluates code quality, fixes findings, validates fixes, and repeats until convergence.
 
@@ -24,10 +24,10 @@ Iterative evaluate-fix-validate convergence loop. Evaluates code quality, fixes 
 
 ```yaml
 aliases:
-  /refine: /refine
-  /polish: /refine
-  /iterate: /refine
-  /loop: /refine
+  /loop: /loop
+  /polish: /loop
+  /iterate: /loop
+  /refine: /loop
 
 defaults:
   max_iterations: 8
@@ -35,7 +35,7 @@ defaults:
   deferred_drop_after: 2
 ```
 
-> **Customization**: Override defaults in `toolkit.toml` under `[skills.refine]`. Run `bash toolkit.sh customize skills/refine/SKILL.md` to take full ownership of this skill.
+> **Customization**: Override defaults in `toolkit.toml` under `[skills.loop]`. Run `bash toolkit.sh customize skills/loop/SKILL.md` to take full ownership of this skill.
 
 ## Critical Rules (READ FIRST)
 
@@ -62,20 +62,20 @@ defaults:
 ## Usage
 
 ```bash
-/refine my-feature                # Refine feature scope
-/refine cross:backend             # Refine all backend code
-/refine cross:tests               # Refine all tests
-/refine cross:frontend            # Refine all frontend code
-/refine "improve error handling"  # Natural language
-/refine --resume                  # Resume last interrupted session
-/refine my-feature --max-iterations 5 # Limit iterations
+/loop my-feature                # Loop on feature scope
+/loop cross:backend             # Loop on all backend code
+/loop cross:tests               # Loop on all tests
+/loop cross:frontend            # Loop on all frontend code
+/loop "improve error handling"  # Natural language
+/loop --resume                  # Resume last interrupted session
+/loop my-feature --max-iterations 5 # Limit iterations
 ```
 
 ## Architecture
 
 ```text
 +---------------------------------------------------------------------+
-| REFINE ORCHESTRATOR |
+| LOOP ORCHESTRATOR |
 |  |
 | +---------+    +----------------------------------------------+ |
 |  | Scope | ---> | ITERATION LOOP |  |
@@ -114,7 +114,7 @@ defaults:
 
 ## Scope Inference
 
-The refine skill infers scope from keywords in the user's prompt. Scope resolution uses the project's feature registry (if available).
+The loop skill infers scope from keywords in the user's prompt. Scope resolution uses the project's feature registry (if available).
 
 ### Keyword Mapping
 
@@ -130,8 +130,8 @@ The refine skill infers scope from keywords in the user's prompt. Scope resoluti
 ### Explicit Scope
 
 ```bash
-/refine feature:my-feature    # Explicit feature scope
-/refine cross:backend         # Explicit cross-cutting scope
+/loop feature:my-feature    # Explicit feature scope
+/loop cross:backend         # Explicit cross-cutting scope
 ```
 
 ---
@@ -143,7 +143,7 @@ All state is persisted to enable resume capability.
 ### State Directory
 
 ```text
-artifacts/refine/<scope-slug>/<run-id>/
+artifacts/loop/<scope-slug>/<run-id>/
 |-- state.json
 |-- findings.json
 |-- deferred.json
@@ -173,7 +173,7 @@ For each iteration (1 to max_iterations):
 
 #### Phase A: Evaluate (Fresh Agent)
 
-Spawn a fresh Task() agent (opus model) to evaluate the scope.
+Spawn a fresh Task() agent (most capable tier) to evaluate the scope.
 
 **Agent evaluates for**:
 
@@ -266,7 +266,7 @@ Finding F003 in iteration 3 -> DROPPED (exceeded threshold)
 | ------------ | ------ |
 | **0 issues** | Pass immediately. Convergence confirmed — proceed to final report. |
 | **1-3 issues** | Fix inline (the clean-room agent fixes them directly), then re-verify with a second clean-room round. |
-| **4+ issues** | Fail the milestone. Do NOT attempt to fix — the scope has not converged. Log the issues, escalate to the user, and recommend running another full `/refine` pass with adjusted scope or parameters. |
+| **4+ issues** | Fail the milestone. Do NOT attempt to fix — the scope has not converged. Log the issues, escalate to the user, and recommend running another full `/loop` pass with adjusted scope or parameters. |
 
 ### Termination
 
@@ -290,7 +290,7 @@ For scopes with 61+ files:
 
 ## Convergence Report
 
-Generated at convergence. Saved to `artifacts/refine/<scope-slug>/<run-id>/convergence-report.md`.
+Generated at convergence. Saved to `artifacts/loop/<scope-slug>/<run-id>/convergence-report.md`.
 
 Includes: scope, summary, iteration history, clean-room verification results, deferred findings, files modified, commits.
 
@@ -310,7 +310,7 @@ Includes: scope, summary, iteration history, clean-room verification results, de
 
 ## Diff from /review
 
-| Aspect | /review | /refine |
+| Aspect | /review | /loop |
 | -------- | --------- | --------- |
 | Evaluation | Single pass | Multiple iterations |
 | Fixes | Reports findings only | Fixes findings automatically |

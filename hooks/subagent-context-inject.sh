@@ -49,11 +49,11 @@ while read -r STATE_DIR; do
       [ -n "$PLAN_NAME" ] && ACTIVE_STATE="${ACTIVE_STATE:+$ACTIVE_STATE | }Active implement: $PLAN_NAME $PLAN_MS"
     fi
   fi
-  if [ -d "$STATE_DIR/refine" ]; then
-    LATEST_REFINE=$(ls -t "$STATE_DIR"/refine/*/*/state.json 2>/dev/null | head -1)
-    if [ -n "$LATEST_REFINE" ] && command -v jq >/dev/null 2>&1; then
-      REFINE_SCOPE=$(jq -r '.scope // empty' "$LATEST_REFINE" 2>/dev/null)
-      [ -n "$REFINE_SCOPE" ] && ACTIVE_STATE="${ACTIVE_STATE:+$ACTIVE_STATE | }Active refine: $REFINE_SCOPE"
+  if [ -d "$STATE_DIR/loop" ]; then
+    LATEST_LOOP=$(ls -t "$STATE_DIR"/loop/*/*/state.json 2>/dev/null | head -1)
+    if [ -n "$LATEST_LOOP" ] && command -v jq >/dev/null 2>&1; then
+      LOOP_SCOPE=$(jq -r '.scope // empty' "$LATEST_LOOP" 2>/dev/null)
+      [ -n "$LOOP_SCOPE" ] && ACTIVE_STATE="${ACTIVE_STATE:+$ACTIVE_STATE | }Active loop: $LOOP_SCOPE"
     fi
   fi
 done < <(toolkit_iterate_array "$TOOLKIT_HOOKS_COMPACT_STATE_DIRS")

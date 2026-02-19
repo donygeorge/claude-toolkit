@@ -55,7 +55,7 @@ Principles for writing Claude Code skills that resist rationalization, survive m
 
 ## 3. Rationalization Prevention
 
-**When to add**: Skills where the agent makes judgment calls and might shortcut (review, verify, implement, fix, solve, plan, refine).
+**When to add**: Skills where the agent makes judgment calls and might shortcut (review, verify, implement, fix, solve, plan, loop).
 
 **When to skip**: Mechanical/utility skills with no judgment calls (commit, conventions, scope-resolver).
 
@@ -134,8 +134,8 @@ Longer skills suffer from context dilution -- the agent is more likely to skip o
 | Skill Type | Examples | Target | Rationale |
 | ---------- | -------- | ------ | --------- |
 | Utility/reference | conventions, scope-resolver | < 150 lines | Single purpose, minimal workflow |
-| Workflow (single-path) | commit, fix, solve | < 350 lines | Linear steps, one execution path |
-| Orchestration (multi-agent) | implement, verify, plan, review-suite, refine | < 600 lines | Agent coordination, state management |
+| Workflow (single-path) | fix, solve | < 350 lines | Linear steps, one execution path |
+| Orchestration (multi-agent) | implement, verify, plan, review-suite, loop, toolkit-* | < 600 lines | Agent coordination, state management |
 | Multi-mode (distinct flows) | brainstorm | < 1000 lines | Multiple execution paths (e.g., shallow/normal/deep) |
 
 **When a skill exceeds its budget**: Split it. A 2,000+ line skill with 4 distinct execution paths should become 4 focused skills (~500 lines each). Each new skill gets its own frontmatter, Critical Rules, and workflow.

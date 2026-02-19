@@ -129,7 +129,7 @@ This file maps feature names to file globs and entrypoints.
 <!--   } -->
 <!-- } -->
 
-## Usage
+## Internal Usage
 
 Called internally by review-suite orchestrator. Not typically invoked directly.
 
