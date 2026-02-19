@@ -36,7 +36,7 @@ For each fix, ask: "Would a test or code change have caught this before shipping
 ```yaml
 aliases:
   /fix-github: /fix-github
-  /fix-github: /fix-github
+  /solve: /fix-github
 
 defaults:
   skip_review: false
