@@ -74,7 +74,10 @@ _PIPE_TO_SHELL = re.compile(r"\|\s*(sh|bash|python|python3)\b")
 # Settings schema validation
 # ---------------------------------------------------------------------------
 
-KNOWN_TOP_LEVEL_KEYS = {"hooks", "permissions", "env", "preferences", "mcpServers", "mcp"}
+KNOWN_TOP_LEVEL_KEYS = {
+    "hooks", "permissions", "env", "preferences", "mcpServers", "mcp",
+    "sandbox", "enabledPlugins",
+}
 
 HOOKS_KNOWN_EVENT_TYPES = {
     "PreToolUse",
@@ -358,6 +361,47 @@ def deep_merge(base: dict, overlay: dict) -> dict:
     return result
 
 
+def merge_mcp_servers(base: dict, overlay: dict) -> dict:
+    """Merge MCP server configurations with replacement semantics.
+
+    Unlike deep_merge (which concat+dedup arrays), this function replaces
+    entire server entries when a server exists in both base and overlay.
+    This is correct for MCP servers where args arrays must be replaced,
+    not concatenated.
+
+    Merge rules:
+      - mcpServers: server entries from overlay REPLACE base entries entirely
+      - null server value: delete the server from the result
+      - null top-level key: delete the key from the result
+      - Non-mcpServers keys: deep_merge as normal
+    """
+    result = _deep_copy(base)
+
+    for key, value in overlay.items():
+        if value is None:
+            result.pop(key, None)
+            continue
+
+        if (
+            key == "mcpServers"
+            and isinstance(value, dict)
+            and isinstance(result.get(key), dict)
+        ):
+            base_servers = result[key]
+            for server_name, server_config in value.items():
+                if server_config is None:
+                    base_servers.pop(server_name, None)
+                else:
+                    base_servers[server_name] = _deep_copy(server_config)
+            result[key] = base_servers
+        elif isinstance(value, dict) and isinstance(result.get(key), dict):
+            result[key] = deep_merge(result[key], value)
+        else:
+            result[key] = _deep_copy(value)
+
+    return result
+
+
 def _sort_keys_recursive(obj):
     """Recursively sort dictionary keys for deterministic output.
 
@@ -531,7 +575,7 @@ def main() -> int:
         elif project and "mcp" in project:
             mcp_project = project["mcp"]
 
-        mcp_merged = deep_merge(mcp_base, mcp_project)
+        mcp_merged = merge_mcp_servers(mcp_base, mcp_project)
         mcp_str = to_json(mcp_merged)
 
         if args.mcp_output:

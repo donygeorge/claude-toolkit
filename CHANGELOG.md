@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Settings preservation on init**: `toolkit init` now preserves existing `settings.json` and `.mcp.json` by auto-creating `settings-project.json` as the project overlay, preventing loss of project-specific permissions, hooks, deny rules, and MCP servers
+- **MCP server merge semantics**: MCP server entries now use replacement semantics (project replaces base) instead of deep merge with array concat, fixing incorrect `args` array merging
+
 ## [1.14.0] - 2026-02-18
 
 - M0: Fix Description Trap violations in commit and conventions skill descriptions (trigger-condition format)

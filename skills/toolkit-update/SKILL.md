@@ -272,13 +272,23 @@ shellcheck -x -S warning .claude/toolkit/hooks/*.sh .claude/toolkit/lib/*.sh .cl
 
 If issues are found: these are in toolkit code and should not be modified locally. Note them and report to the user.
 
-#### Check 2: Toolkit validate (includes symlink health)
+#### Check 2: Toolkit validate (includes symlink health and settings protection)
 
 ```bash
 bash .claude/toolkit/toolkit.sh validate
 ```
 
-Review the full output, paying special attention to the symlink section. If broken symlinks exist, run `bash .claude/toolkit/toolkit.sh init --force`. If other issues are found, attempt auto-fix (init --force, chmod +x). Retry up to 3 times.
+Review the full output, paying special attention to:
+
+- **Symlink section**: If broken symlinks exist, run `bash .claude/toolkit/toolkit.sh init --force`.
+- **Settings protection section**: If validate warns about "project-specific settings but no settings-project.json", this means the project had custom settings that aren't in the project overlay. The update command now auto-preserves these, but if the warning appears, fix it immediately:
+
+  ```bash
+  cp .claude/settings.json.pre-toolkit .claude/settings-project.json
+  bash .claude/toolkit/toolkit.sh generate-settings
+  ```
+
+If other issues are found, attempt auto-fix (init --force, chmod +x). Retry up to 3 times.
 
 #### Check 3: Generate settings
 

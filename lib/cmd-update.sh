@@ -182,6 +182,9 @@ cmd_update() {
     manifest_update_skill "$skill_name" "$CLAUDE_DIR"
   done
 
+  # Preserve existing settings for legacy installs (no settings-project.json)
+  _init_preserve_existing_settings
+
   # Regenerate settings
   echo ""
   echo "Regenerating settings..."

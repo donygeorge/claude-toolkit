@@ -694,6 +694,144 @@ test_explain() {
 }
 
 # ============================================================================
+# Test: init preserves existing settings.json
+# ============================================================================
+
+test_init_preserves_existing_settings() {
+  echo ""
+  echo "=== Test: init preserves existing settings ==="
+
+  local project_dir
+  project_dir=$(setup_test_project)
+  local toolkit_sh="${project_dir}/.claude/toolkit/toolkit.sh"
+
+  # Pre-create .claude/settings.json with project-specific content
+  mkdir -p "${project_dir}/.claude"
+  cat > "${project_dir}/.claude/settings.json" << 'SETTINGS_EOF'
+{
+  "permissions": {
+    "allow": [
+      "Bash(sqlite3:*)",
+      "Bash(codex:*)"
+    ],
+    "deny": [
+      "Bash(rm -rf:*)"
+    ]
+  },
+  "env": {
+    "MY_VAR": "preserved"
+  }
+}
+SETTINGS_EOF
+
+  # Run init
+  (cd "$project_dir" && bash "$toolkit_sh" init --from-example) >/dev/null 2>&1
+
+  # Backup should exist
+  assert_file_exists "settings.json.pre-toolkit backup created" \
+    "${project_dir}/.claude/settings.json.pre-toolkit"
+
+  # settings-project.json should be created
+  assert_file_exists "settings-project.json created from existing" \
+    "${project_dir}/.claude/settings-project.json"
+  assert_json_valid "settings-project.json is valid JSON" \
+    "${project_dir}/.claude/settings-project.json"
+
+  # settings-project.json should contain project-specific content
+  assert_contains "project settings has MY_VAR" \
+    "${project_dir}/.claude/settings-project.json" "MY_VAR"
+  assert_contains "project settings has codex" \
+    "${project_dir}/.claude/settings-project.json" "codex"
+
+  # Final settings.json should contain merged result (both base and project)
+  assert_contains "final settings has guard-destructive (from base)" \
+    "${project_dir}/.claude/settings.json" "guard-destructive"
+  assert_contains "final settings has MY_VAR (from project)" \
+    "${project_dir}/.claude/settings.json" "MY_VAR"
+  assert_contains "final settings has codex (from project)" \
+    "${project_dir}/.claude/settings.json" "codex"
+}
+
+# ============================================================================
+# Test: init preserves existing .mcp.json
+# ============================================================================
+
+test_init_preserves_existing_mcp() {
+  echo ""
+  echo "=== Test: init preserves existing .mcp.json ==="
+
+  local project_dir
+  project_dir=$(setup_test_project)
+  local toolkit_sh="${project_dir}/.claude/toolkit/toolkit.sh"
+
+  # Pre-create settings.json and .mcp.json
+  mkdir -p "${project_dir}/.claude"
+  echo '{"permissions": {"allow": []}}' > "${project_dir}/.claude/settings.json"
+  cat > "${project_dir}/.mcp.json" << 'MCP_EOF'
+{
+  "mcpServers": {
+    "codex": {
+      "command": "codex",
+      "args": ["--serve"]
+    },
+    "myserver": {
+      "command": "node",
+      "args": ["server.js"]
+    }
+  }
+}
+MCP_EOF
+
+  # Run init
+  (cd "$project_dir" && bash "$toolkit_sh" init --from-example) >/dev/null 2>&1
+
+  # Backups should exist
+  assert_file_exists ".mcp.json.pre-toolkit backup created" \
+    "${project_dir}/.mcp.json.pre-toolkit"
+
+  # settings-project.json should contain mcpServers
+  assert_contains "project settings has codex MCP server" \
+    "${project_dir}/.claude/settings-project.json" "codex"
+  assert_contains "project settings has myserver MCP server" \
+    "${project_dir}/.claude/settings-project.json" "myserver"
+
+  # Final .mcp.json should contain project's custom servers
+  assert_file_exists ".mcp.json generated" "${project_dir}/.mcp.json"
+  assert_json_valid ".mcp.json is valid JSON" "${project_dir}/.mcp.json"
+  assert_contains "final .mcp.json has codex" "${project_dir}/.mcp.json" "codex"
+  assert_contains "final .mcp.json has myserver" "${project_dir}/.mcp.json" "myserver"
+}
+
+# ============================================================================
+# Test: init skips preservation when settings-project.json exists
+# ============================================================================
+
+test_init_skips_when_project_settings_exist() {
+  echo ""
+  echo "=== Test: init skips settings preservation when project settings exist ==="
+
+  local project_dir
+  project_dir=$(setup_test_project)
+  local toolkit_sh="${project_dir}/.claude/toolkit/toolkit.sh"
+
+  # Pre-create both settings.json and settings-project.json
+  mkdir -p "${project_dir}/.claude"
+  echo '{"env": {"OLD": "settings"}}' > "${project_dir}/.claude/settings.json"
+  echo '{"env": {"CUSTOM": "override"}}' > "${project_dir}/.claude/settings-project.json"
+
+  # Run init
+  (cd "$project_dir" && bash "$toolkit_sh" init --from-example) >/dev/null 2>&1
+
+  # Backup should NOT exist (preservation was skipped)
+  assert_file_not_exists "no backup when project settings exist" \
+    "${project_dir}/.claude/settings.json.pre-toolkit"
+
+  # settings-project.json should still have original content
+  assert_contains "project settings preserved as-is" \
+    "${project_dir}/.claude/settings-project.json" "CUSTOM"
+}
+
+# ============================================================================
 # Run all tests
 # ============================================================================
 
@@ -718,6 +856,9 @@ test_init_dry_run_global_flag
 test_generate_settings_dry_run
 test_doctor
 test_explain
+test_init_preserves_existing_settings
+test_init_preserves_existing_mcp
+test_init_skips_when_project_settings_exist
 
 echo ""
 echo "==============================="

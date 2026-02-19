@@ -208,7 +208,12 @@ cmd_doctor() {
         passed=$((passed + 1))
       else
         _warn "settings.json differs from what generate-settings would produce"
-        _info "  Fix: Run '$0 generate-settings'"
+        if [[ ! -f "$project_file" ]]; then
+          _info "  No settings-project.json found — project-specific settings are at risk"
+          _info "  Fix: cp .claude/settings.json .claude/settings-project.json && $0 generate-settings"
+        else
+          _info "  Fix: Run '$0 generate-settings'"
+        fi
         warnings=$((warnings + 1))
       fi
     else

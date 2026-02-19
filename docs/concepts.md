@@ -69,7 +69,7 @@ Configuration flows through three layers:
 
 1. **`toolkit.toml`** -- Your project's configuration file. Controls hook behavior, quality gates, linter commands, notification settings, and more.
 2. **Config cache** (`toolkit-cache.env`) -- Generated bash environment variables from your TOML config. Hooks source this for fast access without parsing TOML at runtime.
-3. **Three-tier settings merge** -- Base defaults + stack overlays + project overrides produce the final `settings.json` that Claude Code reads.
+3. **Three-tier settings merge** -- Base defaults + stack overlays + project overrides produce the final `settings.json` that Claude Code reads. When you first run `init` on a project that already has a `settings.json`, the toolkit automatically preserves it as `settings-project.json` so your existing configuration flows through the merge.
 
 ## How It All Fits Together
 

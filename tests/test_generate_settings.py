@@ -36,6 +36,7 @@ validate_merged = mod.validate_merged
 validate_settings_schema = mod.validate_settings_schema
 to_json = mod.to_json
 load_json = mod.load_json
+merge_mcp_servers = mod.merge_mcp_servers
 
 
 # ===================================================================
@@ -414,6 +415,139 @@ class TestMCPMerge:
         }
         result = deep_merge(intermediate, add_overlay)
         assert result["mcpServers"]["context7"]["args"] == ["@context7@2.0"]
+
+
+# ===================================================================
+# MCP server replacement merge (merge_mcp_servers)
+# ===================================================================
+
+
+class TestMergeMCPServers:
+    def test_replacement_semantics(self):
+        """Overlay server replaces base server entirely (no arg concat)."""
+        base = {
+            "mcpServers": {
+                "context7": {"command": "npx", "args": ["-y", "@context7@1.0"]},
+            }
+        }
+        overlay = {
+            "mcpServers": {
+                "context7": {"command": "npx", "args": ["-y", "@context7@2.0"]},
+            }
+        }
+        result = merge_mcp_servers(base, overlay)
+        assert result["mcpServers"]["context7"]["args"] == ["-y", "@context7@2.0"]
+
+    def test_null_deletes_server(self):
+        """null value deletes server from result."""
+        base = {
+            "mcpServers": {
+                "context7": {"command": "npx", "args": ["@context7"]},
+                "playwright": {"command": "npx", "args": ["@playwright"]},
+            }
+        }
+        overlay = {"mcpServers": {"playwright": None}}
+        result = merge_mcp_servers(base, overlay)
+        assert "context7" in result["mcpServers"]
+        assert "playwright" not in result["mcpServers"]
+
+    def test_add_new_server(self):
+        """New server in overlay is added."""
+        base = {
+            "mcpServers": {
+                "context7": {"command": "npx", "args": ["@context7"]},
+            }
+        }
+        overlay = {
+            "mcpServers": {
+                "codex": {"command": "codex", "args": ["--serve"]},
+            }
+        }
+        result = merge_mcp_servers(base, overlay)
+        assert "context7" in result["mcpServers"]
+        assert "codex" in result["mcpServers"]
+        assert result["mcpServers"]["codex"]["args"] == ["--serve"]
+
+    def test_preserve_base_only_servers(self):
+        """Servers only in base are preserved."""
+        base = {
+            "mcpServers": {
+                "context7": {"command": "npx", "args": ["@context7"]},
+                "playwright": {"command": "npx", "args": ["@playwright"]},
+            }
+        }
+        overlay = {"mcpServers": {}}
+        result = merge_mcp_servers(base, overlay)
+        assert "context7" in result["mcpServers"]
+        assert "playwright" in result["mcpServers"]
+
+    def test_empty_overlay(self):
+        """Empty overlay returns base unchanged."""
+        base = {
+            "mcpServers": {
+                "context7": {"command": "npx", "args": ["@context7"]},
+            }
+        }
+        result = merge_mcp_servers(base, {})
+        assert result == base
+
+    def test_base_not_mutated(self):
+        """Base dict should not be mutated."""
+        base = {
+            "mcpServers": {
+                "context7": {"command": "npx", "args": ["@context7@1.0"]},
+            }
+        }
+        overlay = {
+            "mcpServers": {
+                "context7": {"command": "npx", "args": ["@context7@2.0"]},
+            }
+        }
+        import copy
+
+        base_copy = copy.deepcopy(base)
+        merge_mcp_servers(base, overlay)
+        assert base == base_copy
+
+    def test_non_mcp_keys_deep_merged(self):
+        """Non-mcpServers keys use normal deep_merge."""
+        base = {"mcpServers": {}, "other": {"a": 1}}
+        overlay = {"other": {"b": 2}}
+        result = merge_mcp_servers(base, overlay)
+        assert result["other"] == {"a": 1, "b": 2}
+
+    def test_server_with_env_replaced(self):
+        """Server config with env dict is replaced entirely."""
+        base = {
+            "mcpServers": {
+                "myserver": {
+                    "command": "node",
+                    "args": ["server.js"],
+                    "env": {"PORT": "3000"},
+                }
+            }
+        }
+        overlay = {
+            "mcpServers": {
+                "myserver": {
+                    "command": "node",
+                    "args": ["server.js", "--verbose"],
+                    "env": {"PORT": "4000", "DEBUG": "true"},
+                }
+            }
+        }
+        result = merge_mcp_servers(base, overlay)
+        server = result["mcpServers"]["myserver"]
+        assert server["args"] == ["server.js", "--verbose"]
+        assert server["env"] == {"PORT": "4000", "DEBUG": "true"}
+
+    def test_null_top_level_key(self):
+        """null at top level deletes the key."""
+        base = {"mcpServers": {"s1": {}}, "extra": "val"}
+        overlay = {"extra": None}
+        result = merge_mcp_servers(base, overlay)
+        assert "extra" not in result
+        assert "mcpServers" in result
 
 
 # ===================================================================
@@ -809,6 +943,55 @@ class TestCLI:
         mcp_content = json.loads(mcp_out.read_text())
         assert "context7" in mcp_content["mcpServers"]
         assert "playwright" not in mcp_content["mcpServers"]
+
+    def test_mcp_server_replacement(self, tmp_path):
+        """MCP servers should be replaced, not concat+dedup'd."""
+        mcp_base = tmp_path / "base.mcp.json"
+        mcp_base.write_text(
+            json.dumps(
+                {
+                    "mcpServers": {
+                        "context7": {"command": "npx", "args": ["@context7@1.0"]},
+                    }
+                }
+            )
+        )
+        project = tmp_path / "project.json"
+        project.write_text(
+            json.dumps(
+                {
+                    "mcpServers": {
+                        "context7": {"command": "npx", "args": ["@context7@2.0"]},
+                    }
+                }
+            )
+        )
+
+        settings_out = tmp_path / "settings.json"
+        mcp_out = tmp_path / ".mcp.json"
+
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(SCRIPT),
+                "--base",
+                str(FIXTURES / "base.json"),
+                "--project",
+                str(project),
+                "--mcp-base",
+                str(mcp_base),
+                "--mcp-output",
+                str(mcp_out),
+                "--output",
+                str(settings_out),
+            ],
+            capture_output=True,
+            text=True,
+        )
+        assert result.returncode == 0
+        mcp_content = json.loads(mcp_out.read_text())
+        # Should REPLACE, not concat
+        assert mcp_content["mcpServers"]["context7"]["args"] == ["@context7@2.0"]
 
     def test_auto_approve_validation_blocks_output(self, tmp_path):
         """Auto-approve validation runs even without --validate flag."""

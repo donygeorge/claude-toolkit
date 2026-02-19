@@ -235,6 +235,57 @@ _init_git_remote() {
   fi
 }
 
+_init_preserve_existing_settings() {
+  local settings_file="${CLAUDE_DIR}/settings.json"
+  local project_file="${CLAUDE_DIR}/settings-project.json"
+  local mcp_file="${PROJECT_DIR}/.mcp.json"
+
+  # Skip if settings-project.json already exists (user already configured)
+  if [[ -f "$project_file" ]]; then
+    _info "settings-project.json already exists, skipping settings preservation"
+    return 0
+  fi
+
+  # Skip if no existing settings.json to preserve
+  if [[ ! -f "$settings_file" ]]; then
+    return 0
+  fi
+
+  echo ""
+  echo "Preserving existing settings..."
+
+  # Back up and convert settings.json to settings-project.json
+  cp "$settings_file" "${settings_file}.pre-toolkit"
+  _ok "Backed up settings.json -> settings.json.pre-toolkit"
+
+  cp "$settings_file" "$project_file"
+  _ok "Created settings-project.json from existing settings.json"
+
+  # If .mcp.json also exists, extract mcpServers into settings-project.json
+  if [[ -f "$mcp_file" ]]; then
+    cp "$mcp_file" "${mcp_file}.pre-toolkit"
+    _ok "Backed up .mcp.json -> .mcp.json.pre-toolkit"
+
+    # Extract mcpServers and merge into settings-project.json
+    local mcp_servers
+    mcp_servers=$(jq '.mcpServers // {}' "$mcp_file" 2>/dev/null || echo '{}')
+
+    if [[ "$mcp_servers" != "{}" ]]; then
+      local merged
+      merged=$(jq --argjson servers "$mcp_servers" \
+        '. + {mcpServers: ((.mcpServers // {}) * $servers)}' \
+        "$project_file" 2>/dev/null) || true
+      if [[ -n "$merged" ]]; then
+        _atomic_write "$project_file" "$merged"
+        _ok "Merged mcpServers from .mcp.json into settings-project.json"
+      else
+        _warn "Could not merge mcpServers (settings-project.json may have invalid JSON)"
+        _info "  You may need to manually add mcpServers from .mcp.json.pre-toolkit"
+      fi
+    fi
+  fi
+}
+
 _init_config() {
   echo ""
   echo "Generating configuration..."
@@ -307,6 +358,7 @@ cmd_init() {
     _init_rule_templates_dry_run "$force"
     _init_agent_memory_dry_run
     _init_git_remote_dry_run
+    _init_preserve_existing_settings_dry_run
     _dry_run_msg "Would generate toolkit-cache.env"
     _dry_run_msg "Would generate settings.json"
     _dry_run_msg "Would create toolkit-manifest.json"
@@ -328,6 +380,7 @@ cmd_init() {
   _init_rule_templates "$force"
   _init_agent_memory
   _init_git_remote "$force"
+  _init_preserve_existing_settings
   _init_config || return 1
   _init_manifest
 
@@ -441,6 +494,26 @@ _init_git_remote_dry_run() {
     remote_url=$(_read_toml_value "$toml_file" "toolkit.remote_url" 2>/dev/null || true)
     if [[ -n "$remote_url" ]]; then
       _dry_run_msg "Would set up git remote 'claude-toolkit' -> ${remote_url}"
+    fi
+  fi
+}
+
+_init_preserve_existing_settings_dry_run() {
+  local settings_file="${CLAUDE_DIR}/settings.json"
+  local project_file="${CLAUDE_DIR}/settings-project.json"
+  local mcp_file="${PROJECT_DIR}/.mcp.json"
+
+  if [[ -f "$project_file" ]]; then
+    _dry_run_msg "settings-project.json already exists (no preservation needed)"
+    return 0
+  fi
+
+  if [[ -f "$settings_file" ]]; then
+    _dry_run_msg "Would back up settings.json -> settings.json.pre-toolkit"
+    _dry_run_msg "Would create settings-project.json from existing settings.json"
+    if [[ -f "$mcp_file" ]]; then
+      _dry_run_msg "Would back up .mcp.json -> .mcp.json.pre-toolkit"
+      _dry_run_msg "Would merge mcpServers from .mcp.json into settings-project.json"
     fi
   fi
 }

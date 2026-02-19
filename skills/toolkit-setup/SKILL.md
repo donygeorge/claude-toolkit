@@ -381,8 +381,18 @@ This checks:
 - Symlinks are valid
 - Settings files exist and are well-formed
 - Config cache is up to date
+- **Settings protection**: project-specific settings are preserved in `settings-project.json`
 
-If validation reports issues, attempt to fix them:
+**Critical check**: If validate warns about "project-specific settings but no settings-project.json", this means the project had custom settings that aren't protected. Fix immediately:
+
+```bash
+cp .claude/settings.json.pre-toolkit .claude/settings-project.json
+bash .claude/toolkit/toolkit.sh generate-settings
+```
+
+If no `.pre-toolkit` backup exists but settings look incomplete (missing permissions, MCP servers, sandbox config), ask the user to check git history for their original `settings.json` and restore it as `settings-project.json`.
+
+If validation reports other issues, attempt to fix them:
 
 - Missing executability: `chmod +x .claude/toolkit/hooks/*.sh`
 - Broken symlinks: `bash .claude/toolkit/toolkit.sh init --force`

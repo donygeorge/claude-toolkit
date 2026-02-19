@@ -145,6 +145,62 @@ cmd_validate() {
     fi
   fi
 
+  # Check for unprotected project settings
+  echo ""
+  echo "Checking settings protection..."
+  local project_overlay="${CLAUDE_DIR}/settings-project.json"
+  if [[ -f "$settings_file" ]] && [[ ! -f "$project_overlay" ]]; then
+    # settings.json exists but no project overlay — check if it matches generated output
+    local stacks_args=""
+    local stacks=""
+    stacks=$(_read_toml_array "$toml_file" "project.stacks" 2>/dev/null || true)
+    if [[ -n "$stacks" ]]; then
+      local stack_files=""
+      while IFS= read -r stack; do
+        [[ -z "$stack" ]] && continue
+        local stack_file="${TOOLKIT_DIR}/templates/stacks/${stack}.json"
+        if [[ -f "$stack_file" ]]; then
+          if [[ -n "$stack_files" ]]; then
+            stack_files="${stack_files},${stack_file}"
+          else
+            stack_files="$stack_file"
+          fi
+        fi
+      done <<< "$stacks"
+      if [[ -n "$stack_files" ]]; then
+        stacks_args="--stacks ${stack_files}"
+      fi
+    fi
+    local expected_output gen_exit=0
+    # shellcheck disable=SC2086
+    expected_output=$(python3 "${TOOLKIT_DIR}/generate-settings.py" \
+      --base "${TOOLKIT_DIR}/templates/settings-base.json" \
+      $stacks_args 2>/dev/null) || gen_exit=$?
+    if [[ $gen_exit -eq 0 ]] && [[ -n "$expected_output" ]]; then
+      local current_output
+      current_output=$(cat "$settings_file")
+      if [[ "$expected_output" != "$current_output" ]]; then
+        _warn "settings.json has project-specific settings but no settings-project.json"
+        _info "  These will be lost on next 'generate-settings' run"
+        _info "  Fix: cp .claude/settings.json .claude/settings-project.json"
+        warnings=$((warnings + 1))
+      else
+        _ok "settings.json matches toolkit defaults (no project overlay needed)"
+      fi
+    else
+      _ok "settings-project.json not required"
+    fi
+  elif [[ -f "$project_overlay" ]]; then
+    if jq empty "$project_overlay" 2>/dev/null; then
+      _ok "settings-project.json exists and is valid JSON"
+    else
+      _error "settings-project.json is not valid JSON"
+      errors=$((errors + 1))
+    fi
+  else
+    _ok "No settings to protect (fresh install)"
+  fi
+
   # Check config staleness
   local cache_file="${CLAUDE_DIR}/toolkit-cache.env"
   if [[ -f "$toml_file" ]] && [[ -f "$cache_file" ]]; then
