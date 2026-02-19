@@ -25,6 +25,11 @@ Perform a deep health evaluation of the toolkit installation. Goes beyond the CL
 - Periodically, to identify optimization opportunities
 - When troubleshooting configuration issues
 
+**When NOT to use** (the skill will detect these and redirect):
+
+- For first-time setup → use `/toolkit-setup` instead
+- To update the toolkit version → use `/toolkit-update` instead
+
 ---
 
 ## Critical Rules (READ FIRST)
@@ -60,6 +65,24 @@ Execute these phases in order. Do NOT skip phases.
 ### Phase H0: Baseline Infrastructure
 
 Run the existing CLI doctor command as a foundation. No point doing deep analysis if the basics are broken.
+
+#### Step H0.0: Check toolkit installation
+
+```bash
+ls .claude/toolkit/toolkit.sh
+```
+
+If the file does not exist, the toolkit is not installed. Tell the user:
+
+> The toolkit is not installed in this project. Use `/toolkit-setup` to install and configure it first.
+
+**Stop here** if the toolkit is not installed.
+
+If `.claude/toolkit.toml` does not exist, the toolkit was installed but never configured. Tell the user:
+
+> The toolkit subtree exists but has not been configured yet. Use `/toolkit-setup` to complete the initial configuration. The doctor skill requires a configured toolkit to diagnose.
+
+**Stop here** if toolkit.toml does not exist.
 
 #### Step H0.1: Run CLI doctor
 

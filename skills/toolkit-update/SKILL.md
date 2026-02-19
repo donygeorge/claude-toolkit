@@ -24,6 +24,12 @@ Perform an LLM-guided toolkit update with pre-flight checks, version preview, co
 - You need to pull specific fixes or features from a newer toolkit version
 - The toolkit remote has updates and you want to review and apply them
 
+**When NOT to use** (the skill will detect these and redirect):
+
+- For first-time setup → use `/toolkit-setup` instead
+- To diagnose issues without updating → use `/toolkit-doctor` instead
+- To regenerate settings after editing toolkit.toml → run `bash .claude/toolkit/toolkit.sh generate-settings`
+
 ---
 
 ## Critical Rules (READ FIRST)
@@ -45,7 +51,31 @@ Execute these phases in order. Do NOT skip phases.
 
 Verify the project is in a healthy state before attempting an update.
 
-#### Step U0.1: Check toolkit status
+#### Step U0.1: Check toolkit installation
+
+```bash
+ls .claude/toolkit/toolkit.sh
+```
+
+If the file does not exist, the toolkit is not installed. Tell the user:
+
+> The toolkit is not installed in this project. Use `/toolkit-setup` to install and configure it first.
+
+**Stop here** if the toolkit is not installed.
+
+Check if toolkit.toml exists:
+
+```bash
+ls .claude/toolkit.toml
+```
+
+If toolkit.toml does not exist, the toolkit was installed but never configured. Tell the user:
+
+> The toolkit subtree exists but has not been configured yet. Use `/toolkit-setup` to complete the initial configuration before updating.
+
+**Stop here** if toolkit.toml does not exist.
+
+#### Step U0.2: Check toolkit status
 
 ```bash
 bash .claude/toolkit/toolkit.sh status
@@ -53,7 +83,7 @@ bash .claude/toolkit/toolkit.sh status
 
 Review the output. Note the current toolkit version and any reported issues.
 
-#### Step U0.2: Validate current installation
+#### Step U0.3: Validate current installation
 
 ```bash
 bash .claude/toolkit/toolkit.sh validate
@@ -65,7 +95,7 @@ If validation reports issues, inform the user:
 
 List each issue. Attempt to fix automatically (e.g., broken symlinks via `toolkit.sh init --force`, stale cache via regeneration). Re-run validation after fixes. If issues persist, **ask the user** whether to proceed with the update anyway or abort.
 
-#### Step U0.3: Check for uncommitted changes
+#### Step U0.4: Check for uncommitted changes
 
 ```bash
 git status --porcelain
@@ -82,7 +112,7 @@ List the changed files. If any uncommitted changes are inside `.claude/toolkit/`
 
 **Do NOT proceed until the user confirms.**
 
-#### Step U0.4: Check toolkit remote
+#### Step U0.5: Check toolkit remote
 
 ```bash
 git remote get-url claude-toolkit 2>/dev/null

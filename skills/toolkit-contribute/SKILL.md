@@ -22,6 +22,12 @@ Identify customized files with generic improvements, evaluate them against a 10-
 - You have fixed a bug in a hook, agent, or skill and want to share it upstream
 - You have added a new feature to a toolkit component that other projects would benefit from
 
+**When NOT to use** (the skill will detect these and redirect):
+
+- For first-time setup → use `/toolkit-setup` instead
+- To update the toolkit version → use `/toolkit-update` instead
+- To diagnose issues → use `/toolkit-doctor` instead
+
 ---
 
 ## Critical Rules (READ FIRST)
@@ -42,6 +48,24 @@ Execute these phases in order. Do NOT skip phases.
 ### Phase C0: Identify Candidates
 
 Find all customized and modified files that could potentially be contributed upstream.
+
+#### Step C0.0: Check toolkit installation
+
+```bash
+ls .claude/toolkit/toolkit.sh
+```
+
+If the file does not exist, the toolkit is not installed. Tell the user:
+
+> The toolkit is not installed in this project. Use `/toolkit-setup` to install and configure it first.
+
+**Stop here** if the toolkit is not installed.
+
+If `.claude/toolkit.toml` does not exist, the toolkit was installed but never configured. Tell the user:
+
+> The toolkit subtree exists but has not been configured yet. Use `/toolkit-setup` to complete the initial configuration before contributing changes.
+
+**Stop here** if toolkit.toml does not exist.
 
 #### Step C0.1: Check toolkit status
 
