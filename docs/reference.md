@@ -297,7 +297,7 @@ Skill templates in `.claude/skills/`. These are copied (not symlinked) so they c
 | Implement | `implement/` | Autonomous plan execution with milestone agents |
 | Plan | `plan/` | Feature planning with research and review |
 | Brainstorm | `brainstorm/` | Idea exploration with persona-based agent teams, deep research, and approach evaluation. Alias: `/ideate`. Output: `docs/ideas/`. Flags: `--quick` (single-agent), `--depth shallow\|normal\|deep`, `--gemini` (second opinion) |
-| Solve | `solve/` | GitHub issue workflow (fetch, reproduce, fix, commit) |
+| Fix GitHub | `fix-github/` | GitHub issue workflow (fetch, reproduce, fix, commit) |
 | Fix | `fix/` | Standalone bug fix without GitHub issue |
 | Loop | `loop/` | Iterative evaluate-fix-validate convergence loop |
 | Conventions | `conventions/` | View coding conventions for a domain |
@@ -328,9 +328,9 @@ Key tunable defaults per skill. Override in `toolkit.toml` under `[skills.<name>
 | plan | `auto_implement` | `false` | Auto-spawn `/implement` after plan finalization |
 | fix | `scan_cap` | `20` | Max similar-pattern matches to collect |
 | fix | `max_fix_attempts` | `3` | Fix attempts before escalating to user |
-| solve | `skip_review` | `false` | Skip QA review at end |
-| solve | `plan_only` | `false` | Create plan without implementing |
-| solve | `max_fix_attempts` | `3` | Fix attempts before escalating to user |
+| fix-github | `skip_review` | `false` | Skip QA review at end |
+| fix-github | `plan_only` | `false` | Create plan without implementing |
+| fix-github | `max_fix_attempts` | `3` | Fix attempts before escalating to user |
 | review-suite | `agents` | `"reviewer"` | Default agent(s) to run |
 | review-suite | `scope` | `"uncommitted"` | Default review scope |
 | review-suite | `max_parallel_agents` | `3` | Max agents running in parallel |

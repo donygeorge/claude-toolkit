@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # SubagentStart hook: Inject project context into subagents
-# Provides branch state, modified files, active plan/solve state, and critical rules.
+# Provides branch state, modified files, active plan/fix-github state, and critical rules.
 #
 # set -u: Catch undefined variable bugs. No set -e/-o pipefail — hooks must
 # degrade gracefully (exit 0 on unexpected errors rather than propagating failure).

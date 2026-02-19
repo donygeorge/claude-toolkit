@@ -40,7 +40,7 @@ Agent prompts are generic by design -- they contain no project-specific paths, t
 
 ### Skills
 
-Skills are workflow templates triggered by slash commands in Claude Code (e.g., `/implement`, `/review-suite`, `/solve`). Each skill is a markdown file (SKILL.md) that describes a multi-step procedure for Claude to follow.
+Skills are workflow templates triggered by slash commands in Claude Code (e.g., `/implement`, `/review-suite`, `/fix-github`). Each skill is a markdown file (SKILL.md) that describes a multi-step procedure for Claude to follow.
 
 Unlike agents (which are symlinked and shared), skills are copied into your project during `init`. This means you can customize them for your project's specific needs.
 

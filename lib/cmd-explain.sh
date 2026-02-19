@@ -84,7 +84,7 @@ cmd_explain() {
       echo "  /review-suite   -- Multi-agent code review orchestration"
       echo "  /implement      -- Autonomous plan execution with milestone agents"
       echo "  /plan           -- Feature planning with research and review"
-      echo "  /solve          -- GitHub issue workflow (fetch, reproduce, fix, commit)"
+      echo "  /fix-github     -- GitHub issue workflow (fetch, reproduce, fix, commit)"
       echo "  /fix            -- Standalone bug fix without GitHub issue"
       echo "  /loop           -- Iterative evaluate-fix-validate convergence loop"
       echo "  /conventions    -- View coding conventions for a domain"

@@ -48,7 +48,7 @@ RECENT_FILES=$(cat "$TMPFILE_RECENT" 2>/dev/null)
 # Get uncommitted changes
 GIT_STATUS=$(git status --porcelain 2>/dev/null | head -10)
 
-# Check for active orchestration state (implement/solve/loop)
+# Check for active orchestration state (implement/fix-github/loop)
 ACTIVE_STATE=""
 
 while read -r STATE_DIR; do

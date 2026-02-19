@@ -10,7 +10,7 @@ A shareable, configurable collection of Claude Code hooks, agents, skills, and r
 
 - 16 configurable hooks (guards, quality gates, lifecycle, automation)
 - 10 agent prompts (reviewer, qa, security, ux, pm, docs, architect, commit-check, plan, gemini)
-- 15 skill templates (review, implement, plan, brainstorm, solve, fix, loop, verify, conventions, scope-resolver, toolkit-setup, toolkit-update, toolkit-doctor, toolkit-contribute, commit)
+- 15 skill templates (review, implement, plan, brainstorm, fix-github, fix, loop, verify, conventions, scope-resolver, toolkit-setup, toolkit-update, toolkit-doctor, toolkit-contribute, commit)
 - Three-tier settings merge (base + stacks + project)
 - Manifest tracking for managed vs customized files
 - Config-driven via `toolkit.toml`
@@ -81,7 +81,7 @@ bash toolkit.sh help                      # Show usage
 │   ├── implement/               # Autonomous plan execution
 │   ├── plan/                    # Feature planning
 │   ├── brainstorm/              # Idea exploration with agent teams
-│   ├── solve/                   # GitHub issue workflow
+│   ├── fix-github/              # GitHub issue workflow
 │   ├── fix/                     # Standalone bug fix
 │   ├── loop/                    # Iterative convergence loop
 │   ├── conventions/             # View coding conventions

@@ -1,11 +1,11 @@
 ---
-name: solve
+name: fix-github
 description: Use when working on one or more GitHub issues.
 argument-hint: "<github-issue-url-or-number>"
 user-invocable: true
 ---
 
-# Solve Issue Skill
+# Fix GitHub Issue Skill
 
 Autonomously work on GitHub issues: fetch details, understand context, reproduce visual issues,
 plan, implement, test, review, and commit. Supports multiple issues in a single invocation.
@@ -35,16 +35,17 @@ For each fix, ask: "Would a test or code change have caught this before shipping
 
 ```yaml
 aliases:
-  /solve: /solve
+  /fix-github: /fix-github
+  /fix-github: /fix-github
 
 defaults:
   skip_review: false
   plan_only: false
 ```
 
-> **Customization**: Override defaults in `toolkit.toml` under `[skills.solve]`. Run `bash toolkit.sh customize skills/solve/SKILL.md` to take full ownership of this skill.
+> **Customization**: Override defaults in `toolkit.toml` under `[skills.fix-github]`. Run `bash toolkit.sh customize skills/fix-github/SKILL.md` to take full ownership of this skill.
 
-> **Note**: `/fix` is a separate skill for standalone bug fixes without GitHub integration. Use `/solve` for GitHub issue workflows.
+> **Note**: `/fix` is a separate skill for standalone bug fixes without GitHub integration. Use `/fix-github` for GitHub issue workflows.
 
 ## Critical Rules (READ FIRST)
 
@@ -73,17 +74,17 @@ defaults:
 ### Single Issue
 
 ```bash
-/solve 123                    # Work on GitHub issue #123
-/solve 123 --plan-only        # Just create a plan, don't implement
-/solve 123 --skip-review      # Skip review at end (faster)
+/fix-github 123                    # Work on GitHub issue #123
+/fix-github 123 --plan-only        # Just create a plan, don't implement
+/fix-github 123 --skip-review      # Skip review at end (faster)
 ```
 
 ### Multiple Issues
 
 ```bash
-/solve 123, 145               # Work on multiple issues together
-/solve 123 145                # Alternative syntax (space-separated)
-/solve 123, 145 --plan-only   # Plan both issues without implementing
+/fix-github 123, 145               # Work on multiple issues together
+/fix-github 123 145                # Alternative syntax (space-separated)
+/fix-github 123, 145 --plan-only   # Plan both issues without implementing
 ```
 
 When multiple issues are specified:

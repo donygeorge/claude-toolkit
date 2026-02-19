@@ -55,7 +55,7 @@ Principles for writing Claude Code skills that resist rationalization, survive m
 
 ## 3. Rationalization Prevention
 
-**When to add**: Skills where the agent makes judgment calls and might shortcut (review, verify, implement, fix, solve, plan, loop).
+**When to add**: Skills where the agent makes judgment calls and might shortcut (review, verify, implement, fix, fix-github, plan, loop).
 
 **When to skip**: Mechanical/utility skills with no judgment calls (commit, conventions, scope-resolver).
 
@@ -134,7 +134,7 @@ Longer skills suffer from context dilution -- the agent is more likely to skip o
 | Skill Type | Examples | Target | Rationale |
 | ---------- | -------- | ------ | --------- |
 | Utility/reference | conventions, scope-resolver | < 150 lines | Single purpose, minimal workflow |
-| Workflow (single-path) | fix, solve | < 350 lines | Linear steps, one execution path |
+| Workflow (single-path) | fix, fix-github | < 350 lines | Linear steps, one execution path |
 | Orchestration (multi-agent) | implement, verify, plan, review-suite, loop, toolkit-* | < 600 lines | Agent coordination, state management |
 | Multi-mode (distinct flows) | brainstorm | < 1000 lines | Multiple execution paths (e.g., shallow/normal/deep) |
 

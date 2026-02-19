@@ -24,7 +24,7 @@ Deep verification of code changes. Runs checks, scans for edge cases, fixes issu
 
 | Mode | Invocation | Purpose |
 | ---- | ---------- | ------- |
-| **Deep** (default) | `/verify`, `/verify docs/plans/my-feature.md` | Full verification -- edge case scan, clean-room agent, thorough checks. Use after `/implement`, `/solve`, `/fix`, or any manual work. |
+| **Deep** (default) | `/verify`, `/verify docs/plans/my-feature.md` | Full verification -- edge case scan, clean-room agent, thorough checks. Use after `/implement`, `/fix-github`, `/fix`, or any manual work. |
 | **Quick** | `/verify --quick`, `/verify docs/plans/my-feature.md --quick` | Focused spec-compliance check -- tests pass, lint passes, exit criteria met, changes committed. Designed to be invoked programmatically from within `/implement` per-milestone. |
 
 ---
@@ -473,7 +473,7 @@ Verdict: PASS / FAIL
 
 Reads the plan state, verifies all milestones and evaluation criteria. The deep mode clean-room agent catches issues that per-milestone verification missed.
 
-### After /solve or /fix
+### After /fix-github or /fix
 
 ```text
 /verify

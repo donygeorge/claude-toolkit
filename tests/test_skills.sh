@@ -307,7 +307,7 @@ echo ""
 #
 # Judgment-heavy skills should have a "Rationalization" section to prevent the
 # agent from rationalizing shortcuts. Skills that make complex judgment calls
-# (solve, loop, review-suite, implement, plan, verify, fix) are checked.
+# (fix-github, loop, review-suite, implement, plan, verify, fix) are checked.
 #
 # Exempt: utility skills (commit, conventions, scope-resolver) and toolkit
 # management skills (toolkit-setup, toolkit-update, toolkit-doctor,
@@ -316,7 +316,7 @@ echo ""
 echo "--- Lint: Rationalization prevention (WARN) ---"
 
 # Skills that should have rationalization prevention
-JUDGMENT_SKILLS="solve loop review-suite implement plan verify fix"
+JUDGMENT_SKILLS="fix-github loop review-suite implement plan verify fix"
 
 for skill_md in "$SKILLS_DIR"/*/SKILL.md; do
   skill_name=$(basename "$(dirname "$skill_md")")
@@ -350,7 +350,7 @@ echo ""
 #
 # Categories:
 #   - utility (<150): commit, conventions, scope-resolver
-#   - workflow (<350): fix, solve
+#   - workflow (<350): fix, fix-github
 #   - orchestration (<600): implement, verify, plan, review-suite, loop,
 #                           toolkit-setup, toolkit-update, toolkit-doctor,
 #                           toolkit-contribute
@@ -368,7 +368,7 @@ for skill_md in "$SKILLS_DIR"/*/SKILL.md; do
       budget=150
       category="utility"
       ;;
-    fix|solve)
+    fix|fix-github)
       budget=350
       category="workflow"
       ;;

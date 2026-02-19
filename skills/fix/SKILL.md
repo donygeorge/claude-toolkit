@@ -20,7 +20,7 @@ allowed-tools:
 
 Systematic bug fix workflow: root-cause, fix, validate, scan for similar issues, test, commit.
 
-**Distinct from `/solve`**: `/fix` is standalone (bug description -> root-cause -> fix -> scan similar -> test -> commit). `/solve` is GitHub issue workflow (fetch issue -> reproduce -> plan -> fix -> commit referencing issue).
+**Distinct from `/fix-github`**: `/fix` is standalone (bug description -> root-cause -> fix -> scan similar -> test -> commit). `/fix-github` is GitHub issue workflow (fetch issue -> reproduce -> plan -> fix -> commit referencing issue).
 
 > **Customization**: Override defaults in `toolkit.toml` under `[skills.fix]`. Run `bash toolkit.sh customize skills/fix/SKILL.md` to take full ownership of this skill.
 

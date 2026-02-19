@@ -6,7 +6,7 @@ Framework for building project-specific `smart-context.py` UserPromptSubmit hook
 
 The smart-context hook automatically loads relevant context based on the user's prompt:
 
-1. **Skill detection**: Detects `/implement`, `/solve`, `/plan`, `/review` commands and loads the corresponding SKILL.md
+1. **Skill detection**: Detects `/implement`, `/fix-github`, `/plan`, `/review` commands and loads the corresponding SKILL.md
 2. **Domain context**: Keyword-matched files from a context directory (e.g., `docs/context/`)
 3. **Caching**: File content cached with mtime-based TTL to reduce I/O
 4. **Size limiting**: Context capped to prevent overwhelming the model
@@ -45,7 +45,7 @@ from framework import run_hook
 SKILL_COMMANDS = [
     (r"^/implement\b", ".claude/skills/implement/SKILL.md"),
     (r"^/impl\b", ".claude/skills/implement/SKILL.md"),
-    (r"^/solve\b", ".claude/skills/solve/SKILL.md"),
+    (r"^/fix-github\b", ".claude/skills/fix-github/SKILL.md"),
     (r"^/fix\b", ".claude/skills/fix/SKILL.md"),
     (r"^/plan\b", ".claude/skills/plan/SKILL.md"),
     (r"^/review\b", ".claude/skills/review-suite/SKILL.md"),

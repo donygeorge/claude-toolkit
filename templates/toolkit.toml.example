@@ -145,7 +145,7 @@ source_dirs = ["app", "src"]
 # File extensions to include when scanning for recent changes
 source_extensions = ["*.py"]
 
-# Directories checked for active orchestration state (implement/solve/loop)
+# Directories checked for active orchestration state (implement/fix-github/loop)
 state_dirs = ["artifacts"]
 
 # ---------------------------------------------------------------------------
@@ -202,7 +202,7 @@ tdd_enforcement = "off"           # TDD mode: "strict", "guided", or "off"
 # scan_cap = 20                   # Max similar-pattern matches to collect
 # max_fix_attempts = 3            # Fix attempts before escalating to user
 
-# [skills.solve]
+# [skills.fix-github]
 # skip_review = false             # Skip QA review at end
 # plan_only = false               # Create plan without implementing
 # max_fix_attempts = 3            # Fix attempts before escalating to user

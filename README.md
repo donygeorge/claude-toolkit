@@ -100,7 +100,7 @@ Skills form a pipeline from ideation through verification. Each stage feeds its 
 
 | Skill | Purpose |
 | ------- | --------- |
-| `/solve` | GitHub issue workflow |
+| `/fix-github` | GitHub issue workflow |
 | `/fix` | Standalone bug fix |
 | `/loop` | Iterative improvement |
 | `/review-suite` | Multi-agent code review |
