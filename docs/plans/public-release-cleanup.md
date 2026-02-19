@@ -182,9 +182,9 @@ Run the full test suite and validate everything is consistent.
 
 **Exit Criteria**:
 
-- [ ] All 6 test/lint commands exit with code 0
-- [ ] All 5 cross-check commands produce expected output
-- [ ] No regressions introduced by any milestone
+- [x] All 6 test/lint commands exit with code 0
+- [x] All 5 cross-check commands produce expected output
+- [x] No regressions introduced by any milestone
 
 ## Testing Strategy
 
