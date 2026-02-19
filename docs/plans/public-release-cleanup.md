@@ -95,9 +95,9 @@ Update all stale test counts to match current actuals.
 
 **Exit Criteria**:
 
-- [ ] All three pytest count references in CLAUDE.md say `314`
-- [ ] No other stale counts remain in CLAUDE.md
-- [ ] `grep -c '290\|126' CLAUDE.md` returns 0
+- [x] All three pytest count references in CLAUDE.md say `314`
+- [x] No other stale counts remain in CLAUDE.md
+- [x] `grep -c '290\|126' CLAUDE.md` returns 0
 
 ### M2: Delete Internal Planning Artifacts
 

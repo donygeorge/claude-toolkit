@@ -23,7 +23,7 @@ A shareable, configurable collection of Claude Code hooks, agents, skills, and r
 
 ```bash
 # Run tests
-python3 -m pytest tests/ -v              # Python unit tests (290 tests)
+python3 -m pytest tests/ -v              # Python unit tests (314 tests)
 bash tests/test_toolkit_cli.sh           # CLI integration tests
 bash tests/test_manifest.sh              # Manifest integration tests
 
@@ -121,7 +121,7 @@ bash toolkit.sh help                      # Show usage
 │   └── plans/                   # Implementation plans
 ├── mcp/                         # MCP templates
 │   └── base.mcp.json            # Base MCP server config
-└── tests/                       # Test suite (290 pytest + bash integration)
+└── tests/                       # Test suite (314 pytest + bash integration)
     ├── test_generate_settings.py
     ├── test_generate_config_cache.py
     ├── test_detect_project.py
@@ -202,7 +202,7 @@ Result written to `.claude/settings.json` and `.mcp.json`.
 ### Python Tests
 
 ```bash
-# Run all Python tests (126 tests)
+# Run all Python tests (314 tests)
 python3 -m pytest tests/ -v
 
 # Run specific test file
