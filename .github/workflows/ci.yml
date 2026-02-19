@@ -25,3 +25,7 @@ jobs:
         run: |
           bash tests/test_toolkit_cli.sh
           bash tests/test_manifest.sh
+      - name: Hook tests
+        run: bash tests/test_hooks.sh
+      - name: Skill tests
+        run: bash tests/test_skills.sh

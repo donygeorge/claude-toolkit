@@ -134,10 +134,10 @@ Add the two missing test suites to the GitHub Actions workflow. No dependency on
 
 **Exit Criteria**:
 
-- [ ] `ci.yml` includes a step running `bash tests/test_hooks.sh`
-- [ ] `ci.yml` includes a step running `bash tests/test_skills.sh`
-- [ ] YAML is valid (no syntax errors)
-- [ ] `shellcheck -x -S warning hooks/*.sh lib/*.sh toolkit.sh` still passes locally
+- [x] `ci.yml` includes a step running `bash tests/test_hooks.sh`
+- [x] `ci.yml` includes a step running `bash tests/test_skills.sh`
+- [x] YAML is valid (no syntax errors)
+- [x] `shellcheck -x -S warning hooks/*.sh lib/*.sh toolkit.sh` still passes locally
 
 ### M4: Add README Badges
 
