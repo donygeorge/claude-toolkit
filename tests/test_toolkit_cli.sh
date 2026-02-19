@@ -832,6 +832,167 @@ test_init_skips_when_project_settings_exist() {
 }
 
 # ============================================================================
+# Test: generate-settings preserves existing settings (no project overlay)
+# ============================================================================
+
+test_generate_settings_preserves_settings() {
+  echo ""
+  echo "=== Test: generate-settings preserves existing settings ==="
+
+  local project_dir
+  project_dir=$(setup_test_project)
+  local toolkit_sh="${project_dir}/.claude/toolkit/toolkit.sh"
+
+  # Run init first (clean)
+  (cd "$project_dir" && bash "$toolkit_sh" init --from-example) >/dev/null 2>&1
+
+  # Now simulate a legacy install: remove settings-project.json, add custom content
+  rm -f "${project_dir}/.claude/settings-project.json"
+  # Add custom env to settings.json (simulates manual editing)
+  local modified
+  modified=$(jq '.env.LEGACY_VAR = "should_survive"' "${project_dir}/.claude/settings.json")
+  echo "$modified" > "${project_dir}/.claude/settings.json"
+
+  # Run generate-settings standalone (this was the critical gap)
+  (cd "$project_dir" && bash "$toolkit_sh" generate-settings) >/dev/null 2>&1
+
+  # settings-project.json should have been auto-created
+  assert_file_exists "generate-settings auto-created settings-project.json" \
+    "${project_dir}/.claude/settings-project.json"
+
+  # Backup should exist
+  assert_file_exists "generate-settings created backup" \
+    "${project_dir}/.claude/settings.json.pre-toolkit"
+
+  # Final settings.json should still contain the custom variable
+  assert_contains "final settings has LEGACY_VAR" \
+    "${project_dir}/.claude/settings.json" "LEGACY_VAR"
+}
+
+# ============================================================================
+# Test: init handles malformed settings.json gracefully
+# ============================================================================
+
+test_init_malformed_settings_json() {
+  echo ""
+  echo "=== Test: init handles malformed settings.json ==="
+
+  local project_dir
+  project_dir=$(setup_test_project)
+  local toolkit_sh="${project_dir}/.claude/toolkit/toolkit.sh"
+
+  # Pre-create a malformed settings.json
+  mkdir -p "${project_dir}/.claude"
+  echo 'NOT VALID JSON {{{' > "${project_dir}/.claude/settings.json"
+
+  # Run init — should succeed (skips preservation, generates fresh)
+  local init_exit=0
+  (cd "$project_dir" && bash "$toolkit_sh" init --from-example) >/dev/null 2>&1 || init_exit=$?
+
+  assert_eq "init succeeds with malformed settings.json" "0" "$init_exit"
+
+  # settings-project.json should NOT exist (preservation was skipped)
+  assert_file_not_exists "no settings-project.json from malformed input" \
+    "${project_dir}/.claude/settings-project.json"
+
+  # settings.json should be regenerated fresh
+  assert_json_valid "settings.json is valid after init" \
+    "${project_dir}/.claude/settings.json"
+}
+
+# ============================================================================
+# Test: init handles malformed .mcp.json gracefully
+# ============================================================================
+
+test_init_malformed_mcp_json() {
+  echo ""
+  echo "=== Test: init handles malformed .mcp.json ==="
+
+  local project_dir
+  project_dir=$(setup_test_project)
+  local toolkit_sh="${project_dir}/.claude/toolkit/toolkit.sh"
+
+  # Pre-create valid settings.json but malformed .mcp.json
+  mkdir -p "${project_dir}/.claude"
+  echo '{"env": {"MY_VAR": "exists"}}' > "${project_dir}/.claude/settings.json"
+  echo 'BROKEN MCP {{{' > "${project_dir}/.mcp.json"
+
+  # Run init — should succeed
+  local init_exit=0
+  (cd "$project_dir" && bash "$toolkit_sh" init --from-example) >/dev/null 2>&1 || init_exit=$?
+
+  assert_eq "init succeeds with malformed .mcp.json" "0" "$init_exit"
+
+  # settings-project.json should exist (from valid settings.json)
+  assert_file_exists "settings-project.json created despite bad .mcp.json" \
+    "${project_dir}/.claude/settings-project.json"
+
+  # .mcp.json.pre-toolkit backup should exist
+  assert_file_exists ".mcp.json.pre-toolkit backup created" \
+    "${project_dir}/.mcp.json.pre-toolkit"
+
+  # settings-project.json should have the original settings content
+  assert_contains "project settings has MY_VAR" \
+    "${project_dir}/.claude/settings-project.json" "MY_VAR"
+}
+
+# ============================================================================
+# Test: session-start warns about missing settings-project.json
+# ============================================================================
+
+test_session_start_settings_warning() {
+  echo ""
+  echo "=== Test: session-start warns about missing overlay ==="
+
+  local project_dir
+  project_dir=$(setup_test_project)
+  local toolkit_sh="${project_dir}/.claude/toolkit/toolkit.sh"
+
+  # Run init first (creates settings-project.json)
+  (cd "$project_dir" && bash "$toolkit_sh" init --from-example) >/dev/null 2>&1
+
+  # Remove settings-project.json to simulate legacy install
+  rm -f "${project_dir}/.claude/settings-project.json"
+
+  # Run session-start hook directly
+  local output
+  output=$(cd "$project_dir" && CLAUDE_PROJECT_DIR="$project_dir" \
+    bash "${project_dir}/.claude/toolkit/hooks/session-start.sh" 2>&1) || true
+
+  assert_output_contains "session-start warns about missing overlay" \
+    "no settings-project.json" "$output"
+}
+
+# ============================================================================
+# Test: validate detects unprotected settings
+# ============================================================================
+
+test_validate_unprotected_settings() {
+  echo ""
+  echo "=== Test: validate detects unprotected settings ==="
+
+  local project_dir
+  project_dir=$(setup_test_project)
+  local toolkit_sh="${project_dir}/.claude/toolkit/toolkit.sh"
+
+  # Run init (creates settings-project.json)
+  (cd "$project_dir" && bash "$toolkit_sh" init --from-example) >/dev/null 2>&1
+
+  # Add custom content to settings.json and remove project overlay
+  local modified
+  modified=$(jq '.env.UNPROTECTED = "value"' "${project_dir}/.claude/settings.json")
+  echo "$modified" > "${project_dir}/.claude/settings.json"
+  rm -f "${project_dir}/.claude/settings-project.json"
+
+  # Run validate — should warn
+  local output
+  output=$(cd "$project_dir" && bash "$toolkit_sh" validate 2>&1) || true
+
+  assert_output_contains "validate warns about unprotected settings" \
+    "no settings-project.json" "$output"
+}
+
+# ============================================================================
 # Run all tests
 # ============================================================================
 
@@ -859,6 +1020,11 @@ test_explain
 test_init_preserves_existing_settings
 test_init_preserves_existing_mcp
 test_init_skips_when_project_settings_exist
+test_generate_settings_preserves_settings
+test_init_malformed_settings_json
+test_init_malformed_mcp_json
+test_session_start_settings_warning
+test_validate_unprotected_settings
 
 echo ""
 echo "==============================="

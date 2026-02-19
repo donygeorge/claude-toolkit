@@ -87,6 +87,7 @@ cmd_generate_settings() {
   if _is_dry_run; then
     echo "Dry-run: showing what 'generate-settings' would do..."
     echo ""
+    _init_preserve_existing_settings_dry_run
     _dry_run_msg "Would regenerate toolkit-cache.env"
     _dry_run_msg "Would regenerate settings.json"
     local mcp_base="${TOOLKIT_DIR}/mcp/base.mcp.json"
@@ -99,6 +100,10 @@ cmd_generate_settings() {
   fi
   echo "Regenerating settings..."
   echo ""
+
+  # Preserve existing settings for projects without settings-project.json
+  _init_preserve_existing_settings
+
   cmd_generate_settings_inner
   echo ""
   _ok "Settings regenerated successfully"

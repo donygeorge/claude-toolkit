@@ -25,4 +25,16 @@ if git status --porcelain 2>/dev/null | grep -q .; then
   git status --porcelain | head -10
 fi
 
+# Settings protection check
+CLAUDE_DIR="${PROJECT_DIR}/.claude"
+if [[ -f "${CLAUDE_DIR}/settings.json" ]] && [[ ! -f "${CLAUDE_DIR}/settings-project.json" ]]; then
+  TOOLKIT_SETTINGS="${CLAUDE_DIR}/toolkit/templates/settings-base.json"
+  if [[ -f "$TOOLKIT_SETTINGS" ]]; then
+    echo ""
+    echo "WARNING: settings.json has no settings-project.json overlay"
+    echo "  Project-specific settings may be lost on next generate-settings"
+    echo "  Fix: cp .claude/settings.json .claude/settings-project.json"
+  fi
+fi
+
 exit 0

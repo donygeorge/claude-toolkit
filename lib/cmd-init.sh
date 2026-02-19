@@ -251,6 +251,13 @@ _init_preserve_existing_settings() {
     return 0
   fi
 
+  # Validate settings.json is valid JSON before preservation
+  if ! jq empty "$settings_file" 2>/dev/null; then
+    _warn "Existing settings.json is not valid JSON — skipping preservation"
+    _info "  Fix the file manually or remove it before running init"
+    return 0
+  fi
+
   echo ""
   echo "Preserving existing settings..."
 
@@ -263,6 +270,15 @@ _init_preserve_existing_settings() {
 
   # If .mcp.json also exists, extract mcpServers into settings-project.json
   if [[ -f "$mcp_file" ]]; then
+    # Validate .mcp.json before extraction
+    if ! jq empty "$mcp_file" 2>/dev/null; then
+      _warn "Existing .mcp.json is not valid JSON — skipping MCP merge"
+      _info "  Review the file manually after setup"
+      cp "$mcp_file" "${mcp_file}.pre-toolkit"
+      _ok "Backed up .mcp.json -> .mcp.json.pre-toolkit (invalid JSON)"
+      return 0
+    fi
+
     cp "$mcp_file" "${mcp_file}.pre-toolkit"
     _ok "Backed up .mcp.json -> .mcp.json.pre-toolkit"
 
