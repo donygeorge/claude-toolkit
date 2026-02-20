@@ -59,6 +59,29 @@ Execute these phases in order. Do NOT skip phases.
 
 Check the current toolkit installation state and resolve any issues before proceeding.
 
+#### Step 0.0.5: Prerequisite tool checks
+
+Verify required tools are available before proceeding:
+
+```bash
+jq --version
+python3 --version
+```
+
+If `jq` is not found, inform the user:
+
+> `jq` is required by the toolkit for JSON processing. Install it:
+>
+> - macOS: `brew install jq`
+> - Ubuntu/Debian: `sudo apt-get install jq`
+> - Other: [jqlang.github.io/jq/download](https://jqlang.github.io/jq/download/)
+
+If `python3` is not found, inform the user:
+
+> `python3 3.11+` is required by the toolkit. Install it from [python.org](https://python.org) or via your package manager.
+
+**Stop here** if either tool is missing. The toolkit cannot function without them.
+
 #### Step 0.1: Check toolkit subtree
 
 ```bash
@@ -76,6 +99,14 @@ If the file does not exist, the toolkit is not installed. Tell the user:
 ```bash
 python3 .claude/toolkit/detect-project.py --project-dir .
 ```
+
+If this command fails (non-zero exit, Python error, or non-JSON output), the toolkit may be corrupted or incompatible. Try:
+
+1. Check Python version: `python3 --version` (must be 3.11+)
+2. Re-run with verbose error: `python3 .claude/toolkit/detect-project.py --project-dir . 2>&1`
+3. If it's a missing module error, the toolkit files may be incomplete — suggest `bash .claude/toolkit/toolkit.sh update --latest`
+
+**Stop here** if detection cannot produce valid JSON output after these recovery steps.
 
 Parse the JSON output. Focus on the `toolkit_state` section:
 
@@ -230,11 +261,13 @@ If `--reconfigure` was passed, skip the state-based shortcuts above and proceed 
 
 ### Phase 1: Project Discovery
 
-Run the detection script to auto-detect project properties.
+Run the detection script to auto-detect project properties. Note: this is the SAME command as Phase 0 Step 0.2 — if you already have the JSON output cached from Phase 0, reuse it instead of re-running.
 
 ```bash
 python3 .claude/toolkit/detect-project.py --project-dir .
 ```
+
+If this fails, apply the same recovery steps as Phase 0 Step 0.2. If detection cannot run, ask the user to manually specify: project name, stacks, test command, lint command, format command. Proceed with manual values.
 
 Parse the full JSON output. The key fields are:
 
@@ -522,42 +555,70 @@ ls .claude/toolkit/agents/*.md
 ls .claude/agents/*.md
 ```
 
-For EACH toolkit agent file, verify a corresponding file or symlink exists in `.claude/agents/`. If missing:
+For EACH toolkit agent file, verify a corresponding file or symlink exists in `.claude/agents/`. If missing, run `bash .claude/toolkit/toolkit.sh init --force`.
+
+**C. Rule completeness** — verify every toolkit rule is linked:
 
 ```bash
-bash .claude/toolkit/toolkit.sh init --force
+ls .claude/toolkit/rules/*.md
+ls .claude/rules/*.md
 ```
 
-**C. Settings merge integrity** — read `.claude/settings.json` and verify:
+For EACH toolkit rule file, verify a corresponding file or symlink exists in `.claude/rules/`. If missing, run `bash .claude/toolkit/toolkit.sh init --force`.
 
-- Has a `hooks` key with at least one event type entry
-- Has a `permissions` key with `deny` list entries
-- If `.claude/settings-project.json` exists and contains `enabledPlugins`, verify they appear in the merged `settings.json`
-- If `.claude/settings-project.json` exists and contains `sandbox` config, verify it appears in merged `settings.json`
-- If `.claude/settings-project.json` exists and contains custom `env` variables, verify they appear in merged `settings.json`
+**D. Settings merge integrity** — use jq to verify the merged settings contain expected content:
 
-If expected project content is missing from the merge, re-run Step 6.2. If still missing after regeneration, report the specific missing keys to the user.
+```bash
+# Must have hooks with at least one event
+jq '.hooks | keys | length' .claude/settings.json
+# Must have permissions with deny list
+jq '.permissions.deny | length' .claude/settings.json
+```
 
-**D. MCP server integrity** — read `.mcp.json` and verify:
+Both counts should be > 0. If either is 0, the merge lost content — re-run Step 6.2.
 
-- Has a `mcpServers` key
-- Read `.claude/toolkit/mcp/base.mcp.json` for the expected base servers
-- Each base server should be present in `.mcp.json` UNLESS it overlaps with an `enabledPlugins` entry in `settings.json` (intentional dedup — this is correct)
-- If a base server is missing and there's no plugin overlap, re-run Step 6.2
+If `.claude/settings-project.json` exists, verify project-specific keys survived the merge:
 
-**E. Hook command resolution** — for each hook command in `.claude/settings.json`:
+```bash
+# Check which top-level keys the project overlay defines
+jq 'keys' .claude/settings-project.json
+# Verify each key exists in the merged output
+jq 'keys' .claude/settings.json
+```
 
-- Replace `$CLAUDE_PROJECT_DIR` (and `"$CLAUDE_PROJECT_DIR"` with embedded quotes) with the actual project directory path
-- Extract the script path (first token, or second token if first is `python3`)
-- If the script path is a system command (like `osascript`), skip it
-- Otherwise verify the file exists and is executable (or is a `.py` file)
+Specifically check:
 
-If hook scripts are missing, run `bash .claude/toolkit/toolkit.sh init --force` to restore them.
+- If project has `enabledPlugins`: `jq '.enabledPlugins' .claude/settings.json` should list them
+- If project has `sandbox`: `jq '.sandbox' .claude/settings.json` should show project's sandbox config
+- If project has custom `env` vars: `jq '.env' .claude/settings.json` should include them
 
-**F. Config consistency** — verify toolkit.toml aligns with reality:
+If expected project content is missing from the merge, re-run Step 6.2. If still missing, report the specific missing keys to the user.
+
+**E. MCP server integrity** — verify base servers are present:
+
+```bash
+# List base servers expected
+jq '.mcpServers | keys' .claude/toolkit/mcp/base.mcp.json
+# List servers in generated .mcp.json
+jq '.mcpServers | keys' .mcp.json
+# List enabledPlugins (if any)
+jq '.enabledPlugins // []' .claude/settings.json
+```
+
+Each base server should be present in `.mcp.json` UNLESS it overlaps with an `enabledPlugins` entry (intentional dedup — this is correct behavior). If a base server is missing with no plugin overlap, re-run Step 6.2.
+
+**F. Hook command resolution** — the CLI validator (`toolkit.sh validate`) already checks this thoroughly, including:
+
+- Resolving `"$CLAUDE_PROJECT_DIR"` (quoted form first, then bare form)
+- Handling `python3` prefixed commands
+- Skipping system commands (e.g., `osascript`)
+
+If Step 6.3 validate passed with 0 hook errors, this check is satisfied. If hook errors were reported and not fixed, run `bash .claude/toolkit/toolkit.sh init --force` to restore missing scripts.
+
+**G. Config consistency** — verify toolkit.toml aligns with reality:
 
 - Stacks in `toolkit.toml` should match what `detect-project.py` found (or what the user confirmed in Phase 3). If they differ and the user didn't override, update toolkit.toml using the **Edit tool** and re-run Steps 6.1-6.2.
-- Config cache (`toolkit-cache.env`) should be newer than `toolkit.toml`. If stale, re-run Step 6.1.
+- Config cache must be fresh: `toolkit-cache.env` should be newer than `toolkit.toml`. If stale, re-run Step 6.1.
 
 #### Step 6.5: Final validation pass
 
@@ -667,6 +728,13 @@ git add CLAUDE.md
 git add .gitignore
 ```
 
+Also stage these if they exist (created during setup):
+
+```bash
+git add .claude/settings-project.json 2>/dev/null
+git add .claude/toolkit-manifest.json 2>/dev/null
+```
+
 Note: `toolkit-cache.env` is generated and gitignored — do NOT stage it.
 
 Also stage any files created or restored by `toolkit.sh init --force` (skills, agents, rules).
@@ -696,11 +764,19 @@ Configure claude-toolkit for [project-name]
 
 | Error | Recovery |
 | ----- | -------- |
-| `detect-project.py` not found | Toolkit may be outdated. Run `bash .claude/toolkit/toolkit.sh update` and retry. |
+| `jq` not installed | Inform user. Cannot proceed without jq — it's required for all JSON operations. |
+| `python3` not found or < 3.11 | Inform user. Required for detection, config cache, and settings generation. |
+| `detect-project.py` not found | Toolkit may be outdated or corrupt. Run `bash .claude/toolkit/toolkit.sh update --latest` and retry. |
+| `detect-project.py` crashes (Python error) | Check Python version (3.11+ required). Read error output. If module error, toolkit files may be incomplete. |
 | Detection returns empty stacks | Ask user to specify stacks manually. Write them to toolkit.toml. |
 | All commands fail validation | Ask user to provide working commands. Proceed with manual config. |
 | `toolkit.sh generate-settings` fails | Check toolkit.toml for syntax errors. Run `python3 .claude/toolkit/generate-config-cache.py --toml .claude/toolkit.toml --output .claude/toolkit-cache.env --validate-only` to find issues. |
-| `toolkit.sh validate` reports issues | Attempt auto-fix (init --force, chmod). Report remaining issues to user. |
+| `toolkit.sh validate` reports issues | Follow auto-fix loop in Step 6.3. Use fix table in priority order. |
+| Missing skills after init | Copy manually: `cp -r .claude/toolkit/skills/<name> .claude/skills/<name>` |
+| Hooks not executable | `chmod +x .claude/toolkit/hooks/*.sh` |
+| Pre-toolkit backup exists, no settings-project.json | `cp .claude/settings.json.pre-toolkit .claude/settings-project.json` then regenerate settings |
+| Duplicate hooks in merged settings | Edit `settings-project.json` to remove entries that overlap with toolkit base hooks |
+| MCP server/plugin overlap persists | Check `enabledPlugins` vs `.mcp.json` servers. Remove the duplicate from whichever side the user doesn't need. |
 | User provides no confirmation in Phase 3 | Remind the user that confirmation is needed. Do not proceed without it. |
 
 ## Output
@@ -711,5 +787,7 @@ After completion, report to the user:
 - Stacks detected and validated
 - Commands configured (lint, test, format)
 - Files created or modified
-- Validation result (pass/fail)
+- CLI validation result (pass/fail with error/warning counts)
+- Deep validation results (skills: N/N, agents: N/N, rules: N/N, merge integrity: pass/fail, MCP integrity: pass/fail)
+- Auto-fixes applied (list what was fixed and how)
 - Any items needing manual attention

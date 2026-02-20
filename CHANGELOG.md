@@ -30,7 +30,11 @@ All notable changes to this project will be documented in this file.
 - **Skill visibility documented**: Added skill visibility section to `docs/reference.md` explaining `user-invocable` flag and listing hidden skills
 - **toolkit-setup validation guidance**: Updated Phase 6.2 to list all fixable validation issues including missing skills, duplicate hooks, and MCP overlap
 - **toolkit-setup edge case detection**: Added Phase 0.3.5 to detect incomplete migrations (pre-toolkit backups without settings-project.json), non-executable hooks, and orphaned skill directories
-- **toolkit-setup deep semantic validation**: Replaced Phase 6 with comprehensive 5-step validation: config cache regen, settings generation, auto-fix loop with prioritized fix table, deep semantic checks (skill/agent completeness, settings merge integrity, MCP server integrity, hook command resolution, config consistency), and a mandatory final validation pass
+- **toolkit-setup deep semantic validation**: Replaced Phase 6 with comprehensive 5-step validation: config cache regen, settings generation, auto-fix loop with prioritized fix table, deep semantic checks (skill/agent/rule completeness with concrete jq commands, settings merge integrity, MCP server integrity, hook command resolution, config consistency), and a mandatory final validation pass
+- **toolkit-setup prerequisite checks**: Added Step 0.0.5 to verify jq and python3 are installed before proceeding — without these, all downstream steps fail silently
+- **toolkit-setup detect-project.py error handling**: Added recovery steps for when the detection script crashes (Python version check, verbose re-run, update suggestion) in both Phase 0 and Phase 1
+- **toolkit-setup error handling table**: Expanded from 6 to 15 entries covering jq/python3 missing, detection crashes, missing skills, non-executable hooks, pre-toolkit backups, duplicate hooks, and MCP overlap
+- **toolkit-setup staging completeness**: Phase 8.2 now stages `settings-project.json` and `toolkit-manifest.json` when they exist
 
 ## [1.14.0] - 2026-02-18
 
