@@ -458,6 +458,14 @@ If regeneration failed (file still missing or empty), report `[ERROR]` ("Config 
 
 Without a fresh cache, hooks will use default values that produce unexpected test results.
 
+Also verify hook scripts are executable before running tests:
+
+```bash
+find .claude/toolkit/hooks/ -name '*.sh' ! -perm -u+x 2>/dev/null
+```
+
+If any hooks are not executable, report `[ERROR]` ("Hook scripts are not executable — run `chmod +x .claude/toolkit/hooks/*.sh`") and **skip all hook tests in H6.1.1**. Non-executable hooks produce cryptic "Permission denied" errors that obscure the real issue. This should have been caught in Phase H0, but permissions can change between phases.
+
 **Step H6.1.1: Run hook tests**
 
 Test `guard-destructive.sh` with multiple sample inputs:
