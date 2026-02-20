@@ -18,6 +18,8 @@ Perform a deep health evaluation of the toolkit installation. Goes beyond the CL
 /toolkit-doctor    # Run deep health evaluation and optimization
 ```
 
+Note: This skill is interactive and requires user input at decision points (fix approval, etc.). For automated or CI health checks, use `bash .claude/toolkit/toolkit.sh doctor` (non-interactive) or `bash .claude/toolkit/toolkit.sh validate` instead.
+
 ## When to Use
 
 - After a toolkit update, to verify nothing is broken
@@ -445,6 +447,14 @@ If the file does not exist or was flagged as stale in Phase H1.3, **regenerate i
 ```bash
 python3 .claude/toolkit/generate-config-cache.py --toml .claude/toolkit.toml --output .claude/toolkit-cache.env
 ```
+
+After regeneration, verify the file was created successfully:
+
+```bash
+ls -la .claude/toolkit-cache.env 2>/dev/null
+```
+
+If regeneration failed (file still missing or empty), report `[ERROR]` ("Config cache regeneration failed — hook tests cannot produce reliable results") and **skip all hook tests in H6.1.1**. Proceed to H6.2 (conflict detection does not depend on cache).
 
 Without a fresh cache, hooks will use default values that produce unexpected test results.
 

@@ -151,6 +151,8 @@ List each issue. Attempt to fix automatically (e.g., broken symlinks via `toolki
 
 #### Step U0.4: Check for uncommitted changes
 
+Note: If multiple Claude Code sessions are open for this project, close them before updating to avoid file conflicts during the subtree pull and settings regeneration.
+
 ```bash
 git status --porcelain
 git diff --stat
@@ -225,6 +227,10 @@ Display a version comparison to the user:
 > **Current version**: [current_version]
 > **Available versions**: [list of tags, newest first]
 > **Latest release**: [newest tag]
+
+If the user has requested a specific version AND the current version is known, compare them. If the target version is older than the current version, warn:
+
+> The target version `[target]` is older than the current version `[current]`. This is a **downgrade**. Downgrades may remove features or reintroduce fixed bugs. Proceed anyway?
 
 If no tags are found (the tag list is empty), inform the user:
 
@@ -705,9 +711,11 @@ If the update causes problems after completion, use these recovery steps.
 ### Rollback a Completed Update
 
 ```text
-1. Find the merge commit from the update:
-   git log --oneline -5
-   # Look for "Update claude-toolkit to <version>" commit(s)
+1. Find the update commits:
+   git log --oneline --grep='toolkit' -5
+   # Look for: "Update claude-toolkit from X to Y" (post-update commit)
+   # and: "Update claude-toolkit to <ref>" or "Merge commit" (subtree pull)
+   # Typically there are 2 commits: the subtree merge + the post-update commit.
 
 2. Revert the update commit(s) in reverse order (newest first):
    git revert <post-update-commit> --no-edit   # if Phase U5 created one
@@ -749,7 +757,7 @@ If validation fails in Phase U3 and the user wants to abort after the subtree pu
 | `git` not installed | Inform user and stop. Git is required for all update operations (fetch, subtree pull, commit). |
 | `jq` not installed | Inform user and stop. jq is required for manifest and settings operations during post-update steps. |
 | `python3` not found or < 3.11 | Inform user and stop. python3 3.11+ is required for settings generation and config cache refresh. |
-| `git fetch claude-toolkit` fails | Check that the `claude-toolkit` remote exists: `git remote -v`. If missing, ask the user for the remote URL and add it: `git remote add claude-toolkit <url>`. Retry the fetch. If fetch fails due to authentication, check SSH keys or HTTPS credentials. |
+| `git fetch claude-toolkit` fails | 1) Check that the `claude-toolkit` remote exists: `git remote -v`. If missing, ask the user for the remote URL and add it. 2) If remote exists but fetch fails with "Could not resolve host" or connection timeout: network may be down. Suggest: check connectivity, retry later. 3) If "Permission denied" or "Authentication failed": check SSH keys (`ssh -T git@github.com`) or HTTPS credentials. |
 | Version not found | If the user-requested version tag does not exist in the tag list, show available versions and ask the user to choose one. Do not proceed with a non-existent tag. |
 | Version missing `v` prefix | The CLI requires version tags to start with `v` (e.g., `v1.3.0`). If the user provides a bare version like `1.3.0`, prepend `v` automatically. |
 | Uncommitted changes in `.claude/toolkit/` | The CLI refuses to update with local subtree modifications. Options: commit/stash changes first, or pass `--force` to bypass (discards local changes). |

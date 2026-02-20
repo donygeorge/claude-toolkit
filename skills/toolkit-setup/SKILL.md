@@ -846,7 +846,25 @@ git add .claude/agent-memory/*/MEMORY.md 2>/dev/null
 
 Note: `toolkit-cache.env` is generated and gitignored — do NOT stage it. Do NOT stage `.claude/settings.json.pre-toolkit` or `.mcp.json.pre-toolkit` (these are local backups).
 
-#### Step 8.3: Commit
+#### Step 8.3: Pre-commit check
+
+Before committing, verify the repository is not in detached HEAD state:
+
+```bash
+git symbolic-ref -q HEAD
+```
+
+If this fails (detached HEAD), inform the user:
+
+> Repository is in detached HEAD state. Create a branch before committing:
+>
+> ```bash
+> git checkout -b setup-toolkit
+> ```
+
+**Wait for user to create a branch before committing.**
+
+#### Step 8.4: Commit
 
 Write a descriptive commit message and commit:
 

@@ -112,6 +112,18 @@ If `shellcheck` is not found, warn the user:
 
 The contribution can still proceed, but the user should run shellcheck manually before submitting.
 
+Also verify that `pytest` is available (required for Phase C3 validation):
+
+```bash
+python3 -m pytest --version
+```
+
+If pytest is not found, inform the user:
+
+> `pytest` is required for test validation in Phase C3. Install it: `pip install pytest` or `pipx install pytest`.
+
+**Stop here** if pytest is missing — test validation is mandatory for contributions.
+
 Check toolkit installation:
 
 ```bash
@@ -563,15 +575,12 @@ git push origin contribute/<brief-description>
 # Then open a PR from your fork to the upstream repo
 ```
 
-**Direct push workflow** (uses `git subtree push` to extract and push):
+**Direct push workflow** (for maintainers with write access to the toolkit repo):
+
+**IMPORTANT**: The `.claude/toolkit/` directory is NOT a standalone git repository — it shares the project's `.git`. You cannot create branches inside it. Always clone the toolkit repo separately to contribute changes.
 
 ```bash
-# Option A: Use git subtree push (pushes ALL subtree changes, not just the contribution)
-git subtree push --prefix=.claude/toolkit claude-toolkit contribute/<brief-description>
-# Then open a PR on the toolkit repo
-# Note: This creates a branch containing the full subtree history, not just your changes
-
-# Option B: Clone the toolkit repo and apply the patch
+# Clone the toolkit repo and apply the patch
 TOOLKIT_URL=$(git remote get-url claude-toolkit)
 git clone "$TOOLKIT_URL" /tmp/toolkit-direct-push
 cd /tmp/toolkit-direct-push
