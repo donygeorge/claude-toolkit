@@ -69,11 +69,29 @@ jq --version
 python3 --version
 ```
 
-If `git` is not found, inform the user and **stop here** — updates require git for fetch, subtree pull, and commit operations.
+If `git` is not found, inform the user:
 
-If `jq` is not found, inform the user and **stop here** — jq is required for manifest and settings operations during post-update steps.
+> `git` is required for fetch, subtree pull, and commit operations. Install it:
+>
+> - macOS: `xcode-select --install`
+> - Ubuntu/Debian: `sudo apt-get install git`
 
-If `python3` is not found, inform the user and **stop here** — python3 is required for settings generation and config cache refresh during post-update validation.
+**Stop here** if git is missing.
+
+If `jq` is not found, inform the user:
+
+> `jq` is required for manifest and settings operations during post-update steps. Install it:
+>
+> - macOS: `brew install jq`
+> - Ubuntu/Debian: `sudo apt-get install jq`
+
+**Stop here** if jq is missing.
+
+If `python3` is not found, inform the user:
+
+> `python3 3.11+` is required for settings generation and config cache refresh. Install it from [python.org](https://python.org) or via your package manager.
+
+**Stop here** if python3 is missing.
 
 If `python3` is found, verify the version is 3.11+ (required for `tomllib`):
 
@@ -85,7 +103,7 @@ If the version is below 3.11, inform the user:
 
 > Python [version] is installed but the toolkit requires 3.11+ for `tomllib` support. Please upgrade Python.
 
-**Stop here** if any required tool is missing or Python is below 3.11.
+**Stop here** if Python is below 3.11.
 
 #### Step U0.1: Check toolkit installation
 
@@ -553,21 +571,10 @@ Based on the user's choice:
 NEW_HASH=$(shasum -a 256 .claude/toolkit/<source_path> | cut -d' ' -f1)
 ```
 
-Then update the manifest using jq. For agents:
+Then update the manifest. Read `.claude/toolkit-manifest.json`, update the `toolkit_hash` field for the relevant entry, and write back using the Edit tool (preferred) or Write tool. The jq logic for reference:
 
-```bash
-jq --arg name "<agent_file>.md" --arg hash "$NEW_HASH" \
-  '.agents[$name].toolkit_hash = $hash' .claude/toolkit-manifest.json > /tmp/manifest-tmp.json
-mv /tmp/manifest-tmp.json .claude/toolkit-manifest.json
-```
-
-For rules:
-
-```bash
-jq --arg name "<rule_file>.md" --arg hash "$NEW_HASH" \
-  '.rules[$name].toolkit_hash = $hash' .claude/toolkit-manifest.json > /tmp/manifest-tmp.json
-mv /tmp/manifest-tmp.json .claude/toolkit-manifest.json
-```
+For agents: set `.agents["<agent_file>.md"].toolkit_hash` to `$NEW_HASH`
+For rules: set `.rules["<rule_file>.md"].toolkit_hash` to `$NEW_HASH`
 
 For skills, no manifest hash update is needed — the manifest does not store `toolkit_hash` for skills. The customized status is sufficient.
 

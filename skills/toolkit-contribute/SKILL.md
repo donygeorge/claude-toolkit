@@ -59,11 +59,41 @@ jq --version
 python3 --version
 ```
 
-If `git` is not found, inform the user and **stop here** — git is required for diffing, patch generation, and submission.
+If `git` is not found, inform the user:
 
-If `jq` is not found, inform the user and **stop here** — jq is required for manifest operations.
+> `git` is required for diffing, patch generation, and submission. Install it:
+>
+> - macOS: `xcode-select --install`
+> - Ubuntu/Debian: `sudo apt-get install git`
 
-If `python3` is not found, inform the user and **stop here** — python3 is required for test validation.
+**Stop here** if git is missing.
+
+If `jq` is not found, inform the user:
+
+> `jq` is required for manifest operations. Install it:
+>
+> - macOS: `brew install jq`
+> - Ubuntu/Debian: `sudo apt-get install jq`
+
+**Stop here** if jq is missing.
+
+If `python3` is not found, inform the user:
+
+> `python3 3.11+` is required for test validation. Install it from [python.org](https://python.org) or via your package manager.
+
+**Stop here** if python3 is missing.
+
+If `python3` is found, verify the version is 3.11+ (required for `tomllib`):
+
+```bash
+python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")'
+```
+
+If the version is below 3.11, inform the user:
+
+> Python [version] is installed but the toolkit requires 3.11+ for `tomllib` support. Please upgrade Python.
+
+**Stop here** if Python is below 3.11.
 
 If the contribution modifies `.sh` files, also check for `shellcheck`:
 
@@ -637,7 +667,7 @@ Example summary format:
 | ----- | -------- |
 | `git` not installed | Inform user and stop. Git is required for diffing, patch generation, and submission. |
 | `jq` not installed | Inform user and stop. jq is required for manifest operations. |
-| `python3` not installed | Inform user and stop. python3 is required for running the test suite (C3.2). |
+| `python3` not found or < 3.11 | Inform user and stop. python3 3.11+ is required for running the test suite (C3.2) and `tomllib` support. Provide install guidance: `brew install python@3.11` (macOS) or see [python.org](https://python.org). |
 | No customized files found | Inform the user that there are no candidates to contribute. Suggest using `toolkit.sh customize <path>` to take ownership of a file first, then making changes and re-running `/toolkit-contribute`. |
 | Customized file was deleted | If a file is marked as customized in the manifest but does not exist on disk, skip it and inform the user. They may need to restore it or update the manifest. |
 | Generalizability gate failure | Show which specific checks failed (H1-H7) with detailed guidance on what needs to change. Offer to help revise the change to make it generic, or let the user skip the file. Do not proceed with a file that fails any hard requirement. |

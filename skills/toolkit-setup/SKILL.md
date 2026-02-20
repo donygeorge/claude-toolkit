@@ -743,17 +743,20 @@ If the format command fails:
 
 #### Step 7.3: Verify test command
 
-If a test command was configured (from `[hooks.task-completed.gates.tests] cmd` in toolkit.toml), run it:
+If a test command was configured (from `[hooks.task-completed.gates.tests] cmd` in toolkit.toml), run it. Use the Bash tool's `timeout` parameter set to 60000 (60 seconds) to prevent hanging on long-running test suites:
 
 ```bash
-# Run the configured test command from toolkit.toml
+# Run the configured test command from toolkit.toml (with 60s timeout)
 ```
+
+Note: If the command is still running when the timeout expires, the Bash tool will terminate it. This is acceptable for a setup verification — the goal is to confirm the command starts and executes correctly, not to wait for the full suite to complete.
 
 If the test command fails:
 
 1. Check if tests are genuinely failing (not a config issue) -- this is OK, report to user
 2. If the command itself is broken (wrong path, missing dependency), adjust and re-run
-3. Iterate up to 2 times
+3. If the command timed out after starting, report `[INFO]` ("Test command starts correctly -- timed out, which is expected for large test suites")
+4. Iterate up to 2 times
 
 #### Step 7.4: Report verification results
 
