@@ -502,6 +502,7 @@ If the source exists, restore it:
 # For agents/rules: restore symlink
 ln -sf ../toolkit/agents/[file] .claude/agents/[file]
 # For skills: copy ALL files in the skill directory (skills can contain multiple files)
+mkdir -p .claude/skills/[skill]
 cp .claude/toolkit/skills/[skill]/* .claude/skills/[skill]/
 ```
 
