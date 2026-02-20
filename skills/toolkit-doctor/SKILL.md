@@ -86,6 +86,16 @@ If `.claude/toolkit.toml` does not exist, the toolkit was installed but never co
 
 #### Step H0.1: Run CLI doctor
 
+First verify the CLI doctor command exists (older toolkit versions may not have it):
+
+```bash
+bash .claude/toolkit/toolkit.sh help 2>&1
+```
+
+If the help output does not list `doctor` as a command, skip this step and proceed directly to Phase H1 — the deep analysis phases do not depend on CLI doctor output. Report `[INFO]` ("CLI doctor not available in this toolkit version — running deep analysis only").
+
+If available, run it:
+
 ```bash
 bash .claude/toolkit/toolkit.sh doctor
 ```
@@ -208,7 +218,7 @@ grep -qE '^test-changed[[:space:]]*:' Makefile 2>/dev/null
 
 Note: Makefile targets may have optional whitespace before the colon. The pattern `^target[[:space:]]*:` handles both `test-changed:` and `test-changed :` variants.
 
-3. Run the test command to verify it at least starts. Use the Bash tool's `timeout` parameter set to 30000 (30 seconds) to avoid hanging on long-running test suites. The `|| true` ensures the Bash tool does not report a non-zero exit as an error:
+3. Run the test command to verify it at least starts. Use the Bash tool's `timeout` parameter set to 60000 (60 seconds) to avoid hanging on long-running test suites (consistent with toolkit-setup's 60s timeout). The `|| true` ensures the Bash tool does not report a non-zero exit as an error:
 
 ```bash
 <test-command> 2>&1 || true
@@ -220,7 +230,7 @@ Note: If the command is still running when the timeout expires, the Bash tool wi
    - Command not found -> `[ERROR]`
    - Makefile target missing -> `[ERROR]` ("Test command 'make test-changed' references missing Makefile target")
    - Command starts but tests fail -> `[INFO]` ("Test command works -- some tests fail, which may be expected")
-   - Command timed out after starting -> `[INFO]` ("Test command starts correctly -- timed out after 30s, which is expected for full test suites")
+   - Command timed out after starting -> `[INFO]` ("Test command starts correctly -- timed out after 60s, which is normal for full test suites")
    - Command works -> `[INFO]`
 
 #### H2.3: Format commands
@@ -247,17 +257,27 @@ Check that external dependencies and credentials referenced across the configura
 
 Read `.mcp.json` and check each configured MCP server:
 
-Read the base MCP configuration using the Read tool on `.claude/toolkit/mcp/base.mcp.json` to identify the expected servers. The typical base servers are:
+Read the base MCP configuration dynamically using the Read tool on `.claude/toolkit/mcp/base.mcp.json`. Extract all server names:
 
-| Server | Dependency Check | API Key Check | If Missing |
-| ------ | ---------------- | ------------- | ---------- |
-| codex | `command -v npx` | `OPENAI_API_KEY` env var set? | `[WARN]` OPENAI_API_KEY not set -- codex MCP may not authenticate |
-| context7 | `command -v npx` | None required | `[WARN]` npx not found -- context7 MCP will not work |
-| playwright | `command -v npx` | None required | `[WARN]` npx not found -- playwright MCP will not work |
+```bash
+jq '.mcpServers // {} | keys[]' .claude/toolkit/mcp/base.mcp.json
+```
 
-Note: Always verify against the actual `mcp/base.mcp.json` content — new servers may be added in toolkit updates.
+For each base server, extract its command and check availability. Known API key requirements (update this table as new servers are added):
 
-For any additional MCP servers found in `.mcp.json` that are not in the table above:
+| Server | API Key Check | If Missing |
+| ------ | ------------- | ---------- |
+| codex | `OPENAI_API_KEY` env var set? | `[WARN]` OPENAI_API_KEY not set -- codex MCP may not authenticate |
+
+For all base servers (including any new ones not in the table above), extract the command from the config:
+
+```bash
+jq -r '.mcpServers.<name>.command // .mcpServers.<name>.args[0] // "unknown"' .claude/toolkit/mcp/base.mcp.json
+```
+
+Check if the command is available: `command -v <exe>`. If not found -> `[WARN]`.
+
+For any additional MCP servers found in `.mcp.json` that are NOT in the base config:
 
 1. Read the server's configuration and extract the `command` field (first element of `args` or the `command` key)
 2. Check if that command is available: `command -v <exe>`
@@ -412,6 +432,24 @@ Test hooks more thoroughly than the CLI doctor's 2-sample test, and check for po
 
 #### H6.1: Extended guard hook testing
 
+**Step H6.1.0: Ensure config cache is fresh** (prerequisite for all hook tests below)
+
+Hooks source `_config.sh` which reads `toolkit-cache.env`. Before running any hook tests, check if `toolkit-cache.env` exists and is fresh:
+
+```bash
+ls -la .claude/toolkit-cache.env 2>/dev/null
+```
+
+If the file does not exist or was flagged as stale in Phase H1.3, **regenerate it now** (do not wait for Phase H7):
+
+```bash
+python3 .claude/toolkit/generate-config-cache.py --toml .claude/toolkit.toml --output .claude/toolkit-cache.env
+```
+
+Without a fresh cache, hooks will use default values that produce unexpected test results.
+
+**Step H6.1.1: Run hook tests**
+
 Test `guard-destructive.sh` with multiple sample inputs:
 
 | Input | Expected | Category |
@@ -442,28 +480,14 @@ For each test, pipe the sample input to the hook via stdin with `CLAUDE_PROJECT_
 echo '<input_json>' | CLAUDE_PROJECT_DIR="$(pwd)" bash .claude/toolkit/hooks/<hook>.sh
 ```
 
-**Prerequisite**: Hooks source `_config.sh` which reads `toolkit-cache.env`. Before running any hook tests, check if `toolkit-cache.env` exists and is fresh:
-
-```bash
-ls -la .claude/toolkit-cache.env 2>/dev/null
-```
-
-If the file does not exist or was flagged as stale in Phase H1.3, **regenerate it now** (do not wait for Phase H7):
-
-```bash
-python3 .claude/toolkit/generate-config-cache.py --toml .claude/toolkit.toml --output .claude/toolkit-cache.env
-```
-
-Without a fresh cache, hooks will use default values that produce unexpected test results.
-
 Check the exit code and stdout. Each unexpected result -> `[ERROR]` ("Hook '[hook]' returned unexpected result for '[category]' input: expected [expected], got exit code [actual]")
 
 #### H6.2: Hook conflict detection
 
 Analyze the logical relationship between guard hooks and auto-approve:
 
-1. Read the auto-approve write paths from the toolkit config
-2. Read the sensitive-write guard's deny patterns (from the hook source code -- look for patterns like `.env`, `credentials`, `.ssh`, `settings.json`)
+1. Read the auto-approve write paths from `toolkit-cache.env` (variable `TOOLKIT_AUTO_APPROVE_WRITE_PATHS`) or parse from `toolkit.toml` `[hooks.auto-approve] write_paths`
+2. Read the sensitive-write guard's deny patterns from `.claude/toolkit/hooks/guard-sensitive-writes.sh` — search for `case` statements or regex patterns that match file paths (e.g., `.env`, `credentials`, `.ssh`, `settings.json`). Also check the `permissions.deny` list in `.claude/settings.json` for additional denied patterns.
 3. Check if any auto-approve pattern would match a file that the guard would deny
 
 For example, if auto-approve includes `*/.claude/*` and guard-sensitive-writes denies `.claude/settings.json`, that is a potential conflict where the auto-approve would approve a write that the guard would subsequently deny.

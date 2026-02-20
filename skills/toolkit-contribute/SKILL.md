@@ -101,7 +101,16 @@ If the contribution modifies `.sh` files, also check for `shellcheck`:
 shellcheck --version
 ```
 
-If `shellcheck` is not found, warn the user that Step C3.1 (shellcheck validation) will be skipped. The contribution can still proceed, but the user should run shellcheck manually before submitting.
+If `shellcheck` is not found, warn the user:
+
+> `shellcheck` is not installed. Step C3.1 (shellcheck validation) will be skipped. Install it:
+>
+> - macOS: `brew install shellcheck`
+> - Ubuntu/Debian: `sudo apt-get install shellcheck`
+>
+> Without shellcheck, your contribution may be rejected by toolkit CI which requires all `.sh` files to pass `shellcheck -x -S warning`.
+
+The contribution can still proceed, but the user should run shellcheck manually before submitting.
 
 Check toolkit installation:
 
@@ -148,7 +157,12 @@ For each candidate file, generate a detailed diff against the toolkit source. Th
 **Rules**: `diff -u .claude/toolkit/rules/<name>.md .claude/rules/<name>.md`
 **Skills**: `diff -u .claude/toolkit/skills/<skill_name>/SKILL.md .claude/skills/<skill_name>/SKILL.md` (also diff any companion files like `output-schema.json`)
 
-Before diffing, verify the installed file actually exists on disk. If a customized file was deleted, skip it and inform the user it needs to be restored.
+Before diffing, verify the installed file actually exists on disk. If a customized file was deleted, skip it and inform the user how to restore it:
+
+> File `[path]` is marked as customized in the manifest but does not exist on disk. To restore it:
+>
+> - From toolkit source: `cp .claude/toolkit/<source_path> .claude/<installed_path>`
+> - From git history: `git checkout HEAD -- .claude/<installed_path>`
 
 If the diff is empty (the customized file is identical to the toolkit source), skip it:
 

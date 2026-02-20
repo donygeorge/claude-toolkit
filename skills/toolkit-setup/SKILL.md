@@ -145,9 +145,9 @@ Parse the JSON output. Focus on the `toolkit_state` section:
 
 #### Step 0.3: Handle issues based on state
 
-Handle issues **in the order listed below**. The toolkit.toml check MUST be resolved first — `init --force` requires toolkit.toml to exist.
+Handle issues **in the numbered order below**. Each sub-step has a gate condition — skip it if the condition is not met. The toolkit.toml check (0.3.1) MUST run first because `init --force` (0.3.2-0.3.3) requires toolkit.toml to exist.
 
-**If `toml_exists` is false** (subtree exists but no toolkit.toml):
+**Step 0.3.1** — If `toml_exists` is false (subtree exists but no toolkit.toml):
 
 ```bash
 bash .claude/toolkit/toolkit.sh init --from-example
@@ -155,11 +155,11 @@ bash .claude/toolkit/toolkit.sh init --from-example
 
 Report to user: "No toolkit.toml found. Created one from the example template."
 
-Note: `init --from-example` runs the full init flow (agents, skills, rules, config, manifest). After this completes, skip the missing skills/agents check below — the init just created them.
+Note: `init --from-example` runs the full init flow (agents, skills, rules, config, manifest). After this completes, **skip Steps 0.3.2 and 0.3.3** — the init just created agents, skills, and symlinks. Proceed directly to Step 0.3.4.
 
-**If skills or agents are missing** (`missing_skills` or `missing_agents` non-empty):
+**Step 0.3.2** — If skills or agents are missing (`missing_skills` or `missing_agents` non-empty) AND Step 0.3.1 was NOT executed:
 
-Only run this if `init --from-example` was NOT just executed above (that already handles missing skills/agents). This is a partial install. Fill the gaps (requires toolkit.toml to exist — handle that first):
+This is a partial install. Fill the gaps:
 
 ```bash
 bash .claude/toolkit/toolkit.sh init --force
@@ -167,11 +167,7 @@ bash .claude/toolkit/toolkit.sh init --force
 
 Report to user: "Detected missing skills/agents. Ran `toolkit.sh init --force` to fill gaps."
 
-**If `toml_is_example` is true** (toolkit.toml is still the unmodified example):
-
-Note: "toolkit.toml is still the default example. This setup will customize it for your project."
-
-**If broken symlinks exist** (`broken_symlinks` non-empty):
+**Step 0.3.3** — If broken symlinks exist (`broken_symlinks` non-empty) AND neither Step 0.3.1 nor Step 0.3.2 was executed:
 
 Note: The `broken_symlinks` array contains paths **relative to `.claude/`** (e.g., `agents/reviewer.md`, not `.claude/agents/reviewer.md`).
 
@@ -181,7 +177,11 @@ bash .claude/toolkit/toolkit.sh init --force
 
 Report the broken symlinks that were found and fixed.
 
-**If `settings_generated` is false** (settings.json does not exist):
+**Step 0.3.4** — If `toml_is_example` is true (toolkit.toml is still the unmodified example):
+
+Note: "toolkit.toml is still the default example. This setup will customize it for your project."
+
+**Step 0.3.5** — If `settings_generated` is false (settings.json does not exist):
 
 The config is stale or was never generated. Regenerate it now:
 
@@ -192,7 +192,7 @@ bash .claude/toolkit/toolkit.sh generate-settings
 
 Report to user: "Settings were missing or stale. Regenerated settings.json and config cache."
 
-#### Step 0.3.5: Detect migration edge cases
+#### Step 0.3.6: Detect migration edge cases
 
 These checks catch problems from interrupted installs or partial migrations.
 
@@ -222,7 +222,7 @@ for hook in .claude/toolkit/hooks/*.sh; do
 done
 ```
 
-Note: Do NOT use `find ... -perm` for this check — the `-perm` flag syntax differs between macOS (`-perm +111`) and Linux (`-perm /111`), causing false results.
+Note: We use `[ ! -x ]` (portable) instead of `find ... -perm` because the `-perm` flag syntax differs between macOS and Linux.
 
 If any are found: `chmod +x .claude/toolkit/hooks/*.sh`
 
@@ -237,9 +237,9 @@ if [ -d .claude/skills ]; then
 fi
 ```
 
-If found, re-copy files from the toolkit source for each orphaned skill directory. **Before copying, check if the corresponding toolkit source directory exists** — if `.claude/toolkit/skills/<name>/` does not exist, the skill directory is not from the toolkit (it may be a user-created skill). Leave it alone and move on.
+If found, re-copy files from the toolkit source for each orphaned skill directory. **Before copying, check that the corresponding toolkit source directory exists AND contains a non-empty SKILL.md** — if `.claude/toolkit/skills/<name>/` does not exist, the skill directory is not from the toolkit (it may be a user-created skill). If the directory exists but `SKILL.md` is missing or empty, the toolkit source itself is incomplete — skip and warn.
 
-For toolkit-sourced skills:
+For toolkit-sourced skills with a valid SKILL.md:
 
 ```bash
 mkdir -p .claude/skills/<name>
@@ -338,17 +338,17 @@ Display a brief summary to the user:
 
 Validate that detected commands actually work by running them directly.
 
-For each detected command (lint, test, format), run it manually:
+For each detected command (lint, test, format), run it with a version check. Use the Bash tool's `timeout` parameter set to 10000 (10 seconds) to prevent hanging on broken or network-dependent tools:
 
 ```bash
-# Example: validate lint command
+# Example: validate lint command (with 10s timeout)
 ruff --version    # Check if the tool is available
 ```
 
 **For each command**:
 
-- If the tool is available and responds to `--version`: keep the command
-- If not found: note the failure
+- If the tool is available and responds to `--version` within the timeout: keep the command
+- If not found or timed out: note the failure
 
 Display validation results to the user:
 
@@ -362,8 +362,7 @@ Display validation results to the user:
 
 1. Check local installations first:
    - Python: check `.venv/bin/` or `poetry run <cmd>` or `pipx run <cmd>`
-   - TypeScript/JS: check `npx <cmd>`, `npm run <script>`, `node_modules/.bin/<cmd>`
-   - Check if `node_modules` is missing but `package.json` exists (needs `npm install`)
+   - TypeScript/JS: first check if `node_modules` exists when `package.json` is present — if missing, prompt to run `npm install` before checking tools. Then check `npx <cmd>`, `npm run <script>`, `node_modules/.bin/<cmd>`
 2. If the tool exists locally, use the local invocation (e.g., `npx eslint` instead of `eslint`)
 3. If not found anywhere, offer to install it or ask for an alternative:
 
@@ -501,7 +500,7 @@ Tell the user:
 
 #### If CLAUDE.md already exists
 
-Do NOT overwrite the existing file. Instead, check if it already mentions the toolkit. If not, append a toolkit section.
+Do NOT overwrite the existing file. Instead, check if it already mentions the toolkit using a case-insensitive search for "toolkit", "claude-toolkit", or ".claude/toolkit". If any match is found, the toolkit section already exists. If not, append a toolkit section.
 
 To get the toolkit's remote URL (for linking in the section), run:
 
@@ -541,11 +540,12 @@ Before generating settings, ensure the config cache is fresh:
 python3 .claude/toolkit/generate-config-cache.py --toml .claude/toolkit.toml --output .claude/toolkit-cache.env
 ```
 
-If this fails, `toolkit.toml` has syntax or schema errors. Read the error output, fix the TOML file using the **Edit tool**, and re-run. Common causes:
+If this fails, `toolkit.toml` has syntax or schema errors. Read the error output, fix the TOML file using the **Edit tool**, and re-run. Common causes and fixes:
 
-- Unknown TOML section (check against `.claude/toolkit/templates/toolkit.toml.example`)
-- Wrong value type (e.g., string where int expected)
-- Invalid enum value (e.g., `mode = "fast"` instead of `"deep"` or `"quick"`)
+- **Unknown TOML section**: A key like `[hooks.unknown]` does not exist in the schema. Check `.claude/toolkit/templates/toolkit.toml.example` for valid sections.
+- **Wrong value type**: e.g., `timeout = "90"` (string) should be `timeout = 90` (integer). TOML is strict about types.
+- **Invalid enum value**: e.g., `tdd_enforcement = "always"` should be `"strict"`, `"guided"`, or `"off"`. Check the example template for allowed values.
+- **Syntax error**: Missing quotes, unclosed brackets, or duplicate keys. The error output will include a line number — read that line in toolkit.toml.
 
 #### Step 6.2: Generate settings
 
@@ -569,7 +569,7 @@ Run validation:
 bash .claude/toolkit/toolkit.sh validate
 ```
 
-If validation reports errors or warnings, apply fixes for each issue type using the table below. Then **re-run validation**. Repeat up to **2 rounds** of fix-then-validate.
+If validation reports errors or warnings, apply ALL applicable fixes from the table below in priority order. After applying all fixes for this round, re-run validation. This is one round. Repeat for at most **2 rounds** total. If a fix introduces a NEW error not seen before, that counts toward the same round. After 2 rounds with persistent errors, stop and report to user.
 
 **Auto-fix procedures** (apply in order of priority):
 
@@ -755,7 +755,7 @@ If the test command fails:
 
 1. Check if tests are genuinely failing (not a config issue) -- this is OK, report to user
 2. If the command itself is broken (wrong path, missing dependency), adjust and re-run
-3. If the command timed out after starting, report `[INFO]` ("Test command starts correctly -- timed out, which is expected for large test suites")
+3. If the command timed out: check whether any output was produced before the timeout. If yes: report "Test command starts correctly -- timed out after 60s, which is expected for large test suites." If no output at all: report "Test command may be hung or misconfigured -- no output produced before timeout."
 4. Iterate up to 2 times
 
 #### Step 7.4: Report verification results

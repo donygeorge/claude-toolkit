@@ -166,6 +166,8 @@ Note: The CLI's `toolkit.sh update` command checks for uncommitted `.claude/tool
 
 **Ask the user**: commit or stash changes first, use `--force` to bypass, or abort?
 
+If the user chooses `--force`, remember this choice and pass the `--force` flag to the `toolkit.sh update` command in Phase U2 Step U2.1.
+
 **Do NOT proceed until the user confirms.**
 
 #### Step U0.5: Check toolkit remote
@@ -286,9 +288,9 @@ Run the toolkit update and handle any conflicts.
 bash .claude/toolkit/toolkit.sh update [version]
 ```
 
-Replace `[version]` with the user's chosen version tag (e.g., `v1.3.0`). **Important**: The version MUST start with `v` — the CLI parser matches `v*` patterns, so bare version numbers like `1.3.0` will be rejected as an unknown option. Omit the version to update to the latest semver release tag. Use `--latest` to pull from the `main` branch instead of a release tag.
+Replace `[version]` with the user's chosen version tag (e.g., `v1.3.0`). The CLI parser recognizes version arguments by matching the `v*` pattern — arguments starting with `v` are treated as version tags, while arguments without the `v` prefix are treated as unknown options and rejected. Omit the version to update to the latest semver release tag. Use `--latest` to pull from the `main` branch instead of a release tag.
 
-If the user provides a version without the `v` prefix, prepend it automatically (e.g., `1.3.0` becomes `v1.3.0`).
+If the user provides a version without the `v` prefix, prepend it automatically (e.g., `1.3.0` becomes `v1.3.0`) so the CLI recognizes it as a version argument.
 
 #### Step U2.2: Check if already up to date
 
@@ -374,7 +376,7 @@ bash .claude/toolkit/toolkit.sh validate
 Review the full output, paying special attention to:
 
 - **Symlink section**: If broken symlinks exist, run `bash .claude/toolkit/toolkit.sh init --force`.
-- **Settings protection section**: If validate warns about "project-specific settings but no settings-project.json", this means the project had custom settings that aren't in the project overlay. The update command auto-preserves these for **legacy installs without settings-project.json only**. If settings-project.json already existed before the update, the preservation step is skipped (assumes settings-project.json already captures custom settings). If the warning appears, fix it immediately:
+- **Settings protection section**: If validate warns about "project-specific settings but no settings-project.json", this means the project had custom settings that aren't in the project overlay. The update command auto-preserves these for **legacy installs without settings-project.json only**. If settings-project.json already existed before the update, the preservation step is skipped — but first verify it is valid JSON (`python3 -c "import json; json.load(open('.claude/settings-project.json'))"`) since a corrupt file would silently lose project settings. If the warning appears, fix it immediately:
 
   ```bash
   cp .claude/settings.json.pre-toolkit .claude/settings-project.json
@@ -389,7 +391,7 @@ If other issues are found, attempt auto-fix (init --force, chmod +x). Retry up t
 bash .claude/toolkit/toolkit.sh generate-settings
 ```
 
-Note: This command internally regenerates the config cache (`toolkit-cache.env`) before producing `settings.json` and `.mcp.json`, so it does not depend on Check 8 running first.
+Note: The `generate-settings` command internally regenerates the config cache (`toolkit-cache.env`) before producing `settings.json` and `.mcp.json`. Check 8 (explicit config cache regeneration) serves as a secondary verification — if it fails there, the TOML may have schema issues that `generate-settings` masked.
 
 If this fails: check toolkit.toml for compatibility with the new toolkit version. The update may have introduced new config keys or changed schema validation. Read the error output carefully. **Ask the user** if the error is unclear.
 
@@ -462,13 +464,13 @@ Note: Check 3 (generate-settings) already regenerates the cache internally. This
 
 #### Check 9: Project test suite
 
-Read the test command from `.claude/toolkit.toml` at `[hooks.task-completed.gates.tests] cmd`. If no test command is configured, skip this check.
+Read the test command from `.claude/toolkit.toml` at `[hooks.task-completed.gates.tests] cmd`. If no test command is configured (key absent or empty), skip this check.
 
-Run the configured test command. If tests fail: determine whether the failure is related to the toolkit update or a pre-existing issue. **Ask the user** if the failure is unclear or requires a judgment call.
+Run the configured test command with the Bash tool's `timeout` parameter set to 60000 (60 seconds) to avoid blocking the update on slow test suites. If the command times out after producing output, treat it as "starts correctly." If tests fail: determine whether the failure is related to the toolkit update or a pre-existing issue. **Ask the user** if the failure is unclear or requires a judgment call.
 
 #### Check 10: Project lint
 
-Read the lint command from `.claude/toolkit.toml` at `[hooks.task-completed.gates.lint] cmd`. If no lint command is configured, skip this check.
+Read the lint command from `.claude/toolkit.toml` at `[hooks.task-completed.gates.lint] cmd`. If no lint command is configured (key absent or empty), skip this check.
 
 Run the configured lint command. If lint fails: determine whether the failure is related to the toolkit update or a pre-existing issue. **Ask the user** if the failure is unclear.
 
@@ -515,14 +517,15 @@ shasum -a 256 .claude/toolkit/<source_path>
 
 If the hash differs from what the manifest records, there is drift — the toolkit source changed since the file was customized.
 
-**For skills**: The manifest does NOT store `toolkit_hash` for skills (it only stores the file list). To detect drift, compare each file in the customized skill directory against the corresponding toolkit source file directly. **First check if the toolkit source file still exists** — if it was deleted upstream in this update, inform the user that the skill was removed from the toolkit and skip drift checking for it.
+**For skills**: The manifest does NOT store `toolkit_hash` for skills (it only stores the file list). To detect drift, compare each file in the customized skill directory against the corresponding toolkit source file directly. **First check if the toolkit source directory AND SKILL.md still exist** — if the entire directory was deleted upstream, or SKILL.md is missing, the skill was removed from the toolkit.
 
 ```bash
-# Check existence first
+# Check directory and SKILL.md existence
+ls -d .claude/toolkit/skills/<name>/ 2>/dev/null
 ls .claude/toolkit/skills/<name>/SKILL.md 2>/dev/null
 ```
 
-If the toolkit source file does NOT exist (the `ls` command shows no output or fails), the skill was removed upstream in this update. Inform the user:
+If the toolkit source directory or SKILL.md does NOT exist, the skill was removed upstream in this update. Inform the user:
 
 > Skill `[name]` was removed from the toolkit in this update. Your customized version in `.claude/skills/[name]/` is preserved but will no longer receive upstream updates. You may keep it as a standalone custom skill or delete it.
 
@@ -647,7 +650,7 @@ Before staging, check if there are actually changes to commit:
 git status --porcelain
 ```
 
-If there are no changes (output is empty), all update changes were captured in the subtree merge commit. No additional commit is needed -- skip to the summary output and inform the user.
+If there are no changes (output is empty), verify the subtree merge commit exists by checking `git log --oneline -1 --grep='Update claude-toolkit'`. If found, all update changes were captured in that commit — no additional commit is needed. If NOT found (e.g., the update was rolled back or aborted mid-flow), warn the user that changes may be lost. Skip to the summary output.
 
 If there are changes, stage all changed files individually. Do NOT use `git add .` or `git add -A`.
 
