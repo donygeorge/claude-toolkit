@@ -42,6 +42,7 @@ defaults:
 | Rule | Description |
 | ---- | ----------- |
 | **1. Converge, don't expand** | Each iteration must reduce the finding count; never introduce scope creep during refinement. |
+| **1.5. Always iterate — never single-pass** | Even if the scope appears small or simple, you MUST run at least 2 full iterations (evaluate-fix-validate-commit). Single-pass execution violates the loop convergence model. |
 | **2. Measure improvement per iteration** | Track new findings and fixes quantitatively; stop when the convergence threshold is met. |
 | **3. Stop when converged** | Honor convergence signals (clean eval, plateau, max iterations); do not run extra iterations. |
 | **4. Fresh agents per phase** | Always spawn new Task() agents for Evaluate and Fix phases to prevent context contamination. |
@@ -51,6 +52,7 @@ defaults:
 
 | Rationalization | Why It Is Wrong | Correct Behavior |
 | --------------- | --------------- | ---------------- |
+| "This scope is simple enough for one pass" | Single-pass execution bypasses iterative refinement and convergence detection; small scopes often reveal issues only after the first fix attempt | Run at least 2 full iterations; convergence signals (clean eval, plateau) will stop the loop if truly converged |
 | "Good enough for now" | Stopping before convergence signals are met leaves known issues unfixed; the threshold exists for a reason | Check the convergence criteria: clean eval, plateau detection, or max iterations; only stop when one of these signals fires |
 | "Diminishing returns, let us stop early" | Subjective judgment of diminishing returns bypasses the quantitative plateau detection that tracks findings per iteration | Let the plateau detector decide: if the last 2 iterations produced fewer than `convergence_threshold` new findings, the system will stop automatically |
 | "This finding is a false positive" | Dismissing findings without verification hides real issues; the evaluator agent flagged it for a reason | Investigate the finding: read the code, check the context; if genuinely false, defer it with a documented reason so the deferred findings lifecycle tracks it |
@@ -169,6 +171,15 @@ artifacts/loop/<scope-slug>/<run-id>/
 
 ### Step 1: Iteration Loop
 
+**CRITICAL**: You MUST run multiple iterations. Do NOT attempt to:
+- Complete the task in a single evaluate-fix-commit cycle
+- Decide "this is simple enough for one pass"
+- Skip iteration 2 because iteration 1 "looks good"
+
+The loop skill requires iterative refinement. Run **at least 2 iterations** before convergence signals can stop the loop.
+
+---
+
 For each iteration (1 to max_iterations):
 
 #### Phase A: Evaluate (Fresh Agent)
@@ -188,7 +199,9 @@ Spawn a fresh Task() agent (most capable tier) to evaluate the scope.
 
 #### Phase B: Convergence Check
 
-**Convergence signals** (ANY triggers convergence):
+**Convergence signals** (ANY triggers convergence, ONLY after iteration 2+):
+
+**IMPORTANT**: Convergence signals are ONLY evaluated starting at iteration 2. Iteration 1 always proceeds to iteration 2, regardless of findings count.
 
 1. **Clean eval**: Zero new findings from Phase A
 2. **Plateau**: Fewer than 2 new findings for 2 consecutive iterations
