@@ -300,7 +300,7 @@ If `--reconfigure` was passed, skip the state-based shortcuts above and proceed 
 
 ### Phase 1: Project Discovery
 
-Run the detection script to auto-detect project properties. Note: this is the SAME command as Phase 0 Step 0.2 — if no changes were made in Phase 0 (no `init --force`, no `init --from-example`), reuse the cached JSON output. If Phase 0 made changes, re-run detection to get fresh results.
+Run the detection script to auto-detect project properties. Note: this is the SAME command as Phase 0 Step 0.2 — if no changes were made in Phase 0 (no `init --force`, no `init --from-example`), you can skip re-running detection and reuse the JSON output you already parsed in Step 0.2. If Phase 0 made changes (init, symlink fixes, etc.), re-run detection to get fresh results that reflect the repaired state.
 
 ```bash
 python3 .claude/toolkit/detect-project.py --project-dir .

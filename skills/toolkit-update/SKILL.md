@@ -66,11 +66,26 @@ Verify required tools are available:
 ```bash
 git --version
 jq --version
+python3 --version
 ```
 
 If `git` is not found, inform the user and **stop here** — updates require git for fetch, subtree pull, and commit operations.
 
 If `jq` is not found, inform the user and **stop here** — jq is required for manifest and settings operations during post-update steps.
+
+If `python3` is not found, inform the user and **stop here** — python3 is required for settings generation and config cache refresh during post-update validation.
+
+If `python3` is found, verify the version is 3.11+ (required for `tomllib`):
+
+```bash
+python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")'
+```
+
+If the version is below 3.11, inform the user:
+
+> Python [version] is installed but the toolkit requires 3.11+ for `tomllib` support. Please upgrade Python.
+
+**Stop here** if any required tool is missing or Python is below 3.11.
 
 #### Step U0.1: Check toolkit installation
 
@@ -259,7 +274,7 @@ If the user provides a version without the `v` prefix, prepend it automatically 
 
 After the update command completes, check whether anything actually changed. The primary signal is the **command output** from Step U2.1, not a diff:
 
-1. **Check the subtree pull output**: If it contains "Already up to date", no merge commit was created and `HEAD` is unchanged.
+1. **Check the subtree pull output**: If it contains "Already up to date" (or "Already up-to-date" on older git versions), no merge commit was created and `HEAD` is unchanged.
 2. **If the output does NOT say "Already up to date"**, a merge commit was created. Verify changes:
 
 ```bash
@@ -354,7 +369,9 @@ If other issues are found, attempt auto-fix (init --force, chmod +x). Retry up t
 bash .claude/toolkit/toolkit.sh generate-settings
 ```
 
-If this fails: check toolkit.toml for compatibility with the new toolkit version. **Ask the user** if the error is unclear.
+Note: This command internally regenerates the config cache (`toolkit-cache.env`) before producing `settings.json` and `.mcp.json`, so it does not depend on Check 8 running first.
+
+If this fails: check toolkit.toml for compatibility with the new toolkit version. The update may have introduced new config keys or changed schema validation. Read the error output carefully. **Ask the user** if the error is unclear.
 
 #### Check 4: JSON validity
 
@@ -421,7 +438,7 @@ chmod +x .claude/toolkit/hooks/*.sh
 python3 .claude/toolkit/generate-config-cache.py --toml .claude/toolkit.toml --output .claude/toolkit-cache.env
 ```
 
-Regenerate the config cache to ensure it reflects any new config options from the update.
+Note: Check 3 (generate-settings) already regenerates the cache internally. This explicit regeneration serves as a verification step — if it fails here, the TOML may have schema issues that Check 3 masked. It also ensures the cache file timestamp is fresh for subsequent mtime-based staleness checks by hooks.
 
 #### Check 9: Project test suite
 
@@ -534,7 +551,22 @@ Based on the user's choice:
 
 ```bash
 NEW_HASH=$(shasum -a 256 .claude/toolkit/<source_path> | cut -d' ' -f1)
-# Use jq to update the toolkit_hash for this file's entry in .claude/toolkit-manifest.json
+```
+
+Then update the manifest using jq. For agents:
+
+```bash
+jq --arg name "<agent_file>.md" --arg hash "$NEW_HASH" \
+  '.agents[$name].toolkit_hash = $hash' .claude/toolkit-manifest.json > /tmp/manifest-tmp.json
+mv /tmp/manifest-tmp.json .claude/toolkit-manifest.json
+```
+
+For rules:
+
+```bash
+jq --arg name "<rule_file>.md" --arg hash "$NEW_HASH" \
+  '.rules[$name].toolkit_hash = $hash' .claude/toolkit-manifest.json > /tmp/manifest-tmp.json
+mv /tmp/manifest-tmp.json .claude/toolkit-manifest.json
 ```
 
 For skills, no manifest hash update is needed — the manifest does not store `toolkit_hash` for skills. The customized status is sufficient.
@@ -694,6 +726,7 @@ If validation fails in Phase U3 and the user wants to abort after the subtree pu
 | ----- | -------- |
 | `git` not installed | Inform user and stop. Git is required for all update operations (fetch, subtree pull, commit). |
 | `jq` not installed | Inform user and stop. jq is required for manifest and settings operations during post-update steps. |
+| `python3` not found or < 3.11 | Inform user and stop. python3 3.11+ is required for settings generation and config cache refresh. |
 | `git fetch claude-toolkit` fails | Check that the `claude-toolkit` remote exists: `git remote -v`. If missing, ask the user for the remote URL and add it: `git remote add claude-toolkit <url>`. Retry the fetch. If fetch fails due to authentication, check SSH keys or HTTPS credentials. |
 | Version not found | If the user-requested version tag does not exist in the tag list, show available versions and ask the user to choose one. Do not proceed with a non-existent tag. |
 | Version missing `v` prefix | The CLI requires version tags to start with `v` (e.g., `v1.3.0`). If the user provides a bare version like `1.3.0`, prepend `v` automatically. |

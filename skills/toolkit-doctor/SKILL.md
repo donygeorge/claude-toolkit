@@ -101,8 +101,8 @@ If doctor reports failures:
 
 | Doctor Failure | Auto-Fix |
 | -------------- | -------- |
-| Missing required tool (git, jq, python3) | `[ERROR]` from CLI. Manual install required. Provide platform-specific install commands (see H3.2 table). Cannot auto-fix — **stop deeper analysis** if jq or python3 is missing (needed for subsequent checks). |
-| Python version < 3.11 | `[ERROR]` from CLI. Manual upgrade required. Inform user that `tomllib` requires Python 3.11+. |
+| Missing required tool (git, jq, python3) | `[ERROR]` from CLI. Manual install required. Provide platform-specific install commands: git (`xcode-select --install` / `apt install git`), jq (`brew install jq` / `apt install jq`), python3 (`brew install python3` / `apt install python3`). Cannot auto-fix — **stop deeper analysis** if jq or python3 is missing (needed for subsequent checks). |
+| Python version < 3.11 | `[ERROR]` from CLI. Manual upgrade required. Inform user: "Python [version] requires upgrade to 3.11+ for `tomllib` support. Install via `brew install python@3.11` (macOS) or `apt install python3.11` (Ubuntu/Debian) or from [python.org](https://python.org)." |
 | Missing config cache | `python3 .claude/toolkit/generate-config-cache.py --toml .claude/toolkit.toml --output .claude/toolkit-cache.env` |
 | Stale config cache | Same as above |
 | Broken symlinks | `bash .claude/toolkit/toolkit.sh init --force` |
@@ -607,6 +607,7 @@ List all modified files at the end:
 | Error | Recovery |
 | ----- | -------- |
 | `toolkit.sh doctor` fails entirely | Report `[ERROR]` with the error output. Ask user whether to continue with deeper analysis or abort. |
+| `python3` not found or < 3.11 | Report `[ERROR]` from CLI doctor. Stop deeper analysis — python3 is required for detection (H1), config cache (H1.3), and TOML validation (H1.5). Provide install guidance: `brew install python@3.11` (macOS) or `apt install python3.11` (Linux). |
 | `detect-project.py` fails | Skip H1.1 and H1.4 (stack and command comparison). Report `[WARN]` ("Detection script failed -- some coherence checks were skipped"). Continue with remaining phases. |
 | toolkit.toml parse error | Report `[ERROR]` in H1.5. Skip H1.4 and H5.1 (these require parsed TOML). Continue with remaining phases. |
 | CLAUDE.md does not exist | Skip Phase H4 entirely. Report `[INFO]` ("No project CLAUDE.md found"). |
