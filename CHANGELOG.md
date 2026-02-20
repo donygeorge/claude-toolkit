@@ -8,6 +8,9 @@ All notable changes to this project will be documented in this file.
 
 - **Settings preservation on init**: `toolkit init` now preserves existing `settings.json` and `.mcp.json` by auto-creating `settings-project.json` as the project overlay, preventing loss of project-specific permissions, hooks, deny rules, and MCP servers
 - **MCP server merge semantics**: MCP server entries now use replacement semantics (project replaces base) instead of deep merge with array concat, fixing incorrect `args` array merging
+- **toolkit-setup manifest check**: Fix early exit check using wrong manifest filename (`manifest.json` → `toolkit-manifest.json`) — previously the skill could never detect a fully-configured toolkit
+- **toolkit-setup staging**: Remove `toolkit-cache.env` from staged files list — the cache is generated and gitignored, contradicting the `.gitignore` entry added in the same phase
+- **toolkit-doctor macOS compatibility**: Replace non-portable `timeout` shell command with Bash tool's native timeout parameter for cross-platform compatibility
 
 ## [1.14.0] - 2026-02-18
 
