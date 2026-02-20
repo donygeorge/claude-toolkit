@@ -413,6 +413,8 @@ bash .claude/toolkit/tests/test_hooks.sh
 bash .claude/toolkit/tests/test_skills.sh
 ```
 
+Note: If the test fails with path errors, run in a subshell: `(cd .claude/toolkit && bash tests/test_skills.sh)`. This is the same workaround as C3.2 for path dependencies.
+
 #### Step C3.6: Settings determinism
 
 Note: This is already included in C3.2's full test run. This explicit step ensures settings determinism is verified even if C3.2 was partially skipped or failed for unrelated reasons.

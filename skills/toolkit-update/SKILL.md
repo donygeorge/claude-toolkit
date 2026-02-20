@@ -243,6 +243,8 @@ If `/toolkit-update` was called with a specific version (e.g., `/toolkit-update 
 
 Read the CHANGELOG using the Read tool on `.claude/toolkit/CHANGELOG.md`. Extract and display only the entries between the current and target versions. Summarize key changes (new features, bug fixes, breaking changes).
 
+If the current version is "unknown" (VERSION file missing or empty), show only the entries for the target version rather than attempting a range extraction. Inform the user that the current version could not be determined.
+
 If CHANGELOG.md does not exist, inform the user and continue without change summaries.
 
 #### Step U1.4: Preview drift for customized files
@@ -518,7 +520,17 @@ If the hash differs from what the manifest records, there is drift — the toolk
 ```bash
 # Check existence first
 ls .claude/toolkit/skills/<name>/SKILL.md 2>/dev/null
-# If exists, compare
+```
+
+If the toolkit source file does NOT exist (the `ls` command shows no output or fails), the skill was removed upstream in this update. Inform the user:
+
+> Skill `[name]` was removed from the toolkit in this update. Your customized version in `.claude/skills/[name]/` is preserved but will no longer receive upstream updates. You may keep it as a standalone custom skill or delete it.
+
+Skip drift checking for this skill and move to the next one.
+
+If the toolkit source file exists, compare it against the customized version:
+
+```bash
 diff .claude/skills/<name>/SKILL.md .claude/toolkit/skills/<name>/SKILL.md
 ```
 
