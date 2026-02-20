@@ -51,6 +51,19 @@ Execute these phases in order. Do NOT skip phases.
 
 Verify the project is in a healthy state before attempting an update.
 
+#### Step U0.0: Prerequisite tool checks
+
+Verify required tools are available:
+
+```bash
+git --version
+jq --version
+```
+
+If `git` is not found, inform the user and **stop here** — updates require git for fetch, subtree pull, and commit operations.
+
+If `jq` is not found, inform the user and **stop here** — jq is required for manifest and settings operations during post-update steps.
+
 #### Step U0.1: Check toolkit installation
 
 ```bash
@@ -122,7 +135,13 @@ If the remote does not exist, inform the user:
 
 > The git remote `claude-toolkit` is not configured. This is required for updates.
 >
-> Please provide the toolkit repository URL so I can add it.
+> Please provide the toolkit repository URL so I can add it. For example:
+>
+> ```bash
+> git remote add claude-toolkit git@github.com:<org>/claude-toolkit.git
+> ```
+>
+> Or for HTTPS: `git remote add claude-toolkit https://github.com/<org>/claude-toolkit.git`
 
 If the user provides a URL:
 
@@ -222,7 +241,9 @@ Run the toolkit update and handle any conflicts.
 bash .claude/toolkit/toolkit.sh update [version]
 ```
 
-Replace `[version]` with the user's chosen version tag (e.g., `v1.3.0`) — the version must start with `v`. Omit the version to update to the latest semver release tag. Use `--latest` to pull from the `main` branch instead of a release tag.
+Replace `[version]` with the user's chosen version tag (e.g., `v1.3.0`). **Important**: The version MUST start with `v` — the CLI parser matches `v*` patterns, so bare version numbers like `1.3.0` will be rejected as an unknown option. Omit the version to update to the latest semver release tag. Use `--latest` to pull from the `main` branch instead of a release tag.
+
+If the user provides a version without the `v` prefix, prepend it automatically (e.g., `1.3.0` becomes `v1.3.0`).
 
 #### Step U2.2: Check if already up to date
 
@@ -238,7 +259,7 @@ If the update command output says "Already up to date" or if no toolkit files ch
 
 **Skip phases U3-U5 and end the update flow.**
 
-Note: Use `-- .claude/toolkit/` to scope the diff to toolkit files only. The subtree pull creates a merge commit, so `HEAD~1` compares against the first parent (pre-merge state).
+Note: Use `-- .claude/toolkit/` to scope the diff to toolkit files only. The subtree pull creates a merge commit, so `HEAD~1` compares against the first parent (pre-merge state). **Caveat**: If you are retrying after a failed update attempt that was resolved (e.g., conflicts were merged and committed), `HEAD~1` may not point to the pre-update state. In that case, use `git log --oneline -5` to find the correct base commit for comparison.
 
 #### Step U2.3: Check for conflicts
 
@@ -337,7 +358,15 @@ Verify symlinks point to valid targets (this is a quick direct check, complement
 ls -la .claude/agents/ .claude/rules/
 ```
 
-For each symlink, verify it resolves to a file that exists. If any symlink is broken:
+Check for broken symlinks specifically — `ls -la` shows the link targets, but to programmatically detect broken links, check each symlink:
+
+```bash
+for link in .claude/agents/*.md .claude/rules/*.md; do
+  [ -L "$link" ] && [ ! -e "$link" ] && echo "Broken: $link"
+done
+```
+
+If any symlink is broken:
 
 ```bash
 bash .claude/toolkit/toolkit.sh init --force
@@ -496,15 +525,18 @@ For skills, no manifest hash update is needed — the manifest does not store `t
 
 **Revert to managed**: Replace the customized file with the toolkit source. First, verify the toolkit source still exists (the update may have removed the file upstream). If the source was deleted upstream, inform the user and skip this file.
 
-If the source exists, restore it:
+If the source exists, restore it. First remove the customized copy, then recreate the symlink or copy:
 
 ```bash
-# For agents/rules: restore symlink
+# For agents/rules: remove customized copy and restore symlink
+rm -f .claude/agents/[file]
 ln -sf ../toolkit/agents/[file] .claude/agents/[file]
 # For skills: copy ALL files in the skill directory (skills can contain multiple files)
 mkdir -p .claude/skills/[skill]
 cp .claude/toolkit/skills/[skill]/* .claude/skills/[skill]/
 ```
+
+Note: The `ln -sf` path is relative — `../toolkit/agents/[file]` resolves from the `.claude/agents/` directory to `.claude/toolkit/agents/[file]`. This matches the pattern used by `toolkit.sh init`.
 
 After applying the resolution, update the manifest to reflect the current state:
 
@@ -629,7 +661,12 @@ If validation fails in Phase U3 and the user wants to abort after the subtree pu
 
 | Error | Recovery |
 | ----- | -------- |
-| `git fetch claude-toolkit` fails | Check that the `claude-toolkit` remote exists: `git remote -v`. If missing, ask the user for the remote URL and add it: `git remote add claude-toolkit <url>`. Retry the fetch. |
+| `git` not installed | Inform user and stop. Git is required for all update operations (fetch, subtree pull, commit). |
+| `jq` not installed | Inform user and stop. jq is required for manifest and settings operations during post-update steps. |
+| `git fetch claude-toolkit` fails | Check that the `claude-toolkit` remote exists: `git remote -v`. If missing, ask the user for the remote URL and add it: `git remote add claude-toolkit <url>`. Retry the fetch. If fetch fails due to authentication, check SSH keys or HTTPS credentials. |
+| Version not found | If the user-requested version tag does not exist in the tag list, show available versions and ask the user to choose one. Do not proceed with a non-existent tag. |
+| Version missing `v` prefix | The CLI requires version tags to start with `v` (e.g., `v1.3.0`). If the user provides a bare version like `1.3.0`, prepend `v` automatically. |
 | Subtree pull conflict | Detect conflicted files with `git diff --diff-filter=U --name-only`. Present conflicts to user. Offer automatic resolution or abort (`git merge --abort`). See Phase U2 for details. |
+| Subtree pull fails (not conflict) | May occur if the subtree prefix is wrong or the history is rewritten. Check `git log --oneline -5 -- .claude/toolkit/` to verify the subtree exists. If the subtree was added with a different prefix, the pull will fail — ask the user for the correct prefix. |
 | Validation failure (any of 10 checks) | Attempt auto-fix up to 3 times per check. If still failing, present the error details to the user and ask how to proceed. Do not silently ignore validation failures. |
 | Drift merge failure | If an intelligent merge fails or produces ambiguous results, show both versions to the user and ask them to choose or manually edit. Do not apply an uncertain merge automatically. |

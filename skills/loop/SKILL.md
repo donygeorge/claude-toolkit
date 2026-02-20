@@ -108,8 +108,14 @@ defaults:
 | +----------------------------------------------+ |
 |  |
 | +--------------------------------------------------------------+ |
-|  | CONVERGENCE REPORT |  |
-|  | Clean-room verification -> Final summary |  |
+|  | FINAL VALIDATION GATE |  |
+|  | Full test suite + linter on all scope files |  |
+|  | PASS -> continue   FAIL -> fix or abort |  |
+| +--------------------------------------------------------------+ |
+|  |
+| +--------------------------------------------------------------+ |
+|  | CLEAN-ROOM VERIFICATION |  |
+|  | Fresh agent eval -> Final summary |  |
 | +--------------------------------------------------------------+ |
 +---------------------------------------------------------------------+
 ```
@@ -155,6 +161,7 @@ artifacts/loop/<scope-slug>/<run-id>/
 |   +-- validate-report.json
 |-- iteration-2/
 |   +-- ...
+|-- final-validation.json
 +-- convergence-report.md
 ```
 
@@ -265,9 +272,33 @@ Finding F003 in iteration 3 -> DROPPED (exceeded threshold)
 
 ---
 
+## Final Validation Gate
+
+**Mandatory** before clean-room verification. When the iteration loop exits (any convergence signal fires), run the project's full test suite and linter against all files in scope. This catches cross-iteration regressions — subtle interactions between fixes from different iterations that per-iteration Phase D validation misses because it only checks files changed in that iteration.
+
+### Procedure
+
+1. Run the project's **full test suite** (not just changed-file tests)
+2. Run the **linter** on all files in scope
+3. Record results in `artifacts/loop/<scope-slug>/<run-id>/final-validation.json`
+
+### Outcome Handling
+
+| Result | Action |
+| ------ | ------ |
+| **All pass** | Proceed to clean-room verification. |
+| **Failures** | Attempt to fix (max 3 attempts, same as Phase D). After each fix attempt, re-run the full suite. If fixed, commit the fix and proceed to clean-room. |
+| **Still failing after 3 attempts** | Revert the failing fix(es) to the last green commit. Log the failures in the convergence report as "validation gate regressions" and proceed to clean-room verification on the reverted state. |
+
+### Why This Matters
+
+Phase D validates per-iteration changes against the test suite, but only for files modified in that iteration. A fix in iteration 3 might subtly break an assumption made by a fix in iteration 1. The final validation gate runs the full suite on the cumulative result, ensuring the combined effect of all iterations is sound before the clean-room agent spends effort evaluating code quality.
+
+---
+
 ## Clean-Room Verification
 
-**Mandatory** when convergence is reached. Spawn a separate, fresh agent that:
+**Mandatory** after the final validation gate passes. Spawn a separate, fresh agent that:
 
 1. Reads current state of all files (post-fixes)
 2. Evaluates independently (same criteria as Phase A)
@@ -305,7 +336,7 @@ For scopes with 61+ files:
 
 Generated at convergence. Saved to `artifacts/loop/<scope-slug>/<run-id>/convergence-report.md`.
 
-Includes: scope, summary, iteration history, clean-room verification results, deferred findings, files modified, commits.
+Includes: scope, summary, iteration history, final validation gate results, clean-room verification results, deferred findings, files modified, commits.
 
 ---
 
@@ -316,6 +347,7 @@ Includes: scope, summary, iteration history, clean-room verification results, de
 | Eval agent fails | Retry once; if 2 consecutive failures, stop |
 | Fix agent fails | Defer unfixed findings, continue |
 | Validation fails | Max 3 fix attempts; if still failing, revert and defer |
+| Final validation gate fails | Max 3 fix attempts; if still failing, revert to last green commit and proceed to clean-room on reverted state |
 | State corruption | Start fresh with same scope |
 | Context exhaustion | Write state, produce partial report, resume later |
 

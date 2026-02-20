@@ -101,6 +101,8 @@ If doctor reports failures:
 
 | Doctor Failure | Auto-Fix |
 | -------------- | -------- |
+| Missing required tool (git, jq, python3) | Manual install required. Provide platform-specific install commands (see H3.2 table). Cannot auto-fix — **stop deeper analysis** if jq or python3 is missing (needed for subsequent checks). |
+| Python version < 3.11 | Manual upgrade required. Inform user that `tomllib` requires Python 3.11+. |
 | Missing config cache | `python3 .claude/toolkit/generate-config-cache.py --toml .claude/toolkit.toml --output .claude/toolkit-cache.env` |
 | Stale config cache | Same as above |
 | Broken symlinks | `bash .claude/toolkit/toolkit.sh init --force` |
@@ -204,16 +206,19 @@ Test that configured commands actually work -- not just "is the binary available
 grep -q '^test-changed:' Makefile 2>/dev/null
 ```
 
-3. Run the test command to verify it at least starts. Use a Bash tool call with a 30-second timeout to avoid hanging on long-running test suites:
+3. Run the test command to verify it at least starts. Use the Bash tool's `timeout` parameter set to 30000 (30 seconds) to avoid hanging on long-running test suites. The `|| true` ensures the Bash tool does not report a non-zero exit as an error:
 
 ```bash
 <test-command> 2>&1 || true
 ```
 
+Note: If the command is still running when the timeout expires, the Bash tool will terminate it — this is expected and counts as a successful "starts correctly" verification.
+
 4. Classify:
    - Command not found -> `[ERROR]`
    - Makefile target missing -> `[ERROR]` ("Test command 'make test-changed' references missing Makefile target")
    - Command starts but tests fail -> `[INFO]` ("Test command works -- some tests fail, which may be expected")
+   - Command timed out after starting -> `[INFO]` ("Test command starts correctly -- timed out after 30s, which is expected for full test suites")
    - Command works -> `[INFO]`
 
 #### H2.3: Format commands
@@ -248,7 +253,12 @@ Base MCP servers (from `mcp/base.mcp.json`):
 | context7 | `command -v npx` | None required | `[WARN]` npx not found -- context7 MCP will not work |
 | playwright | `command -v npx` | None required | `[WARN]` npx not found -- playwright MCP will not work |
 
-For any additional MCP servers found in `.mcp.json` that are not in the table above, check that the configured `command` is available.
+For any additional MCP servers found in `.mcp.json` that are not in the table above:
+
+1. Read the server's configuration and extract the `command` field (first element of `args` or the `command` key)
+2. Check if that command is available: `command -v <exe>`
+3. If not found -> `[WARN]` ("MCP server '[name]' references command '[cmd]' which is not found")
+4. If found -> `[INFO]` ("MCP server '[name]' command '[cmd]' is available")
 
 - **Manual fix guidance**: Provide install commands (e.g., "Install Node.js: `brew install node`", "Set OPENAI_API_KEY: `export OPENAI_API_KEY=...`")
 
@@ -386,7 +396,7 @@ If the hash differs from the manifest's `toolkit_hash`, the toolkit source has c
 
 Drift findings:
 
-- `[OPT]` ("Customized file '[path]' has upstream drift -- the toolkit source was updated since you customized it. Review upstream changes with `/toolkit-update` or re-customize from the new source.")
+- `[OPT]` ("Customized file '[path]' has upstream drift -- the toolkit source was updated since you customized it. To resolve: run `/toolkit-update` which includes Phase U4 Drift Resolution, where you can choose to keep your customization, merge upstream changes, or revert to the managed version.")
 
 If the manifest does not exist, skip this check and report `[WARN]` ("Manifest not found -- cannot check for customization drift. Run `toolkit.sh init` to create a manifest.")
 

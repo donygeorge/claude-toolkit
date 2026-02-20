@@ -8,7 +8,7 @@ user-invocable: true
 
 Identify customized files with generic improvements, evaluate them against a 10-point generalizability checklist, prepare clean changes for the toolkit repo, validate with the full test suite, and generate submission instructions (patch or PR).
 
-> **User Interaction Principle**: The contribute flow is collaborative. At every decision point -- which files to contribute, how to extract generic parts, how to handle divergence, which submission workflow -- ask the user. Never auto-proceed past a judgment call.
+> **User Interaction Principle**: The contribute flow is collaborative. At every decision point -- which files to contribute, how to extract generic parts, how to handle drift, which submission workflow -- ask the user. Never auto-proceed past a judgment call.
 
 ## Usage
 
@@ -49,7 +49,23 @@ Execute these phases in order. Do NOT skip phases.
 
 Find all customized and modified files that could potentially be contributed upstream.
 
-#### Step C0.0: Check toolkit installation
+#### Step C0.0: Check prerequisites
+
+Verify required tools:
+
+```bash
+git --version
+jq --version
+python3 --version
+```
+
+If `git` is not found, inform the user and **stop here** — git is required for diffing, patch generation, and submission.
+
+If `jq` is not found, inform the user and **stop here** — jq is required for manifest operations.
+
+If `python3` is not found, inform the user and **stop here** — python3 is required for test validation (shellcheck is also needed for C3.1 if the contribution modifies shell scripts).
+
+Check toolkit installation:
 
 ```bash
 ls .claude/toolkit/toolkit.sh
@@ -220,21 +236,21 @@ After evaluating all candidates, if every file was skipped or failed the gate (n
 
 ### Phase C2: Prepare Clean Changes
 
-Apply only the approved, gate-passing changes to the toolkit source files. Handle divergence intelligently.
+Apply only the approved, gate-passing changes to the toolkit source files. Handle drift intelligently.
 
-#### Step C2.1: Check for toolkit source divergence
+#### Step C2.1: Check for toolkit source drift
 
-For each approved candidate, compare the toolkit source that the user's customization was originally based on against the current toolkit source:
+For each approved candidate, compare the toolkit source that the user's customization was originally based on against the current toolkit source. This is the same concept as "drift" in `/toolkit-update` Phase U4, but in the contribute context it means the upstream source has changed since the user made their customizations.
 
-**For agents and rules**: Read the `toolkit_hash` from the manifest for this file. Compare it against the current toolkit source hash (`shasum -a 256 .claude/toolkit/<source_path>`). If they differ, the toolkit source has changed since the user customized the file (divergence).
+**For agents and rules**: Read the `toolkit_hash` from the manifest for this file. Compare it against the current toolkit source hash (`shasum -a 256 .claude/toolkit/<source_path>`). If they differ, the toolkit source has changed since the user customized the file (drift).
 
-**For skills**: The manifest does NOT store `toolkit_hash` for skills. To detect divergence, compare each file in the customized skill directory against the toolkit source using `diff`. If they differ (beyond the user's intended changes), divergence exists.
+**For skills**: The manifest does NOT store `toolkit_hash` for skills. To detect drift, compare each file in the customized skill directory against the toolkit source using `diff`. If they differ (beyond the user's intended changes), drift exists.
 
-#### Step C2.2: Handle divergence
+#### Step C2.2: Handle drift
 
-If divergence is detected for a file, show the situation to the user:
+If drift is detected for a file, show the situation to the user:
 
-> **Toolkit source has diverged**: [file_path]
+> **Toolkit source has drifted**: [file_path]
 >
 > The toolkit source for this file has changed since you customized it. Your changes were based on an older version.
 >
@@ -280,7 +296,7 @@ If the user chooses to adapt, show the proposed adaptation and **ask the user to
 
 **IMPORTANT**: Show the user what will change BEFORE modifying any files.
 
-For each approved file (with divergence resolved), generate a preview diff showing what would change in the toolkit source:
+For each approved file (with drift resolved), generate a preview diff showing what would change in the toolkit source:
 
 ```bash
 # For each file, generate a preview diff WITHOUT applying yet
@@ -305,10 +321,10 @@ After the user confirms, apply the changes to the toolkit source files:
 # Copy the approved changes to .claude/toolkit/<source_path>
 ```
 
-Verify the changes were applied correctly. Note: `.claude/toolkit` is a subtree, not a separate repository -- always run git commands from the project root:
+Verify the changes were applied correctly. Note: `.claude/toolkit` is a subtree, not a separate repository -- always run git commands from the project root. Scope the diff to only the contributed files to avoid noise from unrelated toolkit changes:
 
 ```bash
-git diff -- .claude/toolkit/
+git diff -- .claude/toolkit/<source_path_1> .claude/toolkit/<source_path_2>
 ```
 
 If the diff is empty after applying, the changes may not have been applied correctly. Investigate before proceeding.
@@ -404,11 +420,21 @@ Generate the contribution artifacts and guide the user through the submission wo
 
 #### Step C4.1: Generate patch
 
-Create a patch file from the validated changes. The patch must have paths relative to the toolkit root (not the project root), so strip the `.claude/toolkit/` prefix:
+Create a patch file from the validated changes. Scope the diff to ONLY the contributed files (not all toolkit changes), and strip the `.claude/toolkit/` prefix so paths are relative to the toolkit root:
 
 ```bash
-git diff -- .claude/toolkit/ | sed 's|a/.claude/toolkit/|a/|g; s|b/.claude/toolkit/|b/|g' > /tmp/toolkit-contribution.patch
+git diff -- .claude/toolkit/<source_path_1> .claude/toolkit/<source_path_2> | sed 's|a/.claude/toolkit/|a/|g; s|b/.claude/toolkit/|b/|g' > /tmp/toolkit-contribution.patch
 ```
+
+Note: The `sed` pattern only rewrites diff header lines (`a/` and `b/` prefixed paths). It does not affect file content within the diff, so content that happens to contain `.claude/toolkit/` as text will be preserved correctly.
+
+After generating, verify the patch is valid:
+
+```bash
+wc -l /tmp/toolkit-contribution.patch
+```
+
+If the patch is empty (0 lines), the diff was not captured correctly. Check that the contributed files were modified.
 
 If a previous patch exists at that path, inform the user and offer to save to an alternative path (e.g., `/tmp/toolkit-contribution-<timestamp>.patch`).
 
@@ -523,13 +549,14 @@ The changes applied to `.claude/toolkit/` in Step C2.3 were needed for validatio
 **IMPORTANT**: Only revert the specific files that were part of the contribution, not ALL `.claude/toolkit/` changes (the user may have other in-progress work):
 
 ```bash
-# Revert ONLY the contributed files
-git checkout -- .claude/toolkit/<source_path_1>
-git checkout -- .claude/toolkit/<source_path_2>
-# ... one per contributed file
+# Revert ONLY the contributed files (one per contributed file)
+git restore .claude/toolkit/<source_path_1>
+git restore .claude/toolkit/<source_path_2>
 ```
 
-Do NOT use `git checkout -- .claude/toolkit/` as this discards ALL local changes, including unrelated work.
+Note: `git restore` is the modern replacement for `git checkout -- <path>`. Both work, but `git restore` is clearer in intent. If `git restore` is not available (git < 2.23), fall back to `git checkout -- <path>`.
+
+Do NOT use `git restore .claude/toolkit/` or `git checkout -- .claude/toolkit/` as this discards ALL local toolkit changes, including unrelated work.
 
 **Ask the user first** before reverting -- they may want to keep the local changes (e.g., while waiting for the PR to be merged).
 
@@ -598,7 +625,13 @@ Example summary format:
 
 | Error | Recovery |
 | ----- | -------- |
+| `git` not installed | Inform user and stop. Git is required for diffing, patch generation, and submission. |
+| `jq` not installed | Inform user and stop. jq is required for manifest operations. |
+| `python3` not installed | Inform user and stop. python3 is required for running the test suite (C3.2). |
 | No customized files found | Inform the user that there are no candidates to contribute. Suggest using `toolkit.sh customize <path>` to take ownership of a file first, then making changes and re-running `/toolkit-contribute`. |
+| Customized file was deleted | If a file is marked as customized in the manifest but does not exist on disk, skip it and inform the user. They may need to restore it or update the manifest. |
 | Generalizability gate failure | Show which specific checks failed (H1-H7) with detailed guidance on what needs to change. Offer to help revise the change to make it generic, or let the user skip the file. Do not proceed with a file that fails any hard requirement. |
 | Test failures after applying changes | Present the test output and determine whether the failure is caused by the contribution or is pre-existing. **Ask the user** whether to investigate, adjust the contribution, or abort. Do not ignore test failures. |
-| Toolkit source divergence | Show both the user's base version and the current toolkit source. Assess whether the changes conflict or can be merged cleanly. If ambiguous, present options (adapt, skip, abort) and **ask the user** to decide. Do not auto-merge when the result is uncertain. |
+| Toolkit source drift | Show both the user's base version and the current toolkit source. Assess whether the changes conflict or can be merged cleanly. If ambiguous, present options (adapt, skip, abort) and **ask the user** to decide. Do not auto-merge when the result is uncertain. |
+| Patch file already exists | Inform the user and offer to save to an alternative path with a timestamp suffix. Do not silently overwrite. |
+| Empty patch generated | The diff was not captured. Verify the contributed files were actually modified in `.claude/toolkit/`. If the changes were already reverted, re-apply them before generating the patch. |

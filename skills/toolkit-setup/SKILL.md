@@ -64,9 +64,18 @@ Check the current toolkit installation state and resolve any issues before proce
 Verify required tools are available before proceeding:
 
 ```bash
+git --version
 jq --version
 python3 --version
 ```
+
+If `git` is not found, inform the user:
+
+> `git` is required by the toolkit for version control and commits. Install it:
+>
+> - macOS: `xcode-select --install`
+> - Ubuntu/Debian: `sudo apt-get install git`
+> - Other: [git-scm.com/downloads](https://git-scm.com/downloads)
 
 If `jq` is not found, inform the user:
 
@@ -80,7 +89,7 @@ If `python3` is not found, inform the user:
 
 > `python3 3.11+` is required by the toolkit. Install it from [python.org](https://python.org) or via your package manager.
 
-**Stop here** if either tool is missing. The toolkit cannot function without them.
+**Stop here** if any required tool is missing. The toolkit cannot function without them.
 
 #### Step 0.1: Check toolkit subtree
 
@@ -207,7 +216,14 @@ for d in .claude/skills/*/; do
 done
 ```
 
-If found, re-copy all files from toolkit source: `mkdir -p .claude/skills/<name> && cp .claude/toolkit/skills/<name>/* .claude/skills/<name>/` (some skills have companion files like `output-schema.json` or `milestone-template.md`)
+If found, re-copy all files from the toolkit source for each orphaned skill directory:
+
+```bash
+mkdir -p .claude/skills/<name>
+cp .claude/toolkit/skills/<name>/* .claude/skills/<name>/
+```
+
+Note: Some skills have companion files (like `output-schema.json` or `milestone-template.md`), so copy ALL files from the toolkit source directory, not just `SKILL.md`. If the corresponding toolkit source directory does not exist (`.claude/toolkit/skills/<name>/`), the skill directory is not from the toolkit — leave it alone.
 
 #### Step 0.4: Check for toolkit version changes
 
@@ -378,6 +394,9 @@ If the user requests changes:
 - Apply the changes to your working detection results
 - Re-validate any new commands the user provided
 - Re-display the updated table and ask for confirmation again
+- **Termination**: Allow at most 3 rounds of changes. After 3 rounds, proceed with the latest confirmed settings and note that the user can manually edit `toolkit.toml` later for further adjustments.
+
+**Do NOT proceed to Phase 4 until the user explicitly confirms the table.** Implicit continuation from a re-validation round is not sufficient.
 
 ---
 
@@ -406,7 +425,13 @@ Use the **Write tool** (not bash heredocs) to create `.claude/toolkit.toml` with
 
 Use the example template structure. Include comments explaining each section. For lint/format commands, set the gate glob patterns based on the detected source extensions (e.g., `"*.py"` for Python lint gate).
 
-For any detection field that was empty or skipped, use the example template defaults and add a comment noting it should be customized.
+**Handling empty or skipped commands**: If a command (lint, test, or format) was not detected or the user chose to skip it:
+
+- **Omit the key entirely** from the TOML section (do not set it to an empty string `""`)
+- Add a TOML comment explaining the field is available: `# cmd = "your-test-command-here"  # No test command detected — add one when available`
+- The toolkit hooks check whether the key exists before running the command, so omitting the key is safe and preferred over an empty string (which could cause the hook to attempt to run an empty command)
+
+For any other detection field that was empty or skipped, use the example template defaults and add a comment noting it should be customized.
 
 #### Existing toolkit.toml with customizations
 
@@ -747,13 +772,18 @@ git diff
 Review the changes to ensure only expected files are modified. The typical files are:
 
 - `.claude/toolkit.toml`
-- `.claude/toolkit-cache.env`
 - `.claude/settings.json`
 - `.mcp.json`
 - `CLAUDE.md` (new or modified)
+- `.claude/toolkit-manifest.json`
+- `.claude/settings-project.json` (if existing settings were preserved)
 - `.claude/skills/` (if init --force was run)
 - `.claude/agents/` (if init --force was run)
 - `.claude/rules/` (if init --force was run)
+- `.claude/agent-memory/` (if init created agent memory directories)
+- `.gitignore` (if toolkit entries were added)
+
+Note: `.claude/toolkit-cache.env` will show in `git status` but is gitignored and should NOT be staged.
 
 #### Step 8.2: Stage specific files
 
@@ -780,6 +810,12 @@ If `init --force` was run (skills, agents, or rules were created/restored), stag
 git add .claude/skills/*/* 2>/dev/null
 git add .claude/agents/*.md 2>/dev/null
 git add .claude/rules/*.md 2>/dev/null
+```
+
+If agent memory directories were created, stage them:
+
+```bash
+git add .claude/agent-memory/*/MEMORY.md 2>/dev/null
 ```
 
 Note: `toolkit-cache.env` is generated and gitignored — do NOT stage it. Do NOT stage `.claude/settings.json.pre-toolkit` or `.mcp.json.pre-toolkit` (these are local backups).
@@ -809,6 +845,7 @@ Configure claude-toolkit for [project-name]
 
 | Error | Recovery |
 | ----- | -------- |
+| `git` not installed | Inform user. Cannot proceed — git is required for commit, remote operations, and subtree management. |
 | `jq` not installed | Inform user. Cannot proceed without jq — it's required for all JSON operations. |
 | `python3` not found or < 3.11 | Inform user. Required for detection, config cache, and settings generation. |
 | `detect-project.py` not found | Toolkit may be outdated or corrupt. Run `bash .claude/toolkit/toolkit.sh update --latest` and retry. |
