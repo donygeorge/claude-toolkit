@@ -101,8 +101,8 @@ If doctor reports failures:
 
 | Doctor Failure | Auto-Fix |
 | -------------- | -------- |
-| Missing required tool (git, jq, python3) | Manual install required. Provide platform-specific install commands (see H3.2 table). Cannot auto-fix — **stop deeper analysis** if jq or python3 is missing (needed for subsequent checks). |
-| Python version < 3.11 | Manual upgrade required. Inform user that `tomllib` requires Python 3.11+. |
+| Missing required tool (git, jq, python3) | `[ERROR]` from CLI. Manual install required. Provide platform-specific install commands (see H3.2 table). Cannot auto-fix — **stop deeper analysis** if jq or python3 is missing (needed for subsequent checks). |
+| Python version < 3.11 | `[ERROR]` from CLI. Manual upgrade required. Inform user that `tomllib` requires Python 3.11+. |
 | Missing config cache | `python3 .claude/toolkit/generate-config-cache.py --toml .claude/toolkit.toml --output .claude/toolkit-cache.env` |
 | Stale config cache | Same as above |
 | Broken symlinks | `bash .claude/toolkit/toolkit.sh init --force` |
@@ -203,8 +203,10 @@ Test that configured commands actually work -- not just "is the binary available
 2. If it references a Makefile target (e.g., `make test-changed`), verify the Makefile has that target:
 
 ```bash
-grep -q '^test-changed:' Makefile 2>/dev/null
+grep -qE '^test-changed[[:space:]]*:' Makefile 2>/dev/null
 ```
+
+Note: Makefile targets may have optional whitespace before the colon. The pattern `^target[[:space:]]*:` handles both `test-changed:` and `test-changed :` variants.
 
 3. Run the test command to verify it at least starts. Use the Bash tool's `timeout` parameter set to 30000 (30 seconds) to avoid hanging on long-running test suites. The `|| true` ensures the Bash tool does not report a non-zero exit as an error:
 
@@ -245,13 +247,15 @@ Check that external dependencies and credentials referenced across the configura
 
 Read `.mcp.json` and check each configured MCP server:
 
-Base MCP servers (from `mcp/base.mcp.json`):
+Read the base MCP configuration using the Read tool on `.claude/toolkit/mcp/base.mcp.json` to identify the expected servers. The typical base servers are:
 
 | Server | Dependency Check | API Key Check | If Missing |
 | ------ | ---------------- | ------------- | ---------- |
 | codex | `command -v npx` | `OPENAI_API_KEY` env var set? | `[WARN]` OPENAI_API_KEY not set -- codex MCP may not authenticate |
 | context7 | `command -v npx` | None required | `[WARN]` npx not found -- context7 MCP will not work |
 | playwright | `command -v npx` | None required | `[WARN]` npx not found -- playwright MCP will not work |
+
+Note: Always verify against the actual `mcp/base.mcp.json` content — new servers may be added in toolkit updates.
 
 For any additional MCP servers found in `.mcp.json` that are not in the table above:
 
@@ -437,6 +441,20 @@ For each test, pipe the sample input to the hook via stdin with `CLAUDE_PROJECT_
 ```bash
 echo '<input_json>' | CLAUDE_PROJECT_DIR="$(pwd)" bash .claude/toolkit/hooks/<hook>.sh
 ```
+
+**Prerequisite**: Hooks source `_config.sh` which reads `toolkit-cache.env`. Before running any hook tests, check if `toolkit-cache.env` exists and is fresh:
+
+```bash
+ls -la .claude/toolkit-cache.env 2>/dev/null
+```
+
+If the file does not exist or was flagged as stale in Phase H1.3, **regenerate it now** (do not wait for Phase H7):
+
+```bash
+python3 .claude/toolkit/generate-config-cache.py --toml .claude/toolkit.toml --output .claude/toolkit-cache.env
+```
+
+Without a fresh cache, hooks will use default values that produce unexpected test results.
 
 Check the exit code and stdout. Each unexpected result -> `[ERROR]` ("Hook '[hook]' returned unexpected result for '[category]' input: expected [expected], got exit code [actual]")
 

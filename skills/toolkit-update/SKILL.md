@@ -30,6 +30,14 @@ Perform an LLM-guided toolkit update with pre-flight checks, version preview, co
 - To diagnose issues without updating → use `/toolkit-doctor` instead
 - To regenerate settings after editing toolkit.toml → run `bash .claude/toolkit/toolkit.sh generate-settings`
 
+## Flags
+
+| Flag | Effect |
+| ---- | ------ |
+| `[version]` | Specific version tag to update to (e.g., `v1.3.0`). Must start with `v`. |
+| `--latest` | Pull from the `main` branch instead of the latest semver release tag. Use for unreleased changes. |
+| `--force` | Skip the uncommitted-changes check for `.claude/toolkit/`. Use when you know local subtree changes can be overwritten. |
+
 ---
 
 ## Critical Rules (READ FIRST)
@@ -121,7 +129,9 @@ If there are uncommitted changes, warn the user:
 
 List the changed files. If any uncommitted changes are inside `.claude/toolkit/`, **strongly recommend** committing or stashing before proceeding -- subtree pull requires a clean subtree directory and will fail or produce corrupt merges if the subtree has local modifications.
 
-**Ask the user**: commit or stash changes first, or proceed anyway?
+Note: The CLI's `toolkit.sh update` command checks for uncommitted `.claude/toolkit/` changes and refuses to proceed unless `--force` is passed. If the user explicitly wants to discard local subtree changes, they can use `--force`.
+
+**Ask the user**: commit or stash changes first, use `--force` to bypass, or abort?
 
 **Do NOT proceed until the user confirms.**
 
@@ -247,7 +257,10 @@ If the user provides a version without the `v` prefix, prepend it automatically 
 
 #### Step U2.2: Check if already up to date
 
-After the update command completes, check whether anything actually changed:
+After the update command completes, check whether anything actually changed. The primary signal is the **command output** from Step U2.1, not a diff:
+
+1. **Check the subtree pull output**: If it contains "Already up to date", no merge commit was created and `HEAD` is unchanged.
+2. **If the output does NOT say "Already up to date"**, a merge commit was created. Verify changes:
 
 ```bash
 git diff HEAD~1 --stat -- .claude/toolkit/
@@ -259,7 +272,9 @@ If the update command output says "Already up to date" or if no toolkit files ch
 
 **Skip phases U3-U5 and end the update flow.**
 
-Note: Use `-- .claude/toolkit/` to scope the diff to toolkit files only. The subtree pull creates a merge commit, so `HEAD~1` compares against the first parent (pre-merge state). **Caveat**: If you are retrying after a failed update attempt that was resolved (e.g., conflicts were merged and committed), `HEAD~1` may not point to the pre-update state. In that case, use `git log --oneline -5` to find the correct base commit for comparison.
+**Important**: Only use `git diff HEAD~1` if the subtree pull actually created a new merge commit. If the pull said "Already up to date", no merge commit exists and `HEAD~1` would compare against an unrelated previous commit, producing misleading results. Always check the command output first.
+
+Note: Use `-- .claude/toolkit/` to scope the diff to toolkit files only. The subtree pull creates a merge commit, so `HEAD~1` compares against the first parent (pre-merge state). If you are retrying after a failed update attempt that was resolved (e.g., conflicts were merged and committed), `HEAD~1` may not point to the pre-update state. In that case, use `git log --oneline -5` to find the correct base commit for comparison.
 
 #### Step U2.3: Check for conflicts
 
@@ -324,7 +339,7 @@ bash .claude/toolkit/toolkit.sh validate
 Review the full output, paying special attention to:
 
 - **Symlink section**: If broken symlinks exist, run `bash .claude/toolkit/toolkit.sh init --force`.
-- **Settings protection section**: If validate warns about "project-specific settings but no settings-project.json", this means the project had custom settings that aren't in the project overlay. The update command now auto-preserves these, but if the warning appears, fix it immediately:
+- **Settings protection section**: If validate warns about "project-specific settings but no settings-project.json", this means the project had custom settings that aren't in the project overlay. The update command auto-preserves these for **legacy installs without settings-project.json only**. If settings-project.json already existed before the update, the preservation step is skipped (assumes settings-project.json already captures custom settings). If the warning appears, fix it immediately:
 
   ```bash
   cp .claude/settings.json.pre-toolkit .claude/settings-project.json
@@ -463,9 +478,12 @@ shasum -a 256 .claude/toolkit/<source_path>
 
 If the hash differs from what the manifest records, there is drift — the toolkit source changed since the file was customized.
 
-**For skills**: The manifest does NOT store `toolkit_hash` for skills (it only stores the file list). To detect drift, compare each file in the customized skill directory against the corresponding toolkit source file directly:
+**For skills**: The manifest does NOT store `toolkit_hash` for skills (it only stores the file list). To detect drift, compare each file in the customized skill directory against the corresponding toolkit source file directly. **First check if the toolkit source file still exists** — if it was deleted upstream in this update, inform the user that the skill was removed from the toolkit and skip drift checking for it.
 
 ```bash
+# Check existence first
+ls .claude/toolkit/skills/<name>/SKILL.md 2>/dev/null
+# If exists, compare
 diff .claude/skills/<name>/SKILL.md .claude/toolkit/skills/<name>/SKILL.md
 ```
 
@@ -588,6 +606,19 @@ git add .mcp.json
 git add .claude/toolkit-manifest.json
 ```
 
+If the update added new skills or updated managed skills (check the update output for "Added new skill" or "Updated" messages), also stage them:
+
+```bash
+git add .claude/skills/*/* 2>/dev/null
+```
+
+If the update refreshed symlinks or created new agents/rules, stage those too:
+
+```bash
+git add .claude/agents/*.md 2>/dev/null
+git add .claude/rules/*.md 2>/dev/null
+```
+
 Note: Files inside `.claude/toolkit/` were already committed by the subtree pull merge commit — do NOT re-stage them. Only stage files outside the subtree that were modified during post-update steps.
 
 Note: `toolkit-cache.env` is typically in `.gitignore` and should NOT be staged.
@@ -666,6 +697,7 @@ If validation fails in Phase U3 and the user wants to abort after the subtree pu
 | `git fetch claude-toolkit` fails | Check that the `claude-toolkit` remote exists: `git remote -v`. If missing, ask the user for the remote URL and add it: `git remote add claude-toolkit <url>`. Retry the fetch. If fetch fails due to authentication, check SSH keys or HTTPS credentials. |
 | Version not found | If the user-requested version tag does not exist in the tag list, show available versions and ask the user to choose one. Do not proceed with a non-existent tag. |
 | Version missing `v` prefix | The CLI requires version tags to start with `v` (e.g., `v1.3.0`). If the user provides a bare version like `1.3.0`, prepend `v` automatically. |
+| Uncommitted changes in `.claude/toolkit/` | The CLI refuses to update with local subtree modifications. Options: commit/stash changes first, or pass `--force` to bypass (discards local changes). |
 | Subtree pull conflict | Detect conflicted files with `git diff --diff-filter=U --name-only`. Present conflicts to user. Offer automatic resolution or abort (`git merge --abort`). See Phase U2 for details. |
 | Subtree pull fails (not conflict) | May occur if the subtree prefix is wrong or the history is rewritten. Check `git log --oneline -5 -- .claude/toolkit/` to verify the subtree exists. If the subtree was added with a different prefix, the pull will fail — ask the user for the correct prefix. |
 | Validation failure (any of 10 checks) | Attempt auto-fix up to 3 times per check. If still failing, present the error details to the user and ask how to proceed. Do not silently ignore validation failures. |

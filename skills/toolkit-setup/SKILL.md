@@ -89,7 +89,17 @@ If `python3` is not found, inform the user:
 
 > `python3 3.11+` is required by the toolkit. Install it from [python.org](https://python.org) or via your package manager.
 
-**Stop here** if any required tool is missing. The toolkit cannot function without them.
+If `python3` is found, verify the version is 3.11+ (required for `tomllib`):
+
+```bash
+python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")'
+```
+
+If the version is below 3.11, inform the user:
+
+> Python [version] is installed but the toolkit requires 3.11+ for `tomllib` support. Please upgrade Python.
+
+**Stop here** if any required tool is missing or Python is below 3.11. The toolkit cannot function without them.
 
 #### Step 0.1: Check toolkit subtree
 
@@ -163,6 +173,8 @@ Note: "toolkit.toml is still the default example. This setup will customize it f
 
 **If broken symlinks exist** (`broken_symlinks` non-empty):
 
+Note: The `broken_symlinks` array contains paths **relative to `.claude/`** (e.g., `agents/reviewer.md`, not `.claude/agents/reviewer.md`).
+
 ```bash
 bash .claude/toolkit/toolkit.sh init --force
 ```
@@ -202,28 +214,39 @@ Report: "Found pre-toolkit backup but no settings-project.json. Restored project
 
 **Non-executable hooks:**
 
+Check each hook script for executability:
+
 ```bash
-find .claude/toolkit/hooks -name '*.sh' ! -perm -111 2>/dev/null
+for hook in .claude/toolkit/hooks/*.sh; do
+  [ -f "$hook" ] && [ ! -x "$hook" ] && echo "Not executable: $hook"
+done
 ```
+
+Note: Do NOT use `find ... -perm` for this check — the `-perm` flag syntax differs between macOS (`-perm +111`) and Linux (`-perm /111`), causing false results.
 
 If any are found: `chmod +x .claude/toolkit/hooks/*.sh`
 
 **Orphaned skill directories** (directory exists in `.claude/skills/` but is empty or missing SKILL.md):
 
 ```bash
-for d in .claude/skills/*/; do
-  [ -f "$d/SKILL.md" ] || echo "Missing SKILL.md in $d"
-done
+if [ -d .claude/skills ]; then
+  for d in .claude/skills/*/; do
+    [ -d "$d" ] || continue
+    [ -f "$d/SKILL.md" ] || echo "Missing SKILL.md in $d"
+  done
+fi
 ```
 
-If found, re-copy all files from the toolkit source for each orphaned skill directory:
+If found, re-copy files from the toolkit source for each orphaned skill directory. **Before copying, check if the corresponding toolkit source directory exists** — if `.claude/toolkit/skills/<name>/` does not exist, the skill directory is not from the toolkit (it may be a user-created skill). Leave it alone and move on.
+
+For toolkit-sourced skills:
 
 ```bash
 mkdir -p .claude/skills/<name>
 cp .claude/toolkit/skills/<name>/* .claude/skills/<name>/
 ```
 
-Note: Some skills have companion files (like `output-schema.json` or `milestone-template.md`), so copy ALL files from the toolkit source directory, not just `SKILL.md`. If the corresponding toolkit source directory does not exist (`.claude/toolkit/skills/<name>/`), the skill directory is not from the toolkit — leave it alone.
+Note: Some skills have companion files (like `output-schema.json` or `milestone-template.md`), so copy ALL files from the toolkit source directory, not just `SKILL.md`.
 
 #### Step 0.4: Check for toolkit version changes
 
@@ -555,7 +578,7 @@ If validation reports errors or warnings, apply fixes for each issue type using 
 | **Missing skills or agents** | `bash .claude/toolkit/toolkit.sh init --force` |
 | **Hooks not executable** | `chmod +x .claude/toolkit/hooks/*.sh` |
 | **Broken symlinks** | `bash .claude/toolkit/toolkit.sh init --force` |
-| **Stale config cache** | Re-run Step 6.1 |
+| **Stale config cache** | Re-run Step 6.1, then re-run Step 6.2 (settings depend on the cache) |
 | **Manifest not found** | `bash .claude/toolkit/toolkit.sh init --force` |
 | **settings.json invalid JSON** | Delete `.claude/settings.json` and re-run Step 6.2 |
 | **No settings-project.json but custom settings exist** | If `.claude/settings.json.pre-toolkit` exists: `cp .claude/settings.json.pre-toolkit .claude/settings-project.json` then re-run Step 6.2. If no backup exists, ask the user to check `git log -p -- .claude/settings.json` for their original settings. |
@@ -756,8 +779,8 @@ Check the project's `.gitignore` and ensure it contains the toolkit-related entr
 # Claude Toolkit - implementation artifacts
 artifacts/
 
-# Claude Toolkit - generated config cache
-toolkit-cache.env
+# Claude Toolkit - generated config cache (lives at .claude/toolkit-cache.env)
+.claude/toolkit-cache.env
 ```
 
 If `.gitignore` already contains these entries, skip this step.

@@ -63,7 +63,15 @@ If `git` is not found, inform the user and **stop here** — git is required for
 
 If `jq` is not found, inform the user and **stop here** — jq is required for manifest operations.
 
-If `python3` is not found, inform the user and **stop here** — python3 is required for test validation (shellcheck is also needed for C3.1 if the contribution modifies shell scripts).
+If `python3` is not found, inform the user and **stop here** — python3 is required for test validation.
+
+If the contribution modifies `.sh` files, also check for `shellcheck`:
+
+```bash
+shellcheck --version
+```
+
+If `shellcheck` is not found, warn the user that Step C3.1 (shellcheck validation) will be skipped. The contribution can still proceed, but the user should run shellcheck manually before submitting.
 
 Check toolkit installation:
 
@@ -104,13 +112,11 @@ If no customized or modified files are found, inform the user:
 
 #### Step C0.2: Diff each candidate against toolkit source
 
-For each candidate file, generate a detailed diff against the toolkit source:
+For each candidate file, generate a detailed diff against the toolkit source. The paths depend on the file type:
 
-```bash
-diff -u .claude/toolkit/<source_path> .claude/<installed_path>
-```
-
-For agents and rules, the toolkit source is in `.claude/toolkit/agents/` or `.claude/toolkit/rules/`. For skills, the toolkit source is in `.claude/toolkit/skills/<skill_name>/`.
+**Agents**: `diff -u .claude/toolkit/agents/<name>.md .claude/agents/<name>.md`
+**Rules**: `diff -u .claude/toolkit/rules/<name>.md .claude/rules/<name>.md`
+**Skills**: `diff -u .claude/toolkit/skills/<skill_name>/SKILL.md .claude/skills/<skill_name>/SKILL.md` (also diff any companion files like `output-schema.json`)
 
 Before diffing, verify the installed file actually exists on disk. If a customized file was deleted, skip it and inform the user it needs to be restored.
 
@@ -337,6 +343,8 @@ Run the FULL toolkit test suite against the modified toolkit source. ALL checks 
 
 #### Step C3.1: Shellcheck
 
+If shellcheck was found missing in Step C0.0, **skip this step** and note it as "skipped (shellcheck not installed)" in the validation summary table. The contribution can proceed without shellcheck, but inform the user that shellcheck validation should be done manually before the upstream PR is merged.
+
 ```bash
 shellcheck -x -S warning .claude/toolkit/hooks/*.sh .claude/toolkit/lib/*.sh .claude/toolkit/toolkit.sh
 ```
@@ -348,6 +356,8 @@ Note: Run all tests from the project root using paths to the toolkit directory. 
 ```bash
 python3 -m pytest .claude/toolkit/tests/ -v
 ```
+
+Note: If tests fail with import errors (e.g., `ModuleNotFoundError`), the test suite may have path dependencies that assume it runs from the toolkit root. In that case, run in a subshell to isolate the directory change: `(cd .claude/toolkit && python3 -m pytest tests/ -v)`. Using a subshell ensures the working directory is automatically restored even if the tests fail. This is a known edge case when running tests from a consuming project.
 
 #### Step C3.3: CLI integration tests
 
@@ -423,10 +433,10 @@ Generate the contribution artifacts and guide the user through the submission wo
 Create a patch file from the validated changes. Scope the diff to ONLY the contributed files (not all toolkit changes), and strip the `.claude/toolkit/` prefix so paths are relative to the toolkit root:
 
 ```bash
-git diff -- .claude/toolkit/<source_path_1> .claude/toolkit/<source_path_2> | sed 's|a/.claude/toolkit/|a/|g; s|b/.claude/toolkit/|b/|g' > /tmp/toolkit-contribution.patch
+git diff -- .claude/toolkit/<source_path_1> .claude/toolkit/<source_path_2> | sed 's|^--- a/.claude/toolkit/|--- a/|; s|^+++ b/.claude/toolkit/|+++ b/|; s|^diff --git a/.claude/toolkit/|diff --git a/|; s| b/.claude/toolkit/| b/|' > /tmp/toolkit-contribution.patch
 ```
 
-Note: The `sed` pattern only rewrites diff header lines (`a/` and `b/` prefixed paths). It does not affect file content within the diff, so content that happens to contain `.claude/toolkit/` as text will be preserved correctly.
+Note: The `sed` patterns use `^` anchors to only rewrite diff header lines (`--- a/`, `+++ b/`, `diff --git a/`). This prevents accidental rewriting of file content that happens to contain `.claude/toolkit/` as text.
 
 After generating, verify the patch is valid:
 
