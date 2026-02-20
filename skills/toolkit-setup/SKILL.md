@@ -126,15 +126,7 @@ Parse the JSON output. Focus on the `toolkit_state` section:
 
 #### Step 0.3: Handle issues based on state
 
-**If skills or agents are missing** (`missing_skills` or `missing_agents` non-empty):
-
-This is a partial install. Fill the gaps:
-
-```bash
-bash .claude/toolkit/toolkit.sh init --force
-```
-
-Report to user: "Detected missing skills/agents. Ran `toolkit.sh init --force` to fill gaps."
+Handle issues **in the order listed below**. The toolkit.toml check MUST be resolved first — `init --force` requires toolkit.toml to exist.
 
 **If `toml_exists` is false** (subtree exists but no toolkit.toml):
 
@@ -143,6 +135,16 @@ bash .claude/toolkit/toolkit.sh init --from-example
 ```
 
 Report to user: "No toolkit.toml found. Created one from the example template."
+
+**If skills or agents are missing** (`missing_skills` or `missing_agents` non-empty):
+
+This is a partial install. Fill the gaps (requires toolkit.toml to exist — handle that first):
+
+```bash
+bash .claude/toolkit/toolkit.sh init --force
+```
+
+Report to user: "Detected missing skills/agents. Ran `toolkit.sh init --force` to fill gaps."
 
 **If `toml_is_example` is true** (toolkit.toml is still the unmodified example):
 
@@ -251,7 +253,7 @@ bash .claude/toolkit/toolkit.sh validate
 
 If validation passes, report the result and **stop**. Do not proceed to Phase 1.
 
-If validation reports warnings or errors, report them and offer to fix (follow the fix steps in Phase 6.2). After fixes, **stop** — do not re-run the full setup flow.
+If validation reports warnings or errors, report them and offer to fix (follow the auto-fix table in Phase 6.3). After fixes, re-run `toolkit.sh validate` to confirm. Then **stop** — do not re-run the full setup flow.
 
 #### Step 0.6: Handle --reconfigure flag
 
@@ -321,10 +323,32 @@ Display validation results to the user:
 
 **If a command is not available**:
 
-1. Check if an alternative exists (e.g., if `ruff` is not found, check if it's installed in `.venv/bin/`)
-2. Ask the user: "The [type] command `[cmd]` was not found. Would you like to provide an alternative command, or skip this?"
-3. If the user provides an alternative, validate it by running `<cmd> --version`
-4. If skipped, leave that field empty in the config and note it in the output
+1. Check local installations first:
+   - Python: check `.venv/bin/` or `poetry run <cmd>` or `pipx run <cmd>`
+   - TypeScript/JS: check `npx <cmd>`, `npm run <script>`, `node_modules/.bin/<cmd>`
+   - Check if `node_modules` is missing but `package.json` exists (needs `npm install`)
+2. If the tool exists locally, use the local invocation (e.g., `npx eslint` instead of `eslint`)
+3. If not found anywhere, offer to install it or ask for an alternative:
+
+> The [type] command `[cmd]` was not found. Options:
+>
+> 1. **Install it** (recommended): [install command]
+> 2. **Provide an alternative** command
+> 3. **Skip** this tool for now
+
+**Common install commands by stack:**
+
+| Tool | Install command |
+| ---- | -------------- |
+| ruff (Python lint/format) | `pip install ruff` or `pipx install ruff` |
+| eslint (TypeScript lint) | `npm install --save-dev eslint` |
+| prettier (TypeScript format) | `npm install --save-dev prettier` |
+| pytest (Python test) | `pip install pytest` |
+| node_modules missing | `npm install` (installs all package.json deps) |
+
+After installation, re-validate the command by running `<cmd> --version`.
+
+4. If the user skips, leave that field empty in the config and note it in the output
 
 ---
 
@@ -569,10 +593,10 @@ For EACH toolkit rule file, verify a corresponding file or symlink exists in `.c
 **D. Settings merge integrity** — use jq to verify the merged settings contain expected content:
 
 ```bash
-# Must have hooks with at least one event
-jq '.hooks | keys | length' .claude/settings.json
-# Must have permissions with deny list
-jq '.permissions.deny | length' .claude/settings.json
+# Must have hooks with at least one event (null-safe)
+jq '.hooks // {} | keys | length' .claude/settings.json
+# Must have permissions with deny list (null-safe)
+jq '.permissions // {} | .deny // [] | length' .claude/settings.json
 ```
 
 Both counts should be > 0. If either is 0, the merge lost content — re-run Step 6.2.
@@ -597,15 +621,17 @@ If expected project content is missing from the merge, re-run Step 6.2. If still
 **E. MCP server integrity** — verify base servers are present:
 
 ```bash
-# List base servers expected
-jq '.mcpServers | keys' .claude/toolkit/mcp/base.mcp.json
-# List servers in generated .mcp.json
-jq '.mcpServers | keys' .mcp.json
+# List base servers expected (null-safe)
+jq '.mcpServers // {} | keys' .claude/toolkit/mcp/base.mcp.json
+# List servers in generated .mcp.json (null-safe)
+jq '.mcpServers // {} | keys' .mcp.json
 # List enabledPlugins (if any)
 jq '.enabledPlugins // []' .claude/settings.json
 ```
 
 Each base server should be present in `.mcp.json` UNLESS it overlaps with an `enabledPlugins` entry (intentional dedup — this is correct behavior). If a base server is missing with no plugin overlap, re-run Step 6.2.
+
+**Overlap check**: If a server name appears in BOTH `.mcp.json` and `enabledPlugins`, the dedup in `generate-settings.py` should have removed it from `.mcp.json`. If it didn't, manually remove the `.mcp.json` entry (the plugin takes priority) and re-run Step 6.2.
 
 **F. Hook command resolution** — the CLI validator (`toolkit.sh validate`) already checks this thoroughly, including:
 
@@ -655,7 +681,27 @@ If the lint command fails:
 2. If it is a configuration problem, adjust the command in toolkit.toml and re-run
 3. Iterate up to 2 times
 
-#### Step 7.2: Verify test command
+#### Step 7.2: Verify format command
+
+If a format command was configured, run its **check mode** (dry-run) on a real source file:
+
+```bash
+# Example: verify format command in check mode (does not modify files)
+ruff format --check src/example.py
+# or: npx prettier --check src/example.ts
+```
+
+If the format tool has no check mode, run `<cmd> --version` to at least verify it's callable.
+
+If the format command fails:
+
+1. Check if the failure is a real formatting issue (expected) or a configuration problem
+2. If it is a configuration problem, adjust the command in toolkit.toml and re-run
+3. Iterate up to 2 times
+
+**Important**: Use check/dry-run mode only — do NOT modify source files during setup.
+
+#### Step 7.3: Verify test command
 
 If a test command was configured, run it:
 
@@ -669,11 +715,12 @@ If the test command fails:
 2. If the command itself is broken (wrong path, missing dependency), adjust and re-run
 3. Iterate up to 2 times
 
-#### Step 7.3: Report verification results
+#### Step 7.4: Report verification results
 
 > **Verification results**:
 >
 > - Lint: [passed/failed/skipped]
+> - Format: [passed/failed/skipped]
 > - Tests: [passed/failed/skipped]
 >
 > [If failures] Note: some commands reported failures. This may be expected (e.g., existing lint issues or failing tests). The configuration itself is correct.
@@ -735,9 +782,15 @@ git add .claude/settings-project.json 2>/dev/null
 git add .claude/toolkit-manifest.json 2>/dev/null
 ```
 
-Note: `toolkit-cache.env` is generated and gitignored — do NOT stage it.
+If `init --force` was run (skills, agents, or rules were created/restored), stage them explicitly:
 
-Also stage any files created or restored by `toolkit.sh init --force` (skills, agents, rules).
+```bash
+git add .claude/skills/*/SKILL.md 2>/dev/null
+git add .claude/agents/*.md 2>/dev/null
+git add .claude/rules/*.md 2>/dev/null
+```
+
+Note: `toolkit-cache.env` is generated and gitignored — do NOT stage it. Do NOT stage `.claude/settings.json.pre-toolkit` or `.mcp.json.pre-toolkit` (these are local backups).
 
 #### Step 8.3: Commit
 
@@ -769,7 +822,8 @@ Configure claude-toolkit for [project-name]
 | `detect-project.py` not found | Toolkit may be outdated or corrupt. Run `bash .claude/toolkit/toolkit.sh update --latest` and retry. |
 | `detect-project.py` crashes (Python error) | Check Python version (3.11+ required). Read error output. If module error, toolkit files may be incomplete. |
 | Detection returns empty stacks | Ask user to specify stacks manually. Write them to toolkit.toml. |
-| All commands fail validation | Ask user to provide working commands. Proceed with manual config. |
+| All commands fail validation | Offer to install missing tools (see Phase 2 install table). Ask user to provide working commands if install is declined. |
+| `node_modules` missing | Run `npm install` if `package.json` exists. TypeScript tools (eslint, prettier) need this. |
 | `toolkit.sh generate-settings` fails | Check toolkit.toml for syntax errors. Run `python3 .claude/toolkit/generate-config-cache.py --toml .claude/toolkit.toml --output .claude/toolkit-cache.env --validate-only` to find issues. |
 | `toolkit.sh validate` reports issues | Follow auto-fix loop in Step 6.3. Use fix table in priority order. |
 | Missing skills after init | Copy manually: `cp -r .claude/toolkit/skills/<name> .claude/skills/<name>` |

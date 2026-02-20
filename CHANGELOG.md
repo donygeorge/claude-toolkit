@@ -34,7 +34,12 @@ All notable changes to this project will be documented in this file.
 - **toolkit-setup prerequisite checks**: Added Step 0.0.5 to verify jq and python3 are installed before proceeding — without these, all downstream steps fail silently
 - **toolkit-setup detect-project.py error handling**: Added recovery steps for when the detection script crashes (Python version check, verbose re-run, update suggestion) in both Phase 0 and Phase 1
 - **toolkit-setup error handling table**: Expanded from 6 to 15 entries covering jq/python3 missing, detection crashes, missing skills, non-executable hooks, pre-toolkit backups, duplicate hooks, and MCP overlap
-- **toolkit-setup staging completeness**: Phase 8.2 now stages `settings-project.json` and `toolkit-manifest.json` when they exist
+- **toolkit-setup staging completeness**: Phase 8.2 now stages `settings-project.json`, `toolkit-manifest.json`, and explicitly stages skills/agents/rules when `init --force` was run
+- **toolkit-setup dependency installation**: Phase 2 now offers to install missing tools (ruff, eslint, prettier, pytest, npm deps) with stack-specific install commands, and checks local installations (`.venv/bin/`, `npx`, `node_modules/.bin/`) before declaring tools unavailable
+- **toolkit-setup format verification**: Added Phase 7.2 to verify format commands in check/dry-run mode, matching existing lint and test verification
+- **toolkit-setup Phase 0.3 ordering**: Explicit ordering requirement — toolkit.toml must be created before running `init --force` (which depends on it)
+- **toolkit-setup jq null safety**: All jq commands in Phase 6.4 now use null-coalescing (`// {}`, `// []`) to prevent crashes on incomplete settings
+- **toolkit-setup MCP overlap verification**: Phase 6.4E now includes an explicit overlap check instruction for servers appearing in both `.mcp.json` and `enabledPlugins`
 
 ## [1.14.0] - 2026-02-18
 
