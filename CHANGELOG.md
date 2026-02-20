@@ -13,6 +13,9 @@ All notable changes to this project will be documented in this file.
 - **Schema validation for all skill configs**: Added schema entries for `brainstorm`, `plan`, `loop`, `fix`, `fix-github`, `review-suite`, `verify`, and `commit` skill sections in `toolkit.toml`
 - **Sandbox-safe settings generation**: `generate-settings` now writes to temp files and copies to final locations, working around sandbox restrictions that block direct writes to `.claude/settings.json`
 - **toolkit-setup skill sandbox guidance**: Added rules to use Write/Edit tools instead of bash heredocs for config files, preventing sandbox failures during setup
+- **Hook overlap stripping on init**: When preserving existing settings, `toolkit init` now strips hook entries from `settings-project.json` that overlap with toolkit base hooks (same event+matcher), preventing duplicate invocations after merge
+- **MCP plugin dedup**: `generate-settings` now skips MCP servers in `base.mcp.json` that overlap with `enabledPlugins` in project settings, preventing duplicate tool loading
+- **New skills added during update**: `toolkit.sh update` now creates new skill directories for skills added in the update, not just updating existing ones
 - **Settings preservation on init**: `toolkit init` now preserves existing `settings.json` and `.mcp.json` by auto-creating `settings-project.json` as the project overlay, preventing loss of project-specific permissions, hooks, deny rules, and MCP servers
 - **MCP server merge semantics**: MCP server entries now use replacement semantics (project replaces base) instead of deep merge with array concat, fixing incorrect `args` array merging
 - **toolkit-setup manifest check**: Fix early exit check using wrong manifest filename (`manifest.json` → `toolkit-manifest.json`) — previously the skill could never detect a fully-configured toolkit
@@ -23,6 +26,9 @@ All notable changes to this project will be documented in this file.
 
 - **Monorepo source detection**: `detect-project.py` now checks monorepo subdirectories (`frontend/`, `backend/`, `web/`, `server/`, `client/`, `api/`) for nested source dirs and stack indicator files
 - **TypeScript lint/format detection**: Falls back to `package.json` scripts (`npm run lint`, `npm run format`) and `npx` when global executables are not found
+- **Validation now detects duplicate hooks**: `toolkit.sh validate` checks for duplicate hook commands in merged settings and warns about MCP server / enabledPlugins overlap
+- **Skill visibility documented**: Added skill visibility section to `docs/reference.md` explaining `user-invocable` flag and listing hidden skills
+- **toolkit-setup validation guidance**: Updated Phase 6.2 to list all fixable validation issues including missing skills, duplicate hooks, and MCP overlap
 
 ## [1.14.0] - 2026-02-18
 

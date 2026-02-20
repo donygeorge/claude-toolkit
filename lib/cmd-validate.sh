@@ -220,6 +220,59 @@ cmd_validate() {
     fi
   fi
 
+  # Check for duplicate hooks (same event + matcher with multiple commands)
+  if [[ -f "$settings_file" ]] && command -v jq &>/dev/null; then
+    echo ""
+    echo "Checking for hook duplicates..."
+    local dup_hooks
+    dup_hooks=$(jq -r '
+      .hooks // {} | to_entries[] |
+      .key as $event |
+      (.value // [])[] |
+      .matcher as $matcher |
+      (.hooks // [])[] |
+      "\($event):\($matcher // "none"):\(.command // "?")"
+    ' "$settings_file" 2>/dev/null | sort | uniq -d || true)
+    if [[ -n "$dup_hooks" ]]; then
+      _warn "Duplicate hook commands detected in settings.json:"
+      while IFS= read -r dup; do
+        [[ -z "$dup" ]] && continue
+        _info "  - ${dup}"
+        warnings=$((warnings + 1))
+      done <<< "$dup_hooks"
+    else
+      _ok "No duplicate hook commands"
+    fi
+  fi
+
+  # Check for MCP server / enabledPlugins overlap
+  local mcp_file="${PROJECT_DIR}/.mcp.json"
+  if [[ -f "$mcp_file" ]] && [[ -f "$settings_file" ]] && command -v jq &>/dev/null; then
+    echo ""
+    echo "Checking for MCP server overlaps..."
+    local enabled_plugins
+    enabled_plugins=$(jq -r '.enabledPlugins // [] | .[]' "$settings_file" 2>/dev/null || true)
+    if [[ -n "$enabled_plugins" ]]; then
+      local mcp_servers
+      mcp_servers=$(jq -r '.mcpServers // {} | keys[]' "$mcp_file" 2>/dev/null || true)
+      local overlap_count=0
+      while IFS= read -r server; do
+        [[ -z "$server" ]] && continue
+        if echo "$enabled_plugins" | grep -qi "$server"; then
+          _warn "MCP server '${server}' in .mcp.json may overlap with an enabled plugin"
+          _info "  Consider removing it from .mcp.json or the plugin to avoid duplicates"
+          overlap_count=$((overlap_count + 1))
+          warnings=$((warnings + 1))
+        fi
+      done <<< "$mcp_servers"
+      if [[ $overlap_count -eq 0 ]]; then
+        _ok "No MCP server / plugin overlaps"
+      fi
+    else
+      _ok "No enabledPlugins to check against"
+    fi
+  fi
+
   # Summary
   echo ""
   if [[ $errors -eq 0 ]] && [[ $warnings -eq 0 ]]; then

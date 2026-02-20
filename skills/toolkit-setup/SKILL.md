@@ -416,11 +416,14 @@ bash .claude/toolkit/toolkit.sh validate
 
 This checks:
 
-- Hook scripts are executable
+- Hook scripts are executable and found
 - Symlinks are valid
+- All toolkit skills are registered in `.claude/skills/`
 - Settings files exist and are well-formed
 - Config cache is up to date
 - **Settings protection**: project-specific settings are preserved in `settings-project.json`
+- **Duplicate hooks**: No duplicate hook commands in merged settings
+- **MCP overlap**: No `.mcp.json` servers that duplicate `enabledPlugins`
 
 **Critical check**: If validate warns about "project-specific settings but no settings-project.json", this means the project had custom settings that aren't protected. Fix immediately:
 
@@ -433,9 +436,12 @@ If no `.pre-toolkit` backup exists but settings look incomplete (missing permiss
 
 If validation reports other issues, attempt to fix them:
 
+- Missing skills or agents: `bash .claude/toolkit/toolkit.sh init --force`
 - Missing executability: `chmod +x .claude/toolkit/hooks/*.sh`
 - Broken symlinks: `bash .claude/toolkit/toolkit.sh init --force`
 - Stale config cache: `python3 .claude/toolkit/generate-config-cache.py --toml .claude/toolkit.toml --output .claude/toolkit-cache.env`
+- Duplicate hooks: Check `settings-project.json` for hook entries that overlap with toolkit base hooks; remove duplicates
+- MCP server overlap: Check if `.mcp.json` servers duplicate `enabledPlugins`; remove the `.mcp.json` entry or the plugin
 
 Re-run validation after fixes. If issues persist, report them to the user.
 

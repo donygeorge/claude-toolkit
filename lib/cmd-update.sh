@@ -171,7 +171,7 @@ cmd_update() {
   echo "Refreshing symlinks..."
   _refresh_symlinks
 
-  # Update managed skills (skip customized)
+  # Update managed skills and create any new skills added in the update
   echo ""
   echo "Updating managed skills..."
   export TOOLKIT_ROOT="$TOOLKIT_DIR"
@@ -179,7 +179,22 @@ cmd_update() {
     [[ -d "$skill_dir" ]] || continue
     local skill_name
     skill_name=$(basename "$skill_dir")
-    manifest_update_skill "$skill_name" "$CLAUDE_DIR"
+    local target_skill="${CLAUDE_DIR}/skills/${skill_name}"
+    if [[ ! -d "$target_skill" ]]; then
+      # New skill added in this update — create it
+      mkdir -p "$target_skill"
+      local copied=0
+      for skill_file in "$skill_dir"*; do
+        [[ -f "$skill_file" ]] || continue
+        local fname
+        fname=$(basename "$skill_file")
+        cp "$skill_file" "${target_skill}/${fname}"
+        copied=$((copied + 1))
+      done
+      _ok "Added new skill: ${skill_name} (${copied} files)"
+    else
+      manifest_update_skill "$skill_name" "$CLAUDE_DIR"
+    fi
   done
 
   # Preserve existing settings for legacy installs (no settings-project.json)

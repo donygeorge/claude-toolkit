@@ -307,6 +307,23 @@ Skill templates in `.claude/skills/`. These are copied (not symlinked) so they c
 | Commit | `commit/` | Commit uncommitted session changes with auto-generated message |
 | Verify | `verify/` | Post-implementation verification with deep and quick modes. Deep mode includes edge case scanning and clean-room agent review; quick mode checks spec compliance (tests, lint, exit criteria) |
 
+### Skill Visibility
+
+Each skill has a `user-invocable` flag in its YAML frontmatter:
+
+| Value | Meaning |
+| ----- | ------- |
+| `true` | Shown in the `/` slash command list; users can invoke directly |
+| `false` | Hidden from the slash command list; only invocable by other skills or agents |
+
+Current hidden skills:
+
+| Skill | Reason |
+| ----- | ------ |
+| `scope-resolver` | Internal helper used by `review-suite` to resolve review scope |
+
+All other skills are `user-invocable: true`.
+
 ### Skill Defaults
 
 Key tunable defaults per skill. Override in `toolkit.toml` under `[skills.<name>]`. Run `bash toolkit.sh customize skills/<name>/SKILL.md` to take full ownership of a skill file.

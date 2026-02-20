@@ -590,6 +590,26 @@ def main() -> int:
             return 1
         mcp_base = load_json(mcp_base_path)
 
+        # Skip MCP servers already provided by enabledPlugins to avoid duplicates.
+        # enabledPlugins entries contain plugin identifiers (e.g., "context7",
+        # "playwright") that may overlap with base.mcp.json server names.
+        enabled_plugins = merged.get("enabledPlugins", [])
+        if enabled_plugins and isinstance(enabled_plugins, list):
+            mcp_servers = mcp_base.get("mcpServers", {})
+            skipped: list[str] = []
+            for server_name in list(mcp_servers.keys()):
+                # Check if any enabledPlugin name contains this server name
+                for plugin in enabled_plugins:
+                    if isinstance(plugin, str) and server_name in plugin:
+                        skipped.append(server_name)
+                        del mcp_servers[server_name]
+                        break
+            if skipped:
+                print(
+                    f"Skipped MCP servers already in enabledPlugins: {', '.join(skipped)}",
+                    file=sys.stderr,
+                )
+
         # Project may contain MCP overrides (null-as-delete for servers)
         mcp_project = {}
         if project and "mcpServers" in project:

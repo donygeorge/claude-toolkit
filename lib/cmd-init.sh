@@ -235,6 +235,72 @@ _init_git_remote() {
   fi
 }
 
+_init_strip_overlapping_hooks() {
+  # Strip hook entries from settings-project.json that would duplicate
+  # toolkit base hooks (same event type + same matcher).
+  # Unique project hooks (no toolkit equivalent) are preserved.
+  local project_file="$1"
+  local base_file="${TOOLKIT_DIR}/templates/settings-base.json"
+
+  [[ -f "$project_file" ]] || return 0
+  [[ -f "$base_file" ]] || return 0
+
+  # Check if project has any hooks at all
+  local project_hooks
+  project_hooks=$(jq -r '.hooks // {} | keys[]' "$project_file" 2>/dev/null || true)
+  [[ -z "$project_hooks" ]] && return 0
+
+  # Build a list of event+matcher pairs from the toolkit base
+  local base_matchers
+  base_matchers=$(jq -r '
+    .hooks // {} | to_entries[] |
+    .key as $event |
+    (.value // [])[] |
+    "\($event):\(.matcher // "__no_matcher__")"
+  ' "$base_file" 2>/dev/null || true)
+  [[ -z "$base_matchers" ]] && return 0
+
+  # For each event in the project hooks, filter out entries whose matcher
+  # overlaps with a toolkit base entry
+  local stripped_count=0
+  local stripped
+  stripped=$(jq --argjson base_matchers "$(echo "$base_matchers" | jq -R -s 'split("\n") | map(select(length > 0))')" '
+    .hooks as $hooks |
+    if $hooks == null then . else
+    reduce ($hooks | to_entries[]) as $event (.;
+      $event.key as $ename |
+      if ($event.value | type) == "array" then
+        # Filter entries: keep only those whose event:matcher is NOT in base
+        ($event.value | map(
+          select(
+            ("\($ename):\(.matcher // "__no_matcher__")" | IN($base_matchers[])) | not
+          )
+        )) as $kept |
+        if ($kept | length) == ($event.value | length) then .
+        elif ($kept | length) == 0 then .hooks |= del(.[$ename])
+        else .hooks[$ename] = $kept
+        end
+      else .
+      end
+    )
+    end
+  ' "$project_file" 2>/dev/null) || true
+
+  if [[ -n "$stripped" ]]; then
+    # Count how many entries were removed
+    local orig_count new_count
+    orig_count=$(jq '[.hooks // {} | .[] | if type == "array" then length else 0 end] | add // 0' "$project_file" 2>/dev/null || echo 0)
+    _atomic_write "$project_file" "$stripped"
+    new_count=$(jq '[.hooks // {} | .[] | if type == "array" then length else 0 end] | add // 0' "$project_file" 2>/dev/null || echo 0)
+    stripped_count=$((orig_count - new_count))
+    if [[ $stripped_count -gt 0 ]]; then
+      _warn "Stripped ${stripped_count} hook entries that overlap with toolkit base hooks"
+      _info "  These would have caused duplicate invocations after merge"
+      _info "  Original settings preserved in settings.json.pre-toolkit"
+    fi
+  fi
+}
+
 _init_preserve_existing_settings() {
   local settings_file="${CLAUDE_DIR}/settings.json"
   local project_file="${CLAUDE_DIR}/settings-project.json"
@@ -267,6 +333,12 @@ _init_preserve_existing_settings() {
 
   cp "$settings_file" "$project_file"
   _ok "Created settings-project.json from existing settings.json"
+
+  # Strip hook entries that overlap with toolkit base hooks.
+  # The toolkit base provides hooks for specific event+matcher combinations.
+  # If the project had its own hooks for the same events, both would fire
+  # after the merge — causing duplicate invocations.
+  _init_strip_overlapping_hooks "$project_file"
 
   # If .mcp.json also exists, extract mcpServers into settings-project.json
   if [[ -f "$mcp_file" ]]; then
