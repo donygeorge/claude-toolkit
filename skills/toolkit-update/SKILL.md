@@ -483,12 +483,14 @@ For each drifted file, **ask the user**:
 
 Based on the user's choice:
 
-**Keep customization**: No file changes needed. Update the manifest to record the new toolkit hash (so drift is no longer reported for the current version):
+**Keep customization**: No file changes needed. For agents and rules, update the manifest to record the new toolkit hash (so drift is no longer reported for the current version):
 
 ```bash
 NEW_HASH=$(shasum -a 256 .claude/toolkit/<source_path> | cut -d' ' -f1)
 # Use jq to update the toolkit_hash for this file's entry in .claude/toolkit-manifest.json
 ```
+
+For skills, no manifest hash update is needed — the manifest does not store `toolkit_hash` for skills. The customized status is sufficient.
 
 **Merge upstream changes**: Perform an intelligent merge of the user's customizations with the upstream changes. Show the merged result to the user and **ask for confirmation** before writing the file. If the merge is ambiguous, present options and let the user decide.
 
@@ -505,9 +507,9 @@ cp .claude/toolkit/skills/[skill]/* .claude/skills/[skill]/
 
 After applying the resolution, update the manifest to reflect the current state:
 
-- **Keep customization**: Update the `toolkit_hash` to the new toolkit source hash (for agents/rules). Status stays `"customized"`.
-- **Merge upstream**: Update the `toolkit_hash` to the new toolkit source hash. Status stays `"customized"`.
-- **Revert to managed**: Change the `status` back to `"managed"` and update the `toolkit_hash`. For skills, the status field is in `.skills.<name>.status`.
+- **Keep customization**: For agents/rules, update `toolkit_hash` to the new toolkit source hash. For skills, no hash update needed (skills don't store `toolkit_hash`). Status stays `"customized"`.
+- **Merge upstream**: For agents/rules, update `toolkit_hash` to the new toolkit source hash. For skills, no hash update needed. Status stays `"customized"`.
+- **Revert to managed**: Change `status` back to `"managed"`. For agents/rules, also update `toolkit_hash`. For skills, the status field is in `.skills.<name>.status` (no hash to update).
 
 ---
 

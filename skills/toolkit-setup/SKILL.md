@@ -207,7 +207,7 @@ for d in .claude/skills/*/; do
 done
 ```
 
-If found, re-copy all files from toolkit source: `cp .claude/toolkit/skills/<name>/* .claude/skills/<name>/` (some skills have companion files like `output-schema.json` or `milestone-template.md`)
+If found, re-copy all files from toolkit source: `mkdir -p .claude/skills/<name> && cp .claude/toolkit/skills/<name>/* .claude/skills/<name>/` (some skills have companion files like `output-schema.json` or `milestone-template.md`)
 
 #### Step 0.4: Check for toolkit version changes
 
@@ -777,7 +777,7 @@ git add .claude/toolkit-manifest.json 2>/dev/null
 If `init --force` was run (skills, agents, or rules were created/restored), stage them explicitly:
 
 ```bash
-git add .claude/skills/*/SKILL.md 2>/dev/null
+git add .claude/skills/*/* 2>/dev/null
 git add .claude/agents/*.md 2>/dev/null
 git add .claude/rules/*.md 2>/dev/null
 ```

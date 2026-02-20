@@ -382,7 +382,7 @@ shasum -a 256 .claude/toolkit/<source_path> | cut -d' ' -f1
 
 If the hash differs from the manifest's `toolkit_hash`, the toolkit source has changed since customization (drift).
 
-**For skills**: The manifest does NOT store `toolkit_hash` for skills (only `status` and `files`). To detect drift, compare each file in the customized skill directory against the corresponding toolkit source file using `diff`.
+**For skills**: The manifest does NOT store `toolkit_hash` for skills (only `status`, `files`, and `project_files`). To detect drift, compare each file in the customized skill directory against the corresponding toolkit source file using `diff`.
 
 Drift findings:
 
