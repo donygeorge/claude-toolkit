@@ -226,12 +226,9 @@ Apply only the approved, gate-passing changes to the toolkit source files. Handl
 
 For each approved candidate, compare the toolkit source that the user's customization was originally based on against the current toolkit source:
 
-```bash
-# Read the toolkit_hash from the manifest for this file
-# Compare against the current toolkit source hash
-```
+**For agents and rules**: Read the `toolkit_hash` from the manifest for this file. Compare it against the current toolkit source hash (`shasum -a 256 .claude/toolkit/<source_path>`). If they differ, the toolkit source has changed since the user customized the file (divergence).
 
-If the toolkit source has changed since the user customized the file (i.e., the manifest `toolkit_hash` differs from the current file hash), there is divergence.
+**For skills**: The manifest does NOT store `toolkit_hash` for skills. To detect divergence, compare each file in the customized skill directory against the toolkit source using `diff`. If they differ (beyond the user's intended changes), divergence exists.
 
 #### Step C2.2: Handle divergence
 

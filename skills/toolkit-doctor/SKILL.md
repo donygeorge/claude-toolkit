@@ -372,13 +372,19 @@ For each stack detected by `detect-project.py`, check if a corresponding stack o
 
 #### H5.4: Customized file drift
 
-Read the manifest at `.claude/toolkit-manifest.json`. For each file marked as customized, compare the manifest's recorded `toolkit_hash` against the current toolkit source hash:
+Read the manifest at `.claude/toolkit-manifest.json`. For each file marked as customized, check for drift:
+
+**For agents and rules**: Compare the manifest's recorded `toolkit_hash` against the current toolkit source hash:
 
 ```bash
 shasum -a 256 .claude/toolkit/<source_path> | cut -d' ' -f1
 ```
 
-If the hash differs from the manifest's `toolkit_hash`, the toolkit source has changed since customization (drift):
+If the hash differs from the manifest's `toolkit_hash`, the toolkit source has changed since customization (drift).
+
+**For skills**: The manifest does NOT store `toolkit_hash` for skills (only `status` and `files`). To detect drift, compare each file in the customized skill directory against the corresponding toolkit source file using `diff`.
+
+Drift findings:
 
 - `[OPT]` ("Customized file '[path]' has upstream drift -- the toolkit source was updated since you customized it. Review upstream changes with `/toolkit-update` or re-customize from the new source.")
 

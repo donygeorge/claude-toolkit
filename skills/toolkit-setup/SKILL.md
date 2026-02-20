@@ -207,7 +207,7 @@ for d in .claude/skills/*/; do
 done
 ```
 
-If found, re-copy from toolkit source: `cp .claude/toolkit/skills/<name>/SKILL.md .claude/skills/<name>/SKILL.md`
+If found, re-copy all files from toolkit source: `cp .claude/toolkit/skills/<name>/* .claude/skills/<name>/` (some skills have companion files like `output-schema.json` or `milestone-template.md`)
 
 #### Step 0.4: Check for toolkit version changes
 
@@ -219,11 +219,7 @@ If the status output mentions a version change or shows that the toolkit was rec
 
 > Toolkit has been updated. New features may be available. This setup will refresh your configuration.
 
-If the user wants to see what changed, suggest they check the toolkit CHANGELOG:
-
-```bash
-cat .claude/toolkit/CHANGELOG.md
-```
+If the user wants to see what changed, read the toolkit CHANGELOG using the Read tool on `.claude/toolkit/CHANGELOG.md`.
 
 #### Step 0.5: Detect fully-configured toolkit (early exit)
 
@@ -391,11 +387,7 @@ Generate or update `.claude/toolkit.toml` based on confirmed detection results.
 
 #### Fresh setup (no existing toolkit.toml, or toolkit.toml is the unmodified example)
 
-Read the example template for reference:
-
-```bash
-cat .claude/toolkit/templates/toolkit.toml.example
-```
+Read the example template for reference using the Read tool on `.claude/toolkit/templates/toolkit.toml.example`.
 
 Use the **Write tool** (not bash heredocs) to create `.claude/toolkit.toml` with the confirmed detection results. Map detected values to TOML sections:
 
@@ -405,8 +397,10 @@ Use the **Write tool** (not bash heredocs) to create `.claude/toolkit.toml` with
 | `stacks` | `[project] stacks` |
 | `version_file` | `[project] version_file` |
 | Lint commands | `[hooks.post-edit-lint.linters.<ext>] cmd` and `[hooks.task-completed.gates.lint] cmd` |
+| Lint gate glob | `[hooks.task-completed.gates.lint] glob` (e.g., `"*.py"` for Python) |
 | Format commands | `[hooks.post-edit-lint.linters.<ext>] fmt` |
 | Test command | `[hooks.task-completed.gates.tests] cmd` |
+| Test gate glob | `[hooks.task-completed.gates.tests] glob` (e.g., `"*.py"` for Python) |
 | Source dirs | `[hooks.compact] source_dirs` |
 | Source extensions | `[hooks.compact] source_extensions` |
 
@@ -435,11 +429,7 @@ Create or update the project's `CLAUDE.md` with detected values.
 
 #### If no CLAUDE.md exists
 
-Read the template:
-
-```bash
-cat .claude/toolkit/templates/CLAUDE.md.template
-```
+Read the template using the Read tool on `.claude/toolkit/templates/CLAUDE.md.template`.
 
 Replace placeholders with detected values:
 
@@ -566,13 +556,12 @@ For EACH toolkit skill directory:
 2. That directory must contain a `SKILL.md` file
 3. The `SKILL.md` must be non-empty (not 0 bytes)
 
-If any skill is missing or empty, copy from toolkit source:
+If any skill is missing or empty, copy all files from toolkit source (some skills have companion files like `output-schema.json` or `milestone-template.md`):
 
 ```bash
-cp .claude/toolkit/skills/<name>/SKILL.md .claude/skills/<name>/SKILL.md
+mkdir -p .claude/skills/<name>
+cp .claude/toolkit/skills/<name>/* .claude/skills/<name>/
 ```
-
-Copy any other files from the skill source directory too (some skills have multiple files).
 
 **B. Agent completeness** — verify every toolkit agent is linked:
 
@@ -827,7 +816,7 @@ Configure claude-toolkit for [project-name]
 | Detection returns empty stacks | Ask user to specify stacks manually. Write them to toolkit.toml. |
 | All commands fail validation | Offer to install missing tools (see Phase 2 install table). Ask user to provide working commands if install is declined. |
 | `node_modules` missing | Run `npm install` if `package.json` exists. TypeScript tools (eslint, prettier) need this. |
-| `toolkit.sh generate-settings` fails | Check toolkit.toml for syntax errors. Run `python3 .claude/toolkit/generate-config-cache.py --toml .claude/toolkit.toml --output .claude/toolkit-cache.env --validate-only` to find issues. |
+| `toolkit.sh generate-settings` fails | Check toolkit.toml for syntax errors. Run `python3 .claude/toolkit/generate-config-cache.py --validate-only --toml .claude/toolkit.toml` to find issues. |
 | `toolkit.sh validate` reports issues | Follow auto-fix loop in Step 6.3. Use fix table in priority order. |
 | Missing skills after init | Copy manually: `cp -r .claude/toolkit/skills/<name> .claude/skills/<name>` |
 | Hooks not executable | `chmod +x .claude/toolkit/hooks/*.sh` |

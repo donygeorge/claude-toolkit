@@ -152,11 +152,7 @@ If the fetch fails, see the [Error Handling](#error-handling) table.
 git tag -l 'v*' --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -10
 ```
 
-Read the current toolkit version:
-
-```bash
-cat .claude/toolkit/VERSION
-```
+Read the current toolkit version using the Read tool on `.claude/toolkit/VERSION`.
 
 If the VERSION file does not exist or is empty, display the current version as "unknown" and note this to the user.
 
@@ -183,13 +179,7 @@ If `/toolkit-update` was called with a specific version (e.g., `/toolkit-update 
 
 #### Step U1.3: Show CHANGELOG entries
 
-Display the CHANGELOG entries between the current version and the target version:
-
-```bash
-cat .claude/toolkit/CHANGELOG.md
-```
-
-Extract and display only the entries between the current and target versions. Summarize key changes (new features, bug fixes, breaking changes).
+Read the CHANGELOG using the Read tool on `.claude/toolkit/CHANGELOG.md`. Extract and display only the entries between the current and target versions. Summarize key changes (new features, bug fixes, breaking changes).
 
 If CHANGELOG.md does not exist, inform the user and continue without change summaries.
 
@@ -391,23 +381,15 @@ Regenerate the config cache to ensure it reflects any new config options from th
 
 #### Check 9: Project test suite
 
-Run the project's configured test command (from `[hooks.task-completed.gates.tests] cmd` in toolkit.toml):
+Read the test command from `.claude/toolkit.toml` at `[hooks.task-completed.gates.tests] cmd`. If no test command is configured, skip this check.
 
-```bash
-# Run the project's test command as configured in toolkit.toml
-```
-
-If tests fail: determine whether the failure is related to the toolkit update or a pre-existing issue. **Ask the user** if the failure is unclear or requires a judgment call.
+Run the configured test command. If tests fail: determine whether the failure is related to the toolkit update or a pre-existing issue. **Ask the user** if the failure is unclear or requires a judgment call.
 
 #### Check 10: Project lint
 
-Run the project's configured lint command (from `[hooks.task-completed.gates.lint] cmd` in toolkit.toml):
+Read the lint command from `.claude/toolkit.toml` at `[hooks.task-completed.gates.lint] cmd`. If no lint command is configured, skip this check.
 
-```bash
-# Run the project's lint command as configured in toolkit.toml
-```
-
-If lint fails: determine whether the failure is related to the toolkit update or a pre-existing issue. **Ask the user** if the failure is unclear.
+Run the configured lint command. If lint fails: determine whether the failure is related to the toolkit update or a pre-existing issue. **Ask the user** if the failure is unclear.
 
 #### Validation summary
 
@@ -442,15 +424,23 @@ First, check for customized files:
 bash .claude/toolkit/toolkit.sh status
 ```
 
-Then, for each customized file reported by status, manually check for drift by comparing the manifest's recorded `toolkit_hash` against the current toolkit source hash:
+Then, for each customized file reported by status, check for drift:
+
+**For agents and rules**: Compare the manifest's recorded `toolkit_hash` against the current toolkit source hash:
 
 ```bash
 shasum -a 256 .claude/toolkit/<source_path>
 ```
 
-If the hash differs from what the manifest records, there is drift -- the toolkit source changed since the file was customized.
+If the hash differs from what the manifest records, there is drift — the toolkit source changed since the file was customized.
 
-Note: For skills, compare each file in the skill directory individually, as the drift checker may not cover skills automatically.
+**For skills**: The manifest does NOT store `toolkit_hash` for skills (it only stores the file list). To detect drift, compare each file in the customized skill directory against the corresponding toolkit source file directly:
+
+```bash
+diff .claude/skills/<name>/SKILL.md .claude/toolkit/skills/<name>/SKILL.md
+```
+
+If the files differ, drift exists. Check all files in the skill directory, not just `SKILL.md` (some skills have companion files like `output-schema.json`).
 
 If no drift is detected for any customized file, skip to Phase U5.
 
@@ -513,7 +503,11 @@ ln -sf ../toolkit/agents/[file] .claude/agents/[file]
 cp .claude/toolkit/skills/[skill]/* .claude/skills/[skill]/
 ```
 
-After applying the resolution, update the manifest hashes to reflect the current state.
+After applying the resolution, update the manifest to reflect the current state:
+
+- **Keep customization**: Update the `toolkit_hash` to the new toolkit source hash (for agents/rules). Status stays `"customized"`.
+- **Merge upstream**: Update the `toolkit_hash` to the new toolkit source hash. Status stays `"customized"`.
+- **Revert to managed**: Change the `status` back to `"managed"` and update the `toolkit_hash`. For skills, the status field is in `.skills.<name>.status`.
 
 ---
 
