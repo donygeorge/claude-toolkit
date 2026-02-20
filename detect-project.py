@@ -42,6 +42,9 @@ STACK_INDICATORS: dict[str, dict[str, list[str]]] = {
 # Source directory candidates (checked in order)
 SOURCE_DIR_CANDIDATES = ["src", "app", "lib", "packages"]
 
+# Monorepo subdirectory names to check for nested source dirs
+MONOREPO_SUBDIRS = ["frontend", "backend", "web", "server", "client", "api"]
+
 # Version file precedence (first match wins)
 VERSION_FILE_PRECEDENCE = ["package.json", "pyproject.toml", "VERSION"]
 
@@ -91,6 +94,17 @@ def detect_stacks(project_dir: Path) -> list[str]:
             if (project_dir / filename).exists():
                 found = True
                 break
+        # Check indicator files in monorepo subdirs (e.g., frontend/tsconfig.json)
+        if not found:
+            for subdir in MONOREPO_SUBDIRS:
+                subdir_path = project_dir / subdir
+                if subdir_path.is_dir():
+                    for filename in indicators.get("files", []):
+                        if (subdir_path / filename).exists():
+                            found = True
+                            break
+                if found:
+                    break
         # Check glob patterns (only top-level + one level deep)
         if not found:
             for pattern in indicators.get("globs", []):
@@ -135,12 +149,24 @@ def detect_version_file(project_dir: Path) -> str | None:
 
 
 def detect_source_dirs(project_dir: Path) -> list[str]:
-    """Detect source directories by scanning for common patterns."""
+    """Detect source directories by scanning for common patterns.
+
+    Checks top-level candidates (src, app, lib, packages) and also
+    looks inside monorepo subdirectories (frontend/src, backend/src, etc.).
+    """
     found: list[str] = []
     for candidate in SOURCE_DIR_CANDIDATES:
         candidate_path = project_dir / candidate
         if candidate_path.is_dir():
             found.append(candidate)
+    # Check monorepo subdirs for nested source directories
+    for subdir in MONOREPO_SUBDIRS:
+        subdir_path = project_dir / subdir
+        if subdir_path.is_dir():
+            for candidate in SOURCE_DIR_CANDIDATES:
+                nested_path = subdir_path / candidate
+                if nested_path.is_dir():
+                    found.append(f"{subdir}/{candidate}")
     return found
 
 
@@ -173,10 +199,20 @@ def _probe_executable(exe: str, version_flag: str, project_dir: Path) -> bool:
         return False
 
 
+def _check_package_json_script(project_dir: Path, script_name: str) -> bool:
+    """Check if a package.json script exists with the given name."""
+    scripts = _parse_package_json_scripts(project_dir)
+    return script_name in scripts
+
+
 def detect_lint_commands(
     project_dir: Path, stacks: list[str]
 ) -> dict[str, dict[str, str | bool]]:
-    """Detect lint commands by probing executables for each stack."""
+    """Detect lint commands by probing executables for each stack.
+
+    For TypeScript/JS projects, also checks package.json scripts and npx
+    availability as fallbacks when global executables are not found.
+    """
     lint: dict[str, dict[str, str | bool]] = {}
     for stack in stacks:
         for cmd_info in LINT_COMMANDS.get(stack, []):
@@ -186,6 +222,13 @@ def detect_lint_commands(
                 cmd_str = f"{exe} {args}".strip()
                 lint[stack] = {"cmd": cmd_str, "available": True}
                 break
+        if stack not in lint and stack == "typescript":
+            # Fallback: check package.json scripts for lint entry
+            if _check_package_json_script(project_dir, "lint"):
+                lint[stack] = {"cmd": "npm run lint", "available": True}
+            elif shutil.which("npx"):
+                # npx can run locally-installed eslint
+                lint[stack] = {"cmd": "npx eslint", "available": True}
         if stack not in lint:
             # Record that no lint command was found
             lint[stack] = {"cmd": "", "available": False}
@@ -195,7 +238,11 @@ def detect_lint_commands(
 def detect_format_commands(
     project_dir: Path, stacks: list[str]
 ) -> dict[str, dict[str, str | bool]]:
-    """Detect format commands by probing executables for each stack."""
+    """Detect format commands by probing executables for each stack.
+
+    For TypeScript/JS projects, also checks package.json scripts and npx
+    availability as fallbacks when global executables are not found.
+    """
     fmt: dict[str, dict[str, str | bool]] = {}
     for stack in stacks:
         for cmd_info in FORMAT_COMMANDS.get(stack, []):
@@ -211,6 +258,20 @@ def detect_format_commands(
                     "available": True,
                 }
                 break
+        if stack not in fmt and stack == "typescript":
+            # Fallback: check package.json scripts for format entry
+            if _check_package_json_script(project_dir, "format"):
+                fmt[stack] = {
+                    "cmd": "npm run format",
+                    "check_cmd": "",
+                    "available": True,
+                }
+            elif shutil.which("npx"):
+                fmt[stack] = {
+                    "cmd": "npx prettier --write",
+                    "check_cmd": "npx prettier --check .",
+                    "available": True,
+                }
         if stack not in fmt:
             fmt[stack] = {"cmd": "", "check_cmd": "", "available": False}
     return fmt

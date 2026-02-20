@@ -79,8 +79,48 @@ SCHEMA: dict[str, dict[str, type | dict]] = {
         },
     },
     "skills": {
+        "brainstorm": {
+            "depth": str,
+            "output_dir": str,
+            "codex_iterations": int,
+            "personas": int,
+            "gemini_enabled": str,
+            "auto_plan": str,
+        },
         "implement": {
             "tdd_enforcement": str,
+        },
+        "loop": {
+            "max_iterations": int,
+            "convergence_threshold": int,
+            "deferred_drop_after": int,
+        },
+        "plan": {
+            "output_dir": str,
+            "codex_iterations": int,
+            "auto_implement": str,
+        },
+        "fix": {
+            "scan_cap": int,
+            "max_fix_attempts": int,
+        },
+        "fix-github": {
+            "skip_review": str,
+            "plan_only": str,
+            "max_fix_attempts": int,
+        },
+        "review-suite": {
+            "agents": str,
+            "scope": str,
+            "max_parallel_agents": int,
+            "smoke_timeout": int,
+            "deep_timeout": int,
+        },
+        "verify": {
+            "mode": str,
+        },
+        "commit": {
+            "auto_push": str,
         },
     },
     "notifications": {
@@ -94,7 +134,9 @@ SCHEMA: dict[str, dict[str, type | dict]] = {
 # Enum constraints: keys with a restricted set of valid string values.
 # ---------------------------------------------------------------------------
 ENUM_VALUES: dict[str, list[str]] = {
+    "skills.brainstorm.depth": ["shallow", "normal", "deep"],
     "skills.implement.tdd_enforcement": ["strict", "guided", "off"],
+    "skills.verify.mode": ["deep", "quick"],
 }
 
 

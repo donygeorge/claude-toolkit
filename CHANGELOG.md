@@ -6,11 +6,23 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- **Guard hook allows toolkit.toml edits**: Removed `toolkit.toml` from the sensitive-writes guard — it's a user config file, not a generated file. The guard now only blocks `settings.json` and `toolkit-cache.env` (generated files)
+- **Hook deduplication in settings merge**: When base and project hooks share the same matcher, inner hook arrays are now deduplicated by `command` field (last occurrence wins), preventing duplicate hook entries
+- **Validator false positives on quoted paths**: Fixed path resolution to handle `"$CLAUDE_PROJECT_DIR"` with embedded shell quotes — replaces quoted form first, then bare form
+- **Validator skips system commands**: Hook commands that are system executables (e.g., `osascript`) are no longer flagged as "not found" — the validator now checks PATH before requiring a file
+- **Schema validation for all skill configs**: Added schema entries for `brainstorm`, `plan`, `loop`, `fix`, `fix-github`, `review-suite`, `verify`, and `commit` skill sections in `toolkit.toml`
+- **Sandbox-safe settings generation**: `generate-settings` now writes to temp files and copies to final locations, working around sandbox restrictions that block direct writes to `.claude/settings.json`
+- **toolkit-setup skill sandbox guidance**: Added rules to use Write/Edit tools instead of bash heredocs for config files, preventing sandbox failures during setup
 - **Settings preservation on init**: `toolkit init` now preserves existing `settings.json` and `.mcp.json` by auto-creating `settings-project.json` as the project overlay, preventing loss of project-specific permissions, hooks, deny rules, and MCP servers
 - **MCP server merge semantics**: MCP server entries now use replacement semantics (project replaces base) instead of deep merge with array concat, fixing incorrect `args` array merging
 - **toolkit-setup manifest check**: Fix early exit check using wrong manifest filename (`manifest.json` → `toolkit-manifest.json`) — previously the skill could never detect a fully-configured toolkit
 - **toolkit-setup staging**: Remove `toolkit-cache.env` from staged files list — the cache is generated and gitignored, contradicting the `.gitignore` entry added in the same phase
 - **toolkit-doctor macOS compatibility**: Replace non-portable `timeout` shell command with Bash tool's native timeout parameter for cross-platform compatibility
+
+### Improved
+
+- **Monorepo source detection**: `detect-project.py` now checks monorepo subdirectories (`frontend/`, `backend/`, `web/`, `server/`, `client/`, `api/`) for nested source dirs and stack indicator files
+- **TypeScript lint/format detection**: Falls back to `package.json` scripts (`npm run lint`, `npm run format`) and `npx` when global executables are not found
 
 ## [1.14.0] - 2026-02-18
 

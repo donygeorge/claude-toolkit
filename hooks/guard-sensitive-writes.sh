@@ -26,13 +26,16 @@ esac
 if [ "${TOOLKIT_GUARD_ENABLED:-true}" = "false" ]; then exit 0; fi
 
 # =============================================================================
-# 0. Toolkit config files — must be managed via toolkit.sh, not direct AI writes
+# 0. Toolkit generated files — must be managed via toolkit.sh, not direct AI writes
 # =============================================================================
+# Note: toolkit.toml is intentionally NOT blocked — it's the user config file
+# that AI should be able to write/edit (e.g., during /toolkit-setup).
+# Only generated files that should be regenerated from source are blocked.
 # Match both absolute paths (*/.claude/...) and relative paths (.claude/...)
 case "$HOOK_FILE_PATH" in
-  */.claude/settings.json | */.claude/toolkit.toml | */.claude/toolkit-cache.env | \
-  .claude/settings.json | .claude/toolkit.toml | .claude/toolkit-cache.env)
-    hook_deny "Direct modification of toolkit config blocked — use 'toolkit.sh generate-settings'"
+  */.claude/settings.json | */.claude/toolkit-cache.env | \
+  .claude/settings.json | .claude/toolkit-cache.env)
+    hook_deny "Direct modification of generated toolkit file blocked — use 'toolkit.sh generate-settings'"
     ;;
 esac
 

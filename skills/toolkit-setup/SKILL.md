@@ -46,6 +46,8 @@ Orchestrate post-bootstrap project configuration. Auto-detect stacks and command
 | **2. Detect before assuming** | Always run `detect-project.py` and validate commands before writing config; never guess stacks or commands. |
 | **3. Verify before committing** | Run `toolkit.sh validate` and confirm all generated files are correct before creating any commit. |
 | **4. Preserve existing customizations** | When reconfiguring, keep user edits to `toolkit.toml` and customized files; ask about conflicts. |
+| **5. Use Write/Edit tools for config files** | Use Claude's Write or Edit tools to create/modify `.claude/toolkit.toml` and `CLAUDE.md`. Do NOT use bash heredocs (`cat << 'EOF'`) as they may fail in sandbox environments. |
+| **6. Use toolkit.sh for generated files** | Use `bash .claude/toolkit/toolkit.sh generate-settings` to regenerate `settings.json` and `.mcp.json`. These are generated files — never write them directly. |
 
 ---
 
@@ -298,7 +300,7 @@ Read the example template for reference:
 cat .claude/toolkit/templates/toolkit.toml.example
 ```
 
-Write a new `.claude/toolkit.toml` using the confirmed detection results. Map detected values to TOML sections:
+Use the **Write tool** (not bash heredocs) to create `.claude/toolkit.toml` with the confirmed detection results. Map detected values to TOML sections:
 
 | Detection field | TOML location |
 | --------------- | ------------- |
@@ -326,7 +328,7 @@ Read the current `.claude/toolkit.toml`. Compare each detected value against the
 
 - **If current value matches the example default but detected value is different**: update silently (user never customized this)
 
-Write the updated `.claude/toolkit.toml` preserving the TOML structure and comments.
+Use the **Edit tool** to update `.claude/toolkit.toml` preserving the TOML structure and comments.
 
 ---
 
@@ -356,7 +358,7 @@ Replace placeholders with detected values:
 
 For any command placeholder where no command was detected or validated, comment out that line with a note to customize.
 
-Write the result to `CLAUDE.md` at the project root.
+Use the **Write tool** to create `CLAUDE.md` at the project root.
 
 Tell the user:
 

@@ -279,8 +279,29 @@ def _merge_object_arrays(base: list[dict], overlay: list[dict], key: str) -> lis
     return result
 
 
+def _dedup_hooks_by_command(hooks: list[dict]) -> list[dict]:
+    """Deduplicate hook entries by 'command' field (last occurrence wins).
+
+    When merging base + overlay hooks for the same matcher, duplicate commands
+    can appear.  This keeps the last occurrence (overlay wins over base) while
+    preserving order of first appearance for non-duplicates.
+    """
+    seen: dict[str, int] = {}
+    result: list[dict] = []
+    for hook in hooks:
+        cmd = hook.get("command", "")
+        if cmd and cmd in seen:
+            # Replace the earlier occurrence with this one (overlay wins)
+            result[seen[cmd]] = hook
+        else:
+            if cmd:
+                seen[cmd] = len(result)
+            result.append(hook)
+    return result
+
+
 def _deep_merge_hook_entry(base: dict, overlay: dict) -> dict:
-    """Deep merge a single hook entry, concatenating inner 'hooks' arrays."""
+    """Deep merge a single hook entry, concatenating + deduplicating inner 'hooks' arrays."""
     result = _deep_copy(base)
     for key, value in overlay.items():
         if (
@@ -288,8 +309,9 @@ def _deep_merge_hook_entry(base: dict, overlay: dict) -> dict:
             and isinstance(value, list)
             and isinstance(result.get(key), list)
         ):
-            # Concatenate hook command arrays
-            result[key] = result[key] + _deep_copy(value)
+            # Concatenate hook command arrays, then deduplicate by command
+            combined = result[key] + _deep_copy(value)
+            result[key] = _dedup_hooks_by_command(combined)
         elif isinstance(value, dict) and isinstance(result.get(key), dict):
             result[key] = deep_merge(result[key], value)
         else:

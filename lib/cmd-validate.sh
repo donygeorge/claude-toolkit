@@ -117,15 +117,25 @@ cmd_validate() {
     local hook_errors=0
     while IFS= read -r cmd; do
       [[ -z "$cmd" ]] && continue
-      # Resolve $CLAUDE_PROJECT_DIR
-      local resolved_cmd="${cmd//\$CLAUDE_PROJECT_DIR/$PROJECT_DIR}"
+      # Resolve "$CLAUDE_PROJECT_DIR" (with embedded shell quotes) first,
+      # then bare $CLAUDE_PROJECT_DIR — order matters!
+      local resolved_cmd="${cmd//\"\$CLAUDE_PROJECT_DIR\"/$PROJECT_DIR}"
+      resolved_cmd="${resolved_cmd//\$CLAUDE_PROJECT_DIR/$PROJECT_DIR}"
       # Extract the script path (first token)
       local script_path
       script_path=$(echo "$resolved_cmd" | awk '{print $1}')
+      # Strip surrounding quotes from extracted path
+      script_path="${script_path//\"/}"
       # Handle python3 prefix
       if [[ "$script_path" == "python3" ]]; then
         script_path=$(echo "$resolved_cmd" | awk '{print $2}')
+        script_path="${script_path//\"\$CLAUDE_PROJECT_DIR\"/$PROJECT_DIR}"
         script_path="${script_path//\$CLAUDE_PROJECT_DIR/$PROJECT_DIR}"
+        script_path="${script_path//\"/}"
+      fi
+      # Skip system commands (not file paths) — e.g., osascript, say
+      if command -v "$script_path" &>/dev/null && [[ "$script_path" != /* ]] && [[ "$script_path" != ./* ]]; then
+        continue
       fi
       if [[ -f "$script_path" ]]; then
         if [[ -x "$script_path" ]] || [[ "$script_path" == *.py ]]; then
