@@ -303,7 +303,8 @@ If the user provides a version without the `v` prefix, prepend it automatically 
 After the update command completes, check whether anything actually changed. The primary signal is the **command output** from Step U2.1, not a diff:
 
 1. **Check the subtree pull output**: If it contains "Already up to date" (or "Already up-to-date" on older git versions), no merge commit was created and `HEAD` is unchanged.
-2. **If the output does NOT say "Already up to date"**, a merge commit was created. Verify changes:
+2. **Locale fallback**: If git is configured for a non-English locale, the "Already up to date" message may appear in another language. As a secondary check, compare `HEAD` before and after the pull — if they are the same commit hash, no update occurred regardless of the output language.
+3. **If the output does NOT indicate "already up to date" AND `HEAD` changed**, a merge commit was created. Verify changes:
 
 ```bash
 git diff HEAD~1 --stat -- .claude/toolkit/

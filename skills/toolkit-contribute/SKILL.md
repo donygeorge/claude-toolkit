@@ -377,11 +377,7 @@ Present the combined preview to the user:
 
 **Wait for user confirmation before applying.**
 
-After the user confirms, apply the changes to the toolkit source files:
-
-```bash
-# Copy the approved changes to .claude/toolkit/<source_path>
-```
+After the user confirms, apply the changes to the toolkit source files using the **Edit tool** (or Write tool for new files). Do NOT use `cp` — the customized file may contain project-specific content that should not be copied verbatim into the toolkit source. Instead, apply only the approved generic changes to each toolkit source file.
 
 Verify the changes were applied correctly. Note: `.claude/toolkit` is a subtree, not a separate repository -- always run git commands from the project root. Scope the diff to only the contributed files to avoid noise from unrelated toolkit changes:
 
@@ -611,7 +607,9 @@ Present the PR title and summary:
 
 The changes applied to `.claude/toolkit/` in Step C2.3 were needed for validation and patch generation. Now that the patch has been created, revert these local changes to avoid divergence from the upstream subtree.
 
-**IMPORTANT**: Only revert the specific files that were part of the contribution, not ALL `.claude/toolkit/` changes (the user may have other in-progress work):
+**IMPORTANT**: Only revert the specific files that were part of the contribution, not ALL `.claude/toolkit/` changes (the user may have other in-progress work).
+
+**Pre-revert safety check**: Before reverting, check if any contributed files have been staged (`git diff --cached --name-only -- .claude/toolkit/<source_path>`). If files are staged, warn the user that `git restore` will unstage and discard those changes, and ask for confirmation.
 
 ```bash
 # Revert ONLY the contributed files (one per contributed file)
