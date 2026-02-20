@@ -328,7 +328,7 @@ Run the FULL toolkit test suite against the modified toolkit source. ALL checks 
 shellcheck -x -S warning .claude/toolkit/hooks/*.sh .claude/toolkit/lib/*.sh .claude/toolkit/toolkit.sh
 ```
 
-Note: Run all tests from the project root using paths to the toolkit directory. Do NOT `cd` into the subtree, as bash tests use git operations that need the project-level `.git`.
+Note: Run all tests from the project root using paths to the toolkit directory. Do NOT `cd` into the subtree — the subtree shares the project's `.git` directory and `cd`-ing into it would change the working directory context.
 
 #### Step C3.2: Python tests
 
@@ -354,7 +354,15 @@ bash .claude/toolkit/tests/test_manifest.sh
 bash .claude/toolkit/tests/test_hooks.sh
 ```
 
+#### Step C3.5b: Skill tests
+
+```bash
+bash .claude/toolkit/tests/test_skills.sh
+```
+
 #### Step C3.6: Settings determinism
+
+Note: This is already included in C3.2's full test run. This explicit step ensures settings determinism is verified even if C3.2 was partially skipped or failed for unrelated reasons.
 
 ```bash
 python3 -m pytest .claude/toolkit/tests/test_generate_settings.py -v
@@ -375,6 +383,7 @@ Present all results in a table:
 | CLI integration tests | pass/fail | [details] |
 | Manifest integration tests | pass/fail | [details] |
 | Hook tests | pass/fail | [details] |
+| Skill tests | pass/fail | [details] |
 | Settings determinism | pass/fail | [details] |
 | Edge case verification | pass/fail | [details] |
 
@@ -537,7 +546,7 @@ The summary must include ALL of the following sections:
 
 - **Changes proposed**: [count] files, with a brief description of each change
 - **Generalizability results**: table showing all 10 checks (H1-H7, Q1-Q3) for each file with pass/fail status
-- **Validation results**: table showing all 7 test suite checks and their pass/fail status
+- **Validation results**: table showing all 8 test suite checks and their pass/fail status
 - **Submission method**: fork workflow or direct push
 - **Submission instructions**: the copy-pasteable commands from Phase C4
 - **Patch location**: path to the generated patch file
@@ -569,6 +578,7 @@ Example summary format:
 > | CLI integration tests | pass |
 > | Manifest integration tests | pass |
 > | Hook tests | pass |
+> | Skill tests | pass |
 > | Settings determinism | pass |
 > | Edge case verification | pass |
 >

@@ -1,5 +1,9 @@
 {
   "mcpServers": {
+    "codex": {
+      "command": "npx",
+      "args": ["-y", "@openai/codex@latest", "--mcp"]
+    },
     "context7": {
       "command": "npx",
       "args": ["-y", "@anthropic-ai/context7-mcp@0.7.1"]

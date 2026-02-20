@@ -7,6 +7,7 @@
       "mcp__plugin_context7_context7__resolve-library-id",
       "mcp__plugin_context7_context7__query-docs",
       "mcp__codex__codex",
+      "mcp__codex__codex-reply",
       "Bash(ls:*)",
       "Bash(find:*)",
       "Bash(tree:*)",

@@ -136,9 +136,11 @@ bash .claude/toolkit/toolkit.sh init --from-example
 
 Report to user: "No toolkit.toml found. Created one from the example template."
 
+Note: `init --from-example` runs the full init flow (agents, skills, rules, config, manifest). After this completes, skip the missing skills/agents check below — the init just created them.
+
 **If skills or agents are missing** (`missing_skills` or `missing_agents` non-empty):
 
-This is a partial install. Fill the gaps (requires toolkit.toml to exist — handle that first):
+Only run this if `init --from-example` was NOT just executed above (that already handles missing skills/agents). This is a partial install. Fill the gaps (requires toolkit.toml to exist — handle that first):
 
 ```bash
 bash .claude/toolkit/toolkit.sh init --force
@@ -263,7 +265,7 @@ If `--reconfigure` was passed, skip the state-based shortcuts above and proceed 
 
 ### Phase 1: Project Discovery
 
-Run the detection script to auto-detect project properties. Note: this is the SAME command as Phase 0 Step 0.2 — if you already have the JSON output cached from Phase 0, reuse it instead of re-running.
+Run the detection script to auto-detect project properties. Note: this is the SAME command as Phase 0 Step 0.2 — if no changes were made in Phase 0 (no `init --force`, no `init --from-example`), reuse the cached JSON output. If Phase 0 made changes, re-run detection to get fresh results.
 
 ```bash
 python3 .claude/toolkit/detect-project.py --project-dir .
@@ -305,7 +307,7 @@ For each detected command (lint, test, format), run it manually:
 
 ```bash
 # Example: validate lint command
-ruff check --version    # Check if available
+ruff --version    # Check if the tool is available
 ```
 
 **For each command**:
@@ -615,6 +617,7 @@ Specifically check:
 - If project has `enabledPlugins`: `jq '.enabledPlugins' .claude/settings.json` should list them
 - If project has `sandbox`: `jq '.sandbox' .claude/settings.json` should show project's sandbox config
 - If project has custom `env` vars: `jq '.env' .claude/settings.json` should include them
+- If project has `mcpServers`: these are routed to `.mcp.json` (NOT `settings.json`) — check `jq '.mcpServers' .mcp.json` instead
 
 If expected project content is missing from the merge, re-run Step 6.2. If still missing, report the specific missing keys to the user.
 
@@ -683,7 +686,7 @@ If the lint command fails:
 
 #### Step 7.2: Verify format command
 
-If a format command was configured, run its **check mode** (dry-run) on a real source file:
+If a format command was configured, run its **check mode** (dry-run) on a real source file. The detection output includes a `check_cmd` field for each format command — use that if available:
 
 ```bash
 # Example: verify format command in check mode (does not modify files)
@@ -691,7 +694,7 @@ ruff format --check src/example.py
 # or: npx prettier --check src/example.ts
 ```
 
-If the format tool has no check mode, run `<cmd> --version` to at least verify it's callable.
+If no `check_cmd` was detected and the format tool has no known check mode, run `<cmd> --version` to at least verify it's callable.
 
 If the format command fails:
 
@@ -703,10 +706,10 @@ If the format command fails:
 
 #### Step 7.3: Verify test command
 
-If a test command was configured, run it:
+If a test command was configured (from `[hooks.task-completed.gates.tests] cmd` in toolkit.toml), run it:
 
 ```bash
-# Run the configured test command (whatever was written to toolkit.toml)
+# Run the configured test command from toolkit.toml
 ```
 
 If the test command fails:

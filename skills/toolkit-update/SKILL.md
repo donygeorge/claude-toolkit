@@ -149,7 +149,7 @@ If the fetch fails, see the [Error Handling](#error-handling) table.
 #### Step U1.2: Show available versions
 
 ```bash
-git tag -l 'v*' --sort=-version:refname | head -10
+git tag -l 'v*' --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -10
 ```
 
 Read the current toolkit version:
@@ -232,21 +232,23 @@ Run the toolkit update and handle any conflicts.
 bash .claude/toolkit/toolkit.sh update [version]
 ```
 
-Replace `[version]` with the user's chosen version (e.g., `v1.3.0`), or omit for the latest release.
+Replace `[version]` with the user's chosen version tag (e.g., `v1.3.0`) — the version must start with `v`. Omit the version to update to the latest semver release tag. Use `--latest` to pull from the `main` branch instead of a release tag.
 
 #### Step U2.2: Check if already up to date
 
 After the update command completes, check whether anything actually changed:
 
 ```bash
-git diff HEAD~1 --stat
+git diff HEAD~1 --stat -- .claude/toolkit/
 ```
 
-If the update command output says "Already up to date" or if no files changed (empty diff):
+If the update command output says "Already up to date" or if no toolkit files changed (empty diff):
 
 > The toolkit is already at the target version. No changes were made.
 
 **Skip phases U3-U5 and end the update flow.**
+
+Note: Use `-- .claude/toolkit/` to scope the diff to toolkit files only. The subtree pull creates a merge commit, so `HEAD~1` compares against the first parent (pre-merge state).
 
 #### Step U2.3: Check for conflicts
 
@@ -389,7 +391,7 @@ Regenerate the config cache to ensure it reflects any new config options from th
 
 #### Check 9: Project test suite
 
-Run the project's configured test command (from toolkit.toml):
+Run the project's configured test command (from `[hooks.task-completed.gates.tests] cmd` in toolkit.toml):
 
 ```bash
 # Run the project's test command as configured in toolkit.toml
@@ -399,7 +401,7 @@ If tests fail: determine whether the failure is related to the toolkit update or
 
 #### Check 10: Project lint
 
-Run the project's configured lint command (from toolkit.toml):
+Run the project's configured lint command (from `[hooks.task-completed.gates.lint] cmd` in toolkit.toml):
 
 ```bash
 # Run the project's lint command as configured in toolkit.toml
@@ -555,8 +557,9 @@ If there are changes, stage all changed files individually. Do NOT use `git add 
 git add .claude/settings.json
 git add .mcp.json
 git add .claude/toolkit-manifest.json
-# Stage specific changed files within .claude/toolkit/ individually
 ```
+
+Note: Files inside `.claude/toolkit/` were already committed by the subtree pull merge commit — do NOT re-stage them. Only stage files outside the subtree that were modified during post-update steps.
 
 Note: `toolkit-cache.env` is typically in `.gitignore` and should NOT be staged.
 

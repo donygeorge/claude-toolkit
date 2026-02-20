@@ -169,11 +169,7 @@ Compare the commands configured in toolkit.toml against what `detect-project.py`
 python3 .claude/toolkit/generate-config-cache.py --validate-only --toml .claude/toolkit.toml
 ```
 
-If the `--validate-only` flag is not supported, attempt cache generation and check for errors:
-
-```bash
-python3 .claude/toolkit/generate-config-cache.py --toml .claude/toolkit.toml --output /dev/null
-```
+This validates the TOML against the schema without generating output. If it returns non-zero, the TOML has validation errors.
 
 - Validation errors -> `[ERROR]` with the specific schema error message
 
@@ -244,11 +240,13 @@ Check that external dependencies and credentials referenced across the configura
 
 Read `.mcp.json` and check each configured MCP server:
 
+Base MCP servers (from `mcp/base.mcp.json`):
+
 | Server | Dependency Check | API Key Check | If Missing |
 | ------ | ---------------- | ------------- | ---------- |
+| codex | `command -v npx` | `OPENAI_API_KEY` env var set? | `[WARN]` OPENAI_API_KEY not set -- codex MCP may not authenticate |
 | context7 | `command -v npx` | None required | `[WARN]` npx not found -- context7 MCP will not work |
 | playwright | `command -v npx` | None required | `[WARN]` npx not found -- playwright MCP will not work |
-| codex | Check codex server config | `OPENAI_API_KEY` env var set? | `[WARN]` OPENAI_API_KEY not set -- codex MCP may not authenticate |
 
 For any additional MCP servers found in `.mcp.json` that are not in the table above, check that the configured `command` is available.
 

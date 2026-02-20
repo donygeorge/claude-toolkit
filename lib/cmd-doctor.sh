@@ -352,13 +352,24 @@ cmd_doctor() {
   echo ""
   echo "Checking MCP server dependencies..."
   if command -v npx &>/dev/null; then
-    _ok "npx found (required for MCP servers: context7, playwright)"
+    _ok "npx found (required for MCP servers: codex, context7, playwright)"
   else
-    _warn "npx not found — MCP servers (context7, playwright) will not work"
+    _warn "npx not found — MCP servers (codex, context7, playwright) will not work"
     _info "  Fix: Install Node.js (https://nodejs.org) or run: brew install node"
     warnings=$((warnings + 1))
   fi
   checks=$((checks + 1))
+
+  # Check OPENAI_API_KEY for codex MCP
+  checks=$((checks + 1))
+  if [[ -n "${OPENAI_API_KEY:-}" ]]; then
+    _ok "OPENAI_API_KEY is set (required for codex MCP)"
+    passed=$((passed + 1))
+  else
+    _warn "OPENAI_API_KEY not set — codex MCP may not authenticate"
+    _info "  Fix: export OPENAI_API_KEY=<your-key>"
+    warnings=$((warnings + 1))
+  fi
 
   # ---- 15. Optional integrations ----
   echo ""
@@ -374,7 +385,8 @@ cmd_doctor() {
     if jq -e '.mcpServers.codex' "$mcp_json" &>/dev/null; then
       _ok "Codex MCP configured in .mcp.json"
     else
-      _info "Codex MCP not configured (optional — add to .mcp.json for code review in skills)"
+      _warn "Codex MCP not found in .mcp.json — run 'generate-settings' to add it from base"
+      warnings=$((warnings + 1))
     fi
   else
     _info "No .mcp.json found (run 'generate-settings' to create)"
