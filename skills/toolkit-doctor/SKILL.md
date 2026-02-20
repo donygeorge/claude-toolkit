@@ -208,10 +208,10 @@ Test that configured commands actually work -- not just "is the binary available
 grep -q '^test-changed:' Makefile 2>/dev/null
 ```
 
-3. Run the test command with a short timeout (30s) to verify it at least starts:
+3. Run the test command to verify it at least starts. Use a Bash tool call with a 30-second timeout to avoid hanging on long-running test suites:
 
 ```bash
-timeout 30 <test-command> 2>&1 || true
+<test-command> 2>&1 || true
 ```
 
 4. Classify:

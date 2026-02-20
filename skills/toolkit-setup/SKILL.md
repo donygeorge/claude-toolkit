@@ -160,7 +160,7 @@ If ALL of the following are true, the toolkit is already fully set up:
 - `missing_skills` is empty
 - `missing_agents` is empty
 - `broken_symlinks` is empty
-- `.claude/manifest.json` exists
+- `.claude/toolkit-manifest.json` exists
 
 AND `--reconfigure` was NOT passed, then **stop here** and tell the user:
 
@@ -522,12 +522,13 @@ Stage each file individually. Do NOT use `git add .` or `git add -A`.
 
 ```bash
 git add .claude/toolkit.toml
-git add .claude/toolkit-cache.env
 git add .claude/settings.json
 git add .mcp.json
 git add CLAUDE.md
 git add .gitignore
 ```
+
+Note: `toolkit-cache.env` is generated and gitignored — do NOT stage it.
 
 Also stage any files created or restored by `toolkit.sh init --force` (skills, agents, rules).
 
