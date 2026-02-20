@@ -29,6 +29,8 @@ All notable changes to this project will be documented in this file.
 - **Validation now detects duplicate hooks**: `toolkit.sh validate` checks for duplicate hook commands in merged settings and warns about MCP server / enabledPlugins overlap
 - **Skill visibility documented**: Added skill visibility section to `docs/reference.md` explaining `user-invocable` flag and listing hidden skills
 - **toolkit-setup validation guidance**: Updated Phase 6.2 to list all fixable validation issues including missing skills, duplicate hooks, and MCP overlap
+- **toolkit-setup edge case detection**: Added Phase 0.3.5 to detect incomplete migrations (pre-toolkit backups without settings-project.json), non-executable hooks, and orphaned skill directories
+- **toolkit-setup deep semantic validation**: Replaced Phase 6 with comprehensive 5-step validation: config cache regen, settings generation, auto-fix loop with prioritized fix table, deep semantic checks (skill/agent completeness, settings merge integrity, MCP server integrity, hook command resolution, config consistency), and a mandatory final validation pass
 
 ## [1.14.0] - 2026-02-18
 

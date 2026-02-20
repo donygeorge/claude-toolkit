@@ -136,6 +136,44 @@ bash .claude/toolkit/toolkit.sh generate-settings
 
 Report to user: "Settings were missing or stale. Regenerated settings.json and config cache."
 
+#### Step 0.3.5: Detect migration edge cases
+
+These checks catch problems from interrupted installs or partial migrations.
+
+**Incomplete migration** (pre-toolkit backups exist but settings-project.json missing):
+
+```bash
+ls .claude/settings.json.pre-toolkit 2>/dev/null
+ls .claude/settings-project.json 2>/dev/null
+```
+
+If `.pre-toolkit` backups exist but `settings-project.json` does NOT exist, a previous migration was incomplete. Fix:
+
+```bash
+cp .claude/settings.json.pre-toolkit .claude/settings-project.json
+bash .claude/toolkit/toolkit.sh generate-settings
+```
+
+Report: "Found pre-toolkit backup but no settings-project.json. Restored project settings from backup."
+
+**Non-executable hooks:**
+
+```bash
+find .claude/toolkit/hooks -name '*.sh' ! -perm -111 2>/dev/null
+```
+
+If any are found: `chmod +x .claude/toolkit/hooks/*.sh`
+
+**Orphaned skill directories** (directory exists in `.claude/skills/` but is empty or missing SKILL.md):
+
+```bash
+for d in .claude/skills/*/; do
+  [ -f "$d/SKILL.md" ] || echo "Missing SKILL.md in $d"
+done
+```
+
+If found, re-copy from toolkit source: `cp .claude/toolkit/skills/<name>/SKILL.md .claude/skills/<name>/SKILL.md`
+
 #### Step 0.4: Check for toolkit version changes
 
 ```bash
@@ -394,56 +432,149 @@ If the CLAUDE.md already has a toolkit section, leave it unchanged.
 
 ---
 
-### Phase 6: Settings Generation & Validation
+### Phase 6: Settings Generation & Comprehensive Validation
 
-Generate the merged settings and validate the installation.
+Generate the merged settings, validate the installation, auto-fix any issues, then run deep semantic checks that go beyond what the CLI validator covers.
 
-#### Step 6.1: Generate settings
+#### Step 6.1: Regenerate config cache
+
+Before generating settings, ensure the config cache is fresh:
+
+```bash
+python3 .claude/toolkit/generate-config-cache.py --toml .claude/toolkit.toml --output .claude/toolkit-cache.env
+```
+
+If this fails, `toolkit.toml` has syntax or schema errors. Read the error output, fix the TOML file using the **Edit tool**, and re-run. Common causes:
+
+- Unknown TOML section (check against `.claude/toolkit/templates/toolkit.toml.example`)
+- Wrong value type (e.g., string where int expected)
+- Invalid enum value (e.g., `mode = "fast"` instead of `"deep"` or `"quick"`)
+
+#### Step 6.2: Generate settings
 
 ```bash
 bash .claude/toolkit/toolkit.sh generate-settings
 ```
 
-This merges base settings + stack overlays + project overrides into `.claude/settings.json` and `.mcp.json`.
+This merges base + stack overlays + project overrides into `.claude/settings.json` and `.mcp.json`.
 
-If this fails, read the error output and fix the issue (usually a malformed toolkit.toml). Re-run after fixing.
+If this fails:
 
-#### Step 6.2: Validate installation
+- Malformed `toolkit.toml` — fix and re-run Step 6.1 first
+- Missing stack overlay — verify stacks in toolkit.toml match available stacks in `.claude/toolkit/templates/stacks/`
+- Permission error — the command uses temp files + cp internally, but if it still fails, check directory permissions on `.claude/`
+
+#### Step 6.3: Validate and auto-fix loop
+
+Run validation:
 
 ```bash
 bash .claude/toolkit/toolkit.sh validate
 ```
 
-This checks:
+If validation reports errors or warnings, apply fixes for each issue type using the table below. Then **re-run validation**. Repeat up to **2 rounds** of fix-then-validate.
 
-- Hook scripts are executable and found
-- Symlinks are valid
-- All toolkit skills are registered in `.claude/skills/`
-- Settings files exist and are well-formed
-- Config cache is up to date
-- **Settings protection**: project-specific settings are preserved in `settings-project.json`
-- **Duplicate hooks**: No duplicate hook commands in merged settings
-- **MCP overlap**: No `.mcp.json` servers that duplicate `enabledPlugins`
+**Auto-fix procedures** (apply in order of priority):
 
-**Critical check**: If validate warns about "project-specific settings but no settings-project.json", this means the project had custom settings that aren't protected. Fix immediately:
+| Issue | Fix |
+| ----- | --- |
+| **Missing skills or agents** | `bash .claude/toolkit/toolkit.sh init --force` |
+| **Hooks not executable** | `chmod +x .claude/toolkit/hooks/*.sh` |
+| **Broken symlinks** | `bash .claude/toolkit/toolkit.sh init --force` |
+| **Stale config cache** | Re-run Step 6.1 |
+| **Manifest not found** | `bash .claude/toolkit/toolkit.sh init --force` |
+| **settings.json invalid JSON** | Delete `.claude/settings.json` and re-run Step 6.2 |
+| **No settings-project.json but custom settings exist** | If `.claude/settings.json.pre-toolkit` exists: `cp .claude/settings.json.pre-toolkit .claude/settings-project.json` then re-run Step 6.2. If no backup exists, ask the user to check `git log -p -- .claude/settings.json` for their original settings. |
+| **Duplicate hooks in settings.json** | Read `.claude/settings-project.json`. Find hook entries whose event type + matcher combination already exists in `.claude/toolkit/templates/settings-base.json`. Remove those entries from `settings-project.json` using the **Edit tool**. Then re-run Step 6.2. |
+| **MCP server / plugin overlap** | Read `.claude/settings.json` for `enabledPlugins` and `.mcp.json` for `mcpServers`. If a server name appears in both, the generate-settings dedup should have handled it. If it didn't, manually remove the overlapping entry from `settings-project.json` (if the user added it there) or inform the user. Re-run Step 6.2. |
+
+After 2 rounds of fix-then-validate, if errors remain, report them to the user with specific file paths and what went wrong.
+
+#### Step 6.4: Deep semantic validation
+
+The CLI validator checks structural health. This step verifies **semantic correctness** that the validator cannot check. Read the relevant files and verify each property.
+
+**A. Skill completeness** — verify every toolkit skill is registered with content:
 
 ```bash
-cp .claude/settings.json.pre-toolkit .claude/settings-project.json
-bash .claude/toolkit/toolkit.sh generate-settings
+ls -d .claude/toolkit/skills/*/
+ls -d .claude/skills/*/
 ```
 
-If no `.pre-toolkit` backup exists but settings look incomplete (missing permissions, MCP servers, sandbox config), ask the user to check git history for their original `settings.json` and restore it as `settings-project.json`.
+For EACH toolkit skill directory:
 
-If validation reports other issues, attempt to fix them:
+1. A matching directory must exist in `.claude/skills/`
+2. That directory must contain a `SKILL.md` file
+3. The `SKILL.md` must be non-empty (not 0 bytes)
 
-- Missing skills or agents: `bash .claude/toolkit/toolkit.sh init --force`
-- Missing executability: `chmod +x .claude/toolkit/hooks/*.sh`
-- Broken symlinks: `bash .claude/toolkit/toolkit.sh init --force`
-- Stale config cache: `python3 .claude/toolkit/generate-config-cache.py --toml .claude/toolkit.toml --output .claude/toolkit-cache.env`
-- Duplicate hooks: Check `settings-project.json` for hook entries that overlap with toolkit base hooks; remove duplicates
-- MCP server overlap: Check if `.mcp.json` servers duplicate `enabledPlugins`; remove the `.mcp.json` entry or the plugin
+If any skill is missing or empty, copy from toolkit source:
 
-Re-run validation after fixes. If issues persist, report them to the user.
+```bash
+cp .claude/toolkit/skills/<name>/SKILL.md .claude/skills/<name>/SKILL.md
+```
+
+Copy any other files from the skill source directory too (some skills have multiple files).
+
+**B. Agent completeness** — verify every toolkit agent is linked:
+
+```bash
+ls .claude/toolkit/agents/*.md
+ls .claude/agents/*.md
+```
+
+For EACH toolkit agent file, verify a corresponding file or symlink exists in `.claude/agents/`. If missing:
+
+```bash
+bash .claude/toolkit/toolkit.sh init --force
+```
+
+**C. Settings merge integrity** — read `.claude/settings.json` and verify:
+
+- Has a `hooks` key with at least one event type entry
+- Has a `permissions` key with `deny` list entries
+- If `.claude/settings-project.json` exists and contains `enabledPlugins`, verify they appear in the merged `settings.json`
+- If `.claude/settings-project.json` exists and contains `sandbox` config, verify it appears in merged `settings.json`
+- If `.claude/settings-project.json` exists and contains custom `env` variables, verify they appear in merged `settings.json`
+
+If expected project content is missing from the merge, re-run Step 6.2. If still missing after regeneration, report the specific missing keys to the user.
+
+**D. MCP server integrity** — read `.mcp.json` and verify:
+
+- Has a `mcpServers` key
+- Read `.claude/toolkit/mcp/base.mcp.json` for the expected base servers
+- Each base server should be present in `.mcp.json` UNLESS it overlaps with an `enabledPlugins` entry in `settings.json` (intentional dedup — this is correct)
+- If a base server is missing and there's no plugin overlap, re-run Step 6.2
+
+**E. Hook command resolution** — for each hook command in `.claude/settings.json`:
+
+- Replace `$CLAUDE_PROJECT_DIR` (and `"$CLAUDE_PROJECT_DIR"` with embedded quotes) with the actual project directory path
+- Extract the script path (first token, or second token if first is `python3`)
+- If the script path is a system command (like `osascript`), skip it
+- Otherwise verify the file exists and is executable (or is a `.py` file)
+
+If hook scripts are missing, run `bash .claude/toolkit/toolkit.sh init --force` to restore them.
+
+**F. Config consistency** — verify toolkit.toml aligns with reality:
+
+- Stacks in `toolkit.toml` should match what `detect-project.py` found (or what the user confirmed in Phase 3). If they differ and the user didn't override, update toolkit.toml using the **Edit tool** and re-run Steps 6.1-6.2.
+- Config cache (`toolkit-cache.env`) should be newer than `toolkit.toml`. If stale, re-run Step 6.1.
+
+#### Step 6.5: Final validation pass
+
+After all auto-fixes and semantic checks, run one final validation:
+
+```bash
+bash .claude/toolkit/toolkit.sh validate
+```
+
+This **must** pass with 0 errors. Warnings are acceptable if they are documented edge cases (e.g., shellcheck not installed).
+
+If errors persist, report each remaining error to the user with:
+
+- The exact error message
+- Which file is affected
+- What was attempted to fix it
+- What the user should check manually
 
 ---
 
