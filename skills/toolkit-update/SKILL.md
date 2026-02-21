@@ -641,6 +641,63 @@ After applying the resolution, update the manifest to reflect the current state:
 
 ---
 
+### Phase U4.5: Agent Context Optimization
+
+After drift resolution, check whether the project can benefit from selective agent installation (v1.15.0+).
+
+#### Step U4.5.1: Check current agent configuration
+
+```bash
+ls .claude/agents/*.md 2>/dev/null | wc -l
+```
+
+Read `.claude/toolkit.toml` and check whether an `[agents]` section with an `install` key exists.
+
+If an `[agents]` section already exists, **skip this phase** — the user has already configured their agent selection.
+
+If no `[agents]` section exists AND there are more than 2 agent files in `.claude/agents/`, present the optimization opportunity:
+
+> **Agent context optimization available** (new in v1.15.0)
+>
+> Your project currently has [N] agents installed (~[size]KB in system prompt). You can reduce this by selecting only the agents you need. Agents not installed are still available on-demand through skills like `/review-suite`.
+>
+> **Options**:
+>
+> 1. **Lean install (recommended)** — Keep only `reviewer` and `commit-check` (~8.5KB, saves ~40KB)
+> 2. **Custom selection** — Choose which agents to keep
+> 3. **Keep all agents** — No changes (current behavior)
+
+**Wait for the user's choice.**
+
+#### Step U4.5.2: Apply agent configuration
+
+Based on the user's choice:
+
+**Lean install**: Add the `[agents]` section to `.claude/toolkit.toml`:
+
+```toml
+[agents]
+install = ["reviewer", "commit-check"]
+```
+
+**Custom selection**: Ask the user which agents they want. Available agents: `reviewer`, `qa`, `security`, `ux`, `pm`, `docs`, `architect`, `commit-check`, `plan`, `gemini`. Add their selection to toolkit.toml.
+
+**Keep all**: Add `install = ["all"]` to make the intent explicit and suppress future migration hints.
+
+After modifying toolkit.toml, apply the change:
+
+```bash
+bash .claude/toolkit/toolkit.sh init --force
+```
+
+Verify the correct agents are now in `.claude/agents/`:
+
+```bash
+ls .claude/agents/*.md
+```
+
+---
+
 ### Phase U5: Summary & Commit
 
 Present a comprehensive summary and commit the update.

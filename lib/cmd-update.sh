@@ -329,6 +329,15 @@ cmd_update() {
     _atomic_write "$MANIFEST_PATH" "$updated_manifest"
   fi
 
+  # Post-update validation
+  echo ""
+  echo "Validating updated installation..."
+  if cmd_validate; then
+    _ok "All validation checks passed"
+  else
+    _warn "Validation reported issues. Run 'toolkit.sh validate' for details."
+  fi
+
   echo ""
   _ok "Toolkit updated to ${ref}"
 }

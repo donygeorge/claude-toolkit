@@ -1,6 +1,6 @@
 # claude-toolkit
 
-![CI](https://github.com/donygeorge/claude-toolkit/actions/workflows/ci.yml/badge.svg) ![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg) ![Version](https://img.shields.io/badge/version-1.14.0-green.svg)
+![CI](https://github.com/donygeorge/claude-toolkit/actions/workflows/ci.yml/badge.svg) ![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg) ![Version](https://img.shields.io/badge/version-1.15.0-green.svg)
 
 A shareable, configurable collection of Claude Code hooks, agents, skills, and rules for safe, autonomous AI-assisted development.
 
@@ -102,10 +102,12 @@ Toolkit repo: https://github.com/donygeorge/claude-toolkit.git
    git fetch claude-toolkit --tags
    bash .claude/toolkit/toolkit.sh update
 3. Read and follow .claude/skills/toolkit-update/SKILL.md (the /toolkit-update skill)
-   to validate the installation, resolve any drift, and commit.
+   to validate the installation, resolve any drift, optimize agent configuration, and commit.
 ```
 
 Or simply run `/toolkit-update` if the toolkit-update skill is already installed (v1.14.0+).
+
+The update skill will ask whether you want to reduce agent context overhead (v1.15.0+). The default lean install keeps only `reviewer` and `commit-check` (~8.5KB vs ~49KB). All agents remain available on-demand through skills like `/review-suite`.
 
 ## Skill Workflow
 
