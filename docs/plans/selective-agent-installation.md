@@ -184,12 +184,12 @@ Only symlink agents listed in `agents.install` during init.
 
 **Exit Criteria**:
 
-- [ ] `toolkit.sh init --from-example --dry-run` shows only `reviewer.md` and `commit-check.md` as agents to symlink
-- [ ] `toolkit.sh init --from-example` creates symlinks only for configured agents
-- [ ] With `install = ["all"]` in toml, all 10 agents are symlinked
-- [ ] With `install = ["none"]` in toml, no agents are symlinked
-- [ ] Agent memory directories are created for ALL agents regardless of install list
-- [ ] `shellcheck -x -S warning lib/cmd-init.sh` passes
+- [x] `toolkit.sh init --from-example --dry-run` shows only `reviewer.md` and `commit-check.md` as agents to symlink
+- [x] `toolkit.sh init --from-example` creates symlinks only for configured agents
+- [x] With `install = ["all"]` in toml, all 10 agents are symlinked
+- [x] With `install = ["none"]` in toml, no agents are symlinked
+- [x] Agent memory directories are created for ALL agents regardless of install list
+- [x] `shellcheck -x -S warning lib/cmd-init.sh` passes
 
 ---
 

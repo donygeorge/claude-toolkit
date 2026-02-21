@@ -37,10 +37,47 @@ _init_agents() {
   echo ""
   echo "Setting up agents..."
   mkdir -p "${CLAUDE_DIR}/agents"
+
+  # Read agent install list from toolkit.toml
+  local toml_file="${CLAUDE_DIR}/toolkit.toml"
+  local install_list=""
+  if [[ -f "$toml_file" ]]; then
+    install_list=$(_read_toml_array "$toml_file" "agents.install" 2>/dev/null || true)
+  fi
+
+  # Default to reviewer and commit-check if no config
+  if [[ -z "$install_list" ]]; then
+    install_list=$'reviewer\ncommit-check'
+  fi
+
+  # Handle magic values
+  local install_all=false
+  local install_none=false
+  if printf '%s\n' "$install_list" | grep -Fxq "all"; then
+    install_all=true
+  elif printf '%s\n' "$install_list" | grep -Fxq "none"; then
+    install_none=true
+  fi
+
+  if [[ "$install_none" == true ]]; then
+    _info "agents.install = [\"none\"] — skipping all agents"
+    return 0
+  fi
+
   for agent_file in "${TOOLKIT_DIR}"/agents/*.md; do
     [[ -f "$agent_file" ]] || continue
     local agent_name
     agent_name=$(basename "$agent_file")
+    local agent_base="${agent_name%.md}"
+
+    # Filter: skip agents not in the install list (unless install_all)
+    if [[ "$install_all" != true ]]; then
+      if ! printf '%s\n' "$install_list" | grep -Fxq "$agent_base"; then
+        _info "Skipping agents/${agent_name} (not in agents.install)"
+        continue
+      fi
+    fi
+
     local target="${CLAUDE_DIR}/agents/${agent_name}"
     local relative_path="../toolkit/agents/${agent_name}"
 
@@ -503,10 +540,47 @@ _init_toml_dry_run() {
 
 _init_agents_dry_run() {
   local force="$1"
+
+  # Read agent install list from toolkit.toml
+  local toml_file="${CLAUDE_DIR}/toolkit.toml"
+  local install_list=""
+  if [[ -f "$toml_file" ]]; then
+    install_list=$(_read_toml_array "$toml_file" "agents.install" 2>/dev/null || true)
+  fi
+
+  # Default to reviewer and commit-check if no config
+  if [[ -z "$install_list" ]]; then
+    install_list=$'reviewer\ncommit-check'
+  fi
+
+  # Handle magic values
+  local install_all=false
+  local install_none=false
+  if printf '%s\n' "$install_list" | grep -Fxq "all"; then
+    install_all=true
+  elif printf '%s\n' "$install_list" | grep -Fxq "none"; then
+    install_none=true
+  fi
+
+  if [[ "$install_none" == true ]]; then
+    _dry_run_msg "Would skip all agents (agents.install = [\"none\"])"
+    return 0
+  fi
+
   for agent_file in "${TOOLKIT_DIR}"/agents/*.md; do
     [[ -f "$agent_file" ]] || continue
     local agent_name
     agent_name=$(basename "$agent_file")
+    local agent_base="${agent_name%.md}"
+
+    # Filter: skip agents not in the install list (unless install_all)
+    if [[ "$install_all" != true ]]; then
+      if ! printf '%s\n' "$install_list" | grep -Fxq "$agent_base"; then
+        _dry_run_msg "Would skip agents/${agent_name} (not in agents.install)"
+        continue
+      fi
+    fi
+
     local target="${CLAUDE_DIR}/agents/${agent_name}"
     if [[ -e "$target" ]] && [[ "$force" != true ]]; then
       _dry_run_msg "Would skip agents/${agent_name} (already exists)"
