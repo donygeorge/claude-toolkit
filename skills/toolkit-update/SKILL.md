@@ -524,7 +524,7 @@ shasum -a 256 .claude/toolkit/<source_path>
 
 If the hash differs from what the manifest records, there is drift — the toolkit source changed since the file was customized.
 
-**For skills**: The manifest does NOT store `toolkit_hash` for skills (it only stores the file list). To detect drift, compare each file in the customized skill directory against the corresponding toolkit source file directly. **First check if the toolkit source directory AND SKILL.md still exist** — if the entire directory was deleted upstream, or SKILL.md is missing, the skill was removed from the toolkit.
+**For skills**: The manifest now stores `toolkit_hash` for skills (hash of SKILL.md). Compare it the same way as agents/rules. If the manifest lacks a `toolkit_hash` for a skill (legacy manifest), fall back to direct file comparison. **First check if the toolkit source directory AND SKILL.md still exist** — if the entire directory was deleted upstream, or SKILL.md is missing, the skill was removed from the toolkit.
 
 ```bash
 # Check directory and SKILL.md existence
@@ -573,7 +573,23 @@ Present the analysis to the user:
 
 #### Step U4.3: Ask user for resolution
 
-For each drifted file, **ask the user**:
+If there are **3 or more drifted files**, first offer bulk options:
+
+> **[N] files have upstream changes.** How would you like to proceed?
+>
+> 1. **Revert all to managed** -- discard all customizations, use new toolkit versions (most common)
+> 2. **Keep all customizations** -- preserve all your versions, ignore upstream changes
+> 3. **Review individually** -- choose per file (keep, merge, or revert)
+
+If the user chooses option 1 (revert all), run:
+
+```bash
+bash .claude/toolkit/toolkit.sh update --revert-all
+```
+
+If the user chooses option 2 (keep all), update `toolkit_hash` for each drifted file to the current toolkit source hash so drift is no longer reported.
+
+If the user chooses option 3, or if there are fewer than 3 drifted files, ask **per file**:
 
 > How would you like to handle this file?
 >
@@ -598,7 +614,7 @@ Then update the manifest. Read `.claude/toolkit-manifest.json`, update the `tool
 For agents: set `.agents["<agent_file>.md"].toolkit_hash` to `$NEW_HASH`
 For rules: set `.rules["<rule_file>.md"].toolkit_hash` to `$NEW_HASH`
 
-For skills, no manifest hash update is needed — the manifest does not store `toolkit_hash` for skills. The customized status is sufficient.
+For skills: set `.skills["<skill_name>"].toolkit_hash` to the hash of `.claude/toolkit/skills/<skill_name>/SKILL.md`.
 
 **Merge upstream changes**: Perform an intelligent merge of the user's customizations with the upstream changes. Show the merged result to the user and **ask for confirmation** before writing the file. If the merge is ambiguous, present options and let the user decide.
 
@@ -619,9 +635,9 @@ Note: The `ln -sf` path is relative — `../toolkit/agents/[file]` resolves from
 
 After applying the resolution, update the manifest to reflect the current state:
 
-- **Keep customization**: For agents/rules, update `toolkit_hash` to the new toolkit source hash. For skills, no hash update needed (skills don't store `toolkit_hash`). Status stays `"customized"`.
-- **Merge upstream**: For agents/rules, update `toolkit_hash` to the new toolkit source hash. For skills, no hash update needed. Status stays `"customized"`.
-- **Revert to managed**: Change `status` back to `"managed"`. For agents/rules, also update `toolkit_hash`. For skills, the status field is in `.skills.<name>.status` (no hash to update).
+- **Keep customization**: Update `toolkit_hash` to the new toolkit source hash. Status stays `"customized"`.
+- **Merge upstream**: Update `toolkit_hash` to the new toolkit source hash. Status stays `"customized"`.
+- **Revert to managed**: Change `status` back to `"managed"` and update `toolkit_hash`.
 
 ---
 

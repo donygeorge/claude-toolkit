@@ -37,6 +37,9 @@ validate_settings_schema = mod.validate_settings_schema
 to_json = mod.to_json
 load_json = mod.load_json
 merge_mcp_servers = mod.merge_mcp_servers
+_normalize_command_for_dedup = mod._normalize_command_for_dedup
+_split_matcher_components = mod._split_matcher_components
+get_merge_warnings = mod.get_merge_warnings
 
 
 # ===================================================================
@@ -1404,3 +1407,255 @@ class TestArrayMergeEdgeCases:
         overlay = {"items": ["d", "a", "e"]}
         result = deep_merge(base, overlay)
         assert result["items"] == ["c", "a", "b", "d", "e"]
+
+
+# ===================================================================
+# Command normalization for hook dedup (Fix #1)
+# ===================================================================
+
+
+class TestNormalizeCommandForDedup:
+    def test_path_based_script(self):
+        """Script with path should normalize to basename."""
+        assert _normalize_command_for_dedup("bash .claude/toolkit/hooks/guard.sh") == "guard.sh"
+
+    def test_short_path_script(self):
+        """Shorter path to same script should normalize identically."""
+        assert _normalize_command_for_dedup("bash hooks/guard.sh") == "guard.sh"
+
+    def test_python_script_with_flags(self):
+        """Python script with flags normalizes to basename."""
+        assert _normalize_command_for_dedup("python3 scripts/lint.py --fix") == "lint.py"
+
+    def test_no_path_unchanged(self):
+        """Command without paths stays unchanged."""
+        assert _normalize_command_for_dedup("make test") == "make test"
+
+    def test_empty_string(self):
+        assert _normalize_command_for_dedup("") == ""
+
+    def test_bare_script_name(self):
+        """Script name without path stays unchanged."""
+        assert _normalize_command_for_dedup("guard.sh") == "guard.sh"
+
+    def test_binary_path_no_extension(self):
+        """Binary without extension stays unchanged (no '.' in basename)."""
+        assert _normalize_command_for_dedup(".venv/bin/ruff check") == ".venv/bin/ruff check"
+
+    def test_same_script_different_paths_match(self):
+        """The core use case: same script at different paths dedup to same key."""
+        a = _normalize_command_for_dedup("bash .claude/toolkit/hooks/guard-sensitive.sh")
+        b = _normalize_command_for_dedup("bash hooks/guard-sensitive.sh")
+        assert a == b == "guard-sensitive.sh"
+
+
+# ===================================================================
+# Matcher component splitting (Fix #1)
+# ===================================================================
+
+
+class TestSplitMatcherComponents:
+    def test_single_matcher(self):
+        assert _split_matcher_components("Bash") == frozenset({"Bash"})
+
+    def test_compound_matcher(self):
+        assert _split_matcher_components("Write|Edit") == frozenset({"Write", "Edit"})
+
+    def test_triple_matcher(self):
+        assert _split_matcher_components("A|B|C") == frozenset({"A", "B", "C"})
+
+    def test_none_matcher(self):
+        assert _split_matcher_components(None) == frozenset()
+
+    def test_empty_string(self):
+        assert _split_matcher_components("") == frozenset()
+
+    def test_whitespace_stripped(self):
+        assert _split_matcher_components("Write | Edit") == frozenset({"Write", "Edit"})
+
+
+# ===================================================================
+# Legacy hook migration: matcher overlap + command dedup (Fix #1)
+# ===================================================================
+
+
+class TestLegacyHookMigration:
+    def test_compound_base_individual_overlay_merges(self):
+        """Base 'Write|Edit' should merge with overlay 'Write' and 'Edit'."""
+        base = {
+            "hooks": {
+                "PreToolUse": [
+                    {
+                        "matcher": "Write|Edit",
+                        "hooks": [
+                            {"command": "bash .claude/toolkit/hooks/guard-sensitive.sh"}
+                        ],
+                    }
+                ]
+            }
+        }
+        overlay = {
+            "hooks": {
+                "PreToolUse": [
+                    {
+                        "matcher": "Write",
+                        "hooks": [
+                            {"command": "bash hooks/guard-sensitive.sh"}
+                        ],
+                    },
+                    {
+                        "matcher": "Edit",
+                        "hooks": [
+                            {"command": "bash hooks/guard-sensitive.sh"}
+                        ],
+                    },
+                ]
+            }
+        }
+        result = deep_merge(base, overlay)
+        pre_tool = result["hooks"]["PreToolUse"]
+        # Should merge into ONE entry (not three separate ones)
+        assert len(pre_tool) == 1
+        assert pre_tool[0]["matcher"] == "Write|Edit"
+        # Same script at different paths should be deduped
+        assert len(pre_tool[0]["hooks"]) == 1
+
+    def test_compound_base_individual_overlay_different_scripts(self):
+        """Overlay with different scripts should add them, not duplicate."""
+        base = {
+            "hooks": {
+                "PreToolUse": [
+                    {
+                        "matcher": "Write|Edit",
+                        "hooks": [
+                            {"command": "bash .claude/toolkit/hooks/guard-sensitive.sh"}
+                        ],
+                    }
+                ]
+            }
+        }
+        overlay = {
+            "hooks": {
+                "PreToolUse": [
+                    {
+                        "matcher": "Write",
+                        "hooks": [
+                            {"command": "bash hooks/my-custom-check.sh"}
+                        ],
+                    },
+                ]
+            }
+        }
+        result = deep_merge(base, overlay)
+        pre_tool = result["hooks"]["PreToolUse"]
+        assert len(pre_tool) == 1
+        assert pre_tool[0]["matcher"] == "Write|Edit"
+        # Both hooks should be present (different scripts)
+        assert len(pre_tool[0]["hooks"]) == 2
+
+    def test_same_script_different_paths_deduped(self):
+        """Same script at different paths should be deduplicated."""
+        base = {
+            "hooks": {
+                "PreToolUse": [
+                    {
+                        "matcher": "Bash",
+                        "hooks": [
+                            {"command": "bash .claude/toolkit/hooks/guard-destructive.sh"}
+                        ],
+                    }
+                ]
+            }
+        }
+        overlay = {
+            "hooks": {
+                "PreToolUse": [
+                    {
+                        "matcher": "Bash",
+                        "hooks": [
+                            {"command": "bash hooks/guard-destructive.sh"}
+                        ],
+                    }
+                ]
+            }
+        }
+        result = deep_merge(base, overlay)
+        pre_tool = result["hooks"]["PreToolUse"]
+        assert len(pre_tool) == 1
+        # Should dedup to one hook (overlay wins)
+        assert len(pre_tool[0]["hooks"]) == 1
+        assert pre_tool[0]["hooks"][0]["command"] == "bash hooks/guard-destructive.sh"
+
+    def test_merge_warnings_emitted_on_overlap(self):
+        """Merge should emit warnings when matcher overlap is detected."""
+        base = {
+            "hooks": {
+                "PreToolUse": [
+                    {
+                        "matcher": "Write|Edit",
+                        "hooks": [{"command": "guard.sh"}],
+                    }
+                ]
+            }
+        }
+        overlay = {
+            "hooks": {
+                "PreToolUse": [
+                    {
+                        "matcher": "Write",
+                        "hooks": [{"command": "check.sh"}],
+                    }
+                ]
+            }
+        }
+        merge_layers(base, [], overlay)
+        warnings = get_merge_warnings()
+        assert len(warnings) >= 1
+        assert "overlap" in warnings[0].lower()
+
+    def test_no_overlap_no_warnings(self):
+        """No warnings when matchers are disjoint."""
+        base = {
+            "hooks": {
+                "PreToolUse": [
+                    {"matcher": "Bash", "hooks": [{"command": "guard.sh"}]}
+                ]
+            }
+        }
+        overlay = {
+            "hooks": {
+                "PreToolUse": [
+                    {"matcher": "Write", "hooks": [{"command": "check.sh"}]}
+                ]
+            }
+        }
+        merge_layers(base, [], overlay)
+        warnings = get_merge_warnings()
+        assert len(warnings) == 0
+
+    def test_exact_match_still_works(self):
+        """Exact matcher match should still work as before."""
+        base = {
+            "hooks": {
+                "PreToolUse": [
+                    {
+                        "matcher": "Bash",
+                        "hooks": [{"command": "guard.sh"}],
+                    }
+                ]
+            }
+        }
+        overlay = {
+            "hooks": {
+                "PreToolUse": [
+                    {
+                        "matcher": "Bash",
+                        "hooks": [{"command": "project-guard.sh"}],
+                    }
+                ]
+            }
+        }
+        result = deep_merge(base, overlay)
+        pre_tool = result["hooks"]["PreToolUse"]
+        assert len(pre_tool) == 1
+        assert len(pre_tool[0]["hooks"]) == 2

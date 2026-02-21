@@ -542,6 +542,34 @@ _assert_exit 0 "$exit_code" "Empty error classify-error"
 echo ""
 
 # ============================================================================
+# _config.sh warning tests (Fix #3: silent hook failures)
+# ============================================================================
+echo "=== _config.sh missing-cache warning ==="
+
+_test "_config.sh warns when cache missing but toml exists"
+_new_test_project
+# Create a toolkit.toml but NO cache file
+echo '[project]' > "$TEST_PROJECT_DIR/.claude/toolkit.toml"
+stderr_output=$(CLAUDE_PROJECT_DIR="$TEST_PROJECT_DIR" bash -c 'source "'"$HOOKS_DIR"'/_config.sh"' 2>&1 || true)
+if echo "$stderr_output" | grep -q "toolkit-cache.env is missing"; then
+  _pass
+else
+  _fail "_config.sh should warn about missing cache when toml exists"
+fi
+
+_test "_config.sh no warning when neither toml nor cache exist"
+_new_test_project
+# Neither toml nor cache exist — defaults are expected, no warning
+stderr_output=$(CLAUDE_PROJECT_DIR="$TEST_PROJECT_DIR" bash -c 'source "'"$HOOKS_DIR"'/_config.sh"' 2>&1 || true)
+if echo "$stderr_output" | grep -q "toolkit-cache.env is missing"; then
+  _fail "_config.sh should not warn when no toml exists"
+else
+  _pass
+fi
+
+echo ""
+
+# ============================================================================
 # Summary
 # ============================================================================
 echo "=== Results ==="

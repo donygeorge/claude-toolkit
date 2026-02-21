@@ -43,6 +43,9 @@ from pathlib import Path
 # ---------------------------------------------------------------------------
 HOOK_MERGE_KEY = "matcher"
 
+# Accumulated warnings from hook merging (overlap detection, command dedup)
+_merge_warnings: list[str] = []
+
 # ---------------------------------------------------------------------------
 # Auto-approve validation: reject dangerous patterns
 # ---------------------------------------------------------------------------
@@ -235,20 +238,30 @@ def _is_object_array(arr: list) -> bool:
 
 
 def _merge_object_arrays(base: list[dict], overlay: list[dict], key: str) -> list[dict]:
-    """Merge arrays of objects by a key field.
+    """Merge arrays of objects by a key field, with compound matcher awareness.
 
     For hook arrays, the key is "matcher".  Objects with the same key value
     are deep-merged; overlay objects without a matching base entry are appended.
-    Within merged objects, inner "hooks" arrays are concatenated.
+    Within merged objects, inner "hooks" arrays are concatenated and deduplicated.
+
+    Compound matchers (e.g., "Write|Edit") are split by "|" to detect
+    overlaps with individual matchers (e.g., "Write").  This prevents
+    duplicate hook execution when legacy hooks use individual matchers
+    and the toolkit uses compound ones.
     """
     result: list[dict] = []
     base_by_key: dict[str | None, dict] = {}
     base_order: list[str | None] = []
 
+    # Build component → base key index for overlap detection
+    component_to_base_key: dict[str, str | None] = {}
+
     for item in base:
         k = item.get(key)
         base_by_key[k] = item
         base_order.append(k)
+        for comp in _split_matcher_components(k):
+            component_to_base_key[comp] = k
 
     overlay_by_key: dict[str | None, dict] = {}
     overlay_order: list[str | None] = []
@@ -257,6 +270,9 @@ def _merge_object_arrays(base: list[dict], overlay: list[dict], key: str) -> lis
         overlay_by_key[k] = item
         overlay_order.append(k)
 
+    # Track which overlay keys have been consumed (merged into a base entry)
+    consumed_overlay: set[str | None] = set()
+
     # Merge base items with overlay matches
     seen: set[str | None] = set()
     for k in base_order:
@@ -264,15 +280,46 @@ def _merge_object_arrays(base: list[dict], overlay: list[dict], key: str) -> lis
             continue
         seen.add(k)
         base_item = base_by_key[k]
+
         if k in overlay_by_key:
+            # Exact matcher match
             merged = _deep_merge_hook_entry(base_item, overlay_by_key[k])
             result.append(merged)
+            consumed_overlay.add(k)
         else:
-            result.append(_deep_copy(base_item))
+            # Check for component overlap with overlay entries
+            base_components = _split_matcher_components(k)
+            merged_item = _deep_copy(base_item)
+            overlap_found = False
 
-    # Append overlay-only items
+            for ok in overlay_order:
+                if ok in consumed_overlay:
+                    continue
+                overlay_components = _split_matcher_components(ok)
+                shared = base_components & overlay_components
+                if shared:
+                    # Exclude the key field so overlay doesn't overwrite
+                    # the base's compound matcher (e.g., "Write|Edit")
+                    overlay_hooks_only = {
+                        k2: v2
+                        for k2, v2 in overlay_by_key[ok].items()
+                        if k2 != key
+                    }
+                    merged_item = _deep_merge_hook_entry(
+                        merged_item, overlay_hooks_only
+                    )
+                    consumed_overlay.add(ok)
+                    overlap_found = True
+                    _merge_warnings.append(
+                        f"Hook matcher overlap: '{ok}' merged into '{k}' "
+                        f"(shared: {', '.join(sorted(shared))})"
+                    )
+
+            result.append(merged_item)
+
+    # Append overlay-only items (not consumed by merge)
     for k in overlay_order:
-        if k not in seen:
+        if k not in consumed_overlay and k not in seen:
             seen.add(k)
             result.append(_deep_copy(overlay_by_key[k]))
 
@@ -285,17 +332,24 @@ def _dedup_hooks_by_command(hooks: list[dict]) -> list[dict]:
     When merging base + overlay hooks for the same matcher, duplicate commands
     can appear.  This keeps the last occurrence (overlay wins over base) while
     preserving order of first appearance for non-duplicates.
+
+    Commands are normalized before comparison so the same script at different
+    paths (e.g., 'bash hooks/guard.sh' vs 'bash .claude/toolkit/hooks/guard.sh')
+    is recognized as a duplicate.
     """
     seen: dict[str, int] = {}
     result: list[dict] = []
     for hook in hooks:
         cmd = hook.get("command", "")
-        if cmd and cmd in seen:
+        if not cmd:
+            result.append(hook)
+            continue
+        dedup_key = _normalize_command_for_dedup(cmd)
+        if dedup_key in seen:
             # Replace the earlier occurrence with this one (overlay wins)
-            result[seen[cmd]] = hook
+            result[seen[dedup_key]] = hook
         else:
-            if cmd:
-                seen[cmd] = len(result)
+            seen[dedup_key] = len(result)
             result.append(hook)
     return result
 
@@ -326,6 +380,46 @@ def _deep_copy(obj):
     if isinstance(obj, list):
         return [_deep_copy(x) for x in obj]
     return obj
+
+
+def _normalize_command_for_dedup(cmd: str) -> str:
+    """Normalize a hook command string for deduplication comparison.
+
+    Extracts the script basename when the command invokes a script via
+    a path, so that the same script at different locations is recognized
+    as a duplicate.
+
+    Examples:
+        "bash .claude/toolkit/hooks/guard.sh"  →  "guard.sh"
+        "bash hooks/guard.sh"                  →  "guard.sh"
+        "python3 scripts/lint.py --fix"        →  "lint.py"
+        "make test"                            →  "make test" (no path)
+    """
+    if not cmd:
+        return cmd
+    parts = cmd.split()
+    for part in parts:
+        if "/" in part:
+            basename = part.rsplit("/", 1)[-1]
+            if "." in basename:
+                return basename
+    return cmd
+
+
+def _split_matcher_components(matcher: str | None) -> frozenset[str]:
+    """Split a compound matcher like 'Write|Edit' into individual components.
+
+    Returns a frozenset of stripped, non-empty component strings.
+    Returns an empty frozenset for None matchers.
+    """
+    if matcher is None:
+        return frozenset()
+    return frozenset(c.strip() for c in matcher.split("|") if c.strip())
+
+
+def get_merge_warnings() -> list[str]:
+    """Return accumulated merge warnings from the last merge operation."""
+    return list(_merge_warnings)
 
 
 def deep_merge(base: dict, overlay: dict) -> dict:
@@ -458,6 +552,7 @@ def merge_layers(
     project: dict | None = None,
 ) -> dict:
     """Merge base + stack overlays + project overlay."""
+    _merge_warnings.clear()
     result = _deep_copy(base)
     for stack in stacks:
         result = deep_merge(result, strip_meta(stack))
@@ -550,6 +645,13 @@ def main() -> int:
 
     # Merge
     merged = merge_layers(base, stacks, project)
+
+    # Hook merge warnings (overlap detection, command normalization)
+    hook_warnings = get_merge_warnings()
+    if hook_warnings:
+        print("Hook merge warnings:", file=sys.stderr)
+        for w in hook_warnings:
+            print(f"  - {w}", file=sys.stderr)
 
     # Schema validation (warnings only — don't block generation)
     schema_warnings = validate_settings_schema(merged)

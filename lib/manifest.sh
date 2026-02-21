@@ -138,13 +138,19 @@ manifest_init() {
         fname=$(basename "$f")
         files_arr=$(echo "$files_arr" | jq --arg f "$fname" '. + [$f]')
       done
+      # Compute toolkit_hash from SKILL.md for drift detection
+      local skill_hash="file-missing"
+      if [[ -f "${skill_dir}/SKILL.md" ]]; then
+        skill_hash=$(_file_hash "${skill_dir}/SKILL.md")
+      fi
       # Check for project-specific files (like features.json in scope-resolver)
       local project_files="[]"
       skills_json=$(echo "$skills_json" | jq \
         --arg name "$skill_name" \
         --argjson files "$files_arr" \
         --argjson pfiles "$project_files" \
-        '. + {($name): {"status": "managed", "files": $files, "project_files": $pfiles}}')
+        --arg hash "$skill_hash" \
+        '. + {($name): {"status": "managed", "files": $files, "project_files": $pfiles, "toolkit_hash": $hash}}')
     done
   fi
 
@@ -372,11 +378,170 @@ manifest_check_drift() {
     fi
   done
 
+  # Check skills
+  local skill_names
+  skill_names=$(jq -r '.skills | keys[]' "$manifest_path" 2>/dev/null || true)
+  for skill in $skill_names; do
+    local status
+    status=$(jq -r --arg name "$skill" '.skills[$name].status' "$manifest_path")
+    local toolkit_hash
+    toolkit_hash=$(jq -r --arg name "$skill" '.skills[$name].toolkit_hash // ""' "$manifest_path")
+
+    # Skip if no toolkit_hash recorded (legacy manifest)
+    if [[ -z "$toolkit_hash" ]]; then
+      continue
+    fi
+
+    local current_toolkit_hash
+    current_toolkit_hash=$(_file_hash "${TOOLKIT_ROOT}/skills/${skill}/SKILL.md")
+
+    if [[ "$status" == "customized" ]] && [[ "$toolkit_hash" != "$current_toolkit_hash" ]] && [[ "$current_toolkit_hash" != "file-missing" ]]; then
+      echo "  DRIFT: skills/$skill (customized, but toolkit has newer version)"
+      drift_count=$((drift_count + 1))
+    fi
+  done
+
   if [[ $drift_count -eq 0 ]]; then
     echo "  No drift detected."
   else
     echo ""
     echo "  $drift_count file(s) have upstream changes. Review and merge manually."
+    echo "  Tip: Use 'toolkit.sh update --revert-all' to bulk-revert all drifted files."
+  fi
+
+  return 0
+}
+
+# ============================================================================
+# manifest_revert_all_drifted — Bulk revert all customized+drifted files
+# ============================================================================
+
+manifest_revert_all_drifted() {
+  # Reverts all customized files that have drifted back to managed state.
+  # For agents/rules: restores symlinks to toolkit source
+  # For skills: copies from toolkit source
+  # Updates manifest status back to "managed" with current toolkit_hash.
+  # Usage: manifest_revert_all_drifted <project_dir> <claude_dir>
+  local project_dir="${1:-.}"
+  local claude_dir="${2:-${project_dir}/.claude}"
+  local manifest_path="${project_dir}/${MANIFEST_FILE}"
+
+  _require_jq || return 1
+
+  if [[ ! -f "$manifest_path" ]]; then
+    echo "Error: Manifest not found. Run manifest_init first." >&2
+    return 1
+  fi
+
+  if ! _validate_manifest "$manifest_path"; then
+    echo "Regenerating corrupted manifest..." >&2
+    manifest_init "$project_dir" >/dev/null 2>&1
+  fi
+
+  local reverted=0
+
+  # Revert drifted agents
+  local agent_names
+  agent_names=$(jq -r '.agents | keys[]' "$manifest_path" 2>/dev/null || true)
+  for agent in $agent_names; do
+    local status
+    status=$(jq -r --arg name "$agent" '.agents[$name].status' "$manifest_path")
+    local toolkit_hash
+    toolkit_hash=$(jq -r --arg name "$agent" '.agents[$name].toolkit_hash // ""' "$manifest_path")
+
+    local current_toolkit_hash
+    current_toolkit_hash=$(_file_hash "${TOOLKIT_ROOT}/agents/${agent}")
+
+    if [[ "$status" == "customized" ]] && [[ "$toolkit_hash" != "$current_toolkit_hash" ]] && [[ "$current_toolkit_hash" != "file-missing" ]]; then
+      # Remove customized copy and restore symlink
+      rm -f "${claude_dir}/agents/${agent}"
+      local relative_path="../toolkit/agents/${agent}"
+      if ln -sf "$relative_path" "${claude_dir}/agents/${agent}" 2>/dev/null; then
+        echo "  Reverted: agents/$agent (symlink restored)"
+      else
+        cp "${TOOLKIT_ROOT}/agents/${agent}" "${claude_dir}/agents/${agent}"
+        echo "  Reverted: agents/$agent (copied)"
+      fi
+      # Update manifest
+      local updated
+      updated=$(jq --arg name "$agent" --arg hash "$current_toolkit_hash" \
+        '.agents[$name].status = "managed" | .agents[$name].toolkit_hash = $hash | del(.agents[$name].customized_at)' \
+        "$manifest_path")
+      _atomic_write "$manifest_path" "$updated"
+      reverted=$((reverted + 1))
+    fi
+  done
+
+  # Revert drifted rules
+  local rule_names
+  rule_names=$(jq -r '.rules | keys[]' "$manifest_path" 2>/dev/null || true)
+  for rule in $rule_names; do
+    local status
+    status=$(jq -r --arg name "$rule" '.rules[$name].status' "$manifest_path")
+    local toolkit_hash
+    toolkit_hash=$(jq -r --arg name "$rule" '.rules[$name].toolkit_hash // ""' "$manifest_path")
+
+    local current_toolkit_hash
+    current_toolkit_hash=$(_file_hash "${TOOLKIT_ROOT}/rules/${rule}")
+
+    if [[ "$status" == "customized" ]] && [[ "$toolkit_hash" != "$current_toolkit_hash" ]] && [[ "$current_toolkit_hash" != "file-missing" ]]; then
+      rm -f "${claude_dir}/rules/${rule}"
+      local relative_path="../toolkit/rules/${rule}"
+      if ln -sf "$relative_path" "${claude_dir}/rules/${rule}" 2>/dev/null; then
+        echo "  Reverted: rules/$rule (symlink restored)"
+      else
+        cp "${TOOLKIT_ROOT}/rules/${rule}" "${claude_dir}/rules/${rule}"
+        echo "  Reverted: rules/$rule (copied)"
+      fi
+      local updated
+      updated=$(jq --arg name "$rule" --arg hash "$current_toolkit_hash" \
+        '.rules[$name].status = "managed" | .rules[$name].toolkit_hash = $hash | del(.rules[$name].customized_at)' \
+        "$manifest_path")
+      _atomic_write "$manifest_path" "$updated"
+      reverted=$((reverted + 1))
+    fi
+  done
+
+  # Revert drifted skills
+  local skill_names
+  skill_names=$(jq -r '.skills | keys[]' "$manifest_path" 2>/dev/null || true)
+  for skill in $skill_names; do
+    local status
+    status=$(jq -r --arg name "$skill" '.skills[$name].status' "$manifest_path")
+    local toolkit_hash
+    toolkit_hash=$(jq -r --arg name "$skill" '.skills[$name].toolkit_hash // ""' "$manifest_path")
+
+    [[ -z "$toolkit_hash" ]] && continue
+
+    local current_toolkit_hash
+    current_toolkit_hash=$(_file_hash "${TOOLKIT_ROOT}/skills/${skill}/SKILL.md")
+
+    if [[ "$status" == "customized" ]] && [[ "$toolkit_hash" != "$current_toolkit_hash" ]] && [[ "$current_toolkit_hash" != "file-missing" ]]; then
+      # Copy all files from toolkit source
+      local toolkit_skill_dir="${TOOLKIT_ROOT}/skills/${skill}"
+      local target_skill_dir="${claude_dir}/skills/${skill}"
+      mkdir -p "$target_skill_dir"
+      for toolkit_file in "$toolkit_skill_dir"/*; do
+        [[ -f "$toolkit_file" ]] || continue
+        local fname
+        fname=$(basename "$toolkit_file")
+        cp "$toolkit_file" "${target_skill_dir}/${fname}"
+      done
+      echo "  Reverted: skills/$skill (copied from toolkit)"
+      local updated
+      updated=$(jq --arg name "$skill" --arg hash "$current_toolkit_hash" \
+        '.skills[$name].status = "managed" | .skills[$name].toolkit_hash = $hash | del(.skills[$name].customized_at)' \
+        "$manifest_path")
+      _atomic_write "$manifest_path" "$updated"
+      reverted=$((reverted + 1))
+    fi
+  done
+
+  if [[ $reverted -eq 0 ]]; then
+    echo "  No drifted files to revert."
+  else
+    echo ""
+    echo "  Reverted $reverted file(s) to managed state."
   fi
 
   return 0

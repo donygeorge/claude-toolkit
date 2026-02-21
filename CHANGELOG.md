@@ -6,6 +6,16 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- **Legacy hook migration footgun**: Settings merge now detects overlapping compound matchers (e.g., base `Write|Edit` vs project `Write` and `Edit` separately) and merges them instead of creating duplicates. Hook commands are normalized by script basename so the same hook at different paths (`bash hooks/guard.sh` vs `bash .claude/toolkit/hooks/guard.sh`) is deduplicated. Warnings are emitted to stderr when overlaps are detected.
+- **Silent hook failures on missing config cache**: `_config.sh` now warns loudly to stderr when `toolkit.toml` exists but `toolkit-cache.env` is missing, instead of silently falling back to defaults
+
+### Added
+
+- **Skill drift tracking**: Skills now store `toolkit_hash` in the manifest (hash of SKILL.md), enabling drift detection when customized skills have upstream changes — matching the existing behavior for agents and rules
+- **Bulk drift resolution**: Added `toolkit.sh update --revert-all` to bulk-revert all customized+drifted files to managed state. The toolkit-update skill now offers bulk options (revert all / keep all / review individually) when 3+ files have drift, avoiding tedious per-file prompts
+
+### Previously Fixed
+
 - **Guard hook allows toolkit.toml edits**: Removed `toolkit.toml` from the sensitive-writes guard — it's a user config file, not a generated file. The guard now only blocks `settings.json` and `toolkit-cache.env` (generated files)
 - **Hook deduplication in settings merge**: When base and project hooks share the same matcher, inner hook arrays are now deduplicated by `command` field (last occurrence wins), preventing duplicate hook entries
 - **Validator false positives on quoted paths**: Fixed path resolution to handle `"$CLAUDE_PROJECT_DIR"` with embedded shell quotes — replaces quoted form first, then bare form

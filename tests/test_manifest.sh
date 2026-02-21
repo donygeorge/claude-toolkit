@@ -140,6 +140,21 @@ test_manifest_init() {
     echo "  FAIL: agent missing toolkit_hash"
     FAIL=$((FAIL + 1))
   fi
+
+  # Check skill has toolkit_hash (Fix #2: skill drift tracking)
+  local skill_name
+  skill_name=$(jq -r '.skills | keys[0]' "$manifest")
+  if [[ -n "$skill_name" ]] && [[ "$skill_name" != "null" ]]; then
+    local skill_hash
+    skill_hash=$(jq -r --arg name "$skill_name" '.skills[$name].toolkit_hash // "missing"' "$manifest")
+    if [[ "$skill_hash" != "missing" ]] && [[ "$skill_hash" != "null" ]] && [[ ${#skill_hash} -gt 5 ]]; then
+      echo "  PASS: skill has toolkit_hash"
+      PASS=$((PASS + 1))
+    else
+      echo "  FAIL: skill missing toolkit_hash (got: $skill_hash)"
+      FAIL=$((FAIL + 1))
+    fi
+  fi
 }
 
 # ============================================================================
@@ -250,6 +265,113 @@ test_manifest_check_drift() {
   else
     echo "  FAIL: drift not detected"
     echo "    Output: $output"
+    FAIL=$((FAIL + 1))
+  fi
+}
+
+# ============================================================================
+# Test: manifest_check_drift detects skill drift (Fix #2)
+# ============================================================================
+
+test_manifest_check_skill_drift() {
+  echo ""
+  echo "=== Test: manifest_check_drift detects skill drift ==="
+
+  TMPDIR=$(mktemp -d)
+  local project_dir="${TMPDIR}/project"
+  mkdir -p "$project_dir"
+
+  export TOOLKIT_ROOT="$TOOLKIT_SRC"
+  source "${TOOLKIT_SRC}/lib/manifest.sh"
+
+  # Create manifest
+  manifest_init "$project_dir" >/dev/null 2>&1
+
+  # Get the first skill name
+  local manifest="${project_dir}/toolkit-manifest.json"
+  local skill_name
+  skill_name=$(jq -r '.skills | keys[0]' "$manifest")
+
+  if [[ -z "$skill_name" ]] || [[ "$skill_name" == "null" ]]; then
+    echo "  SKIP: no skills found"
+    return
+  fi
+
+  # Mark skill as customized
+  manifest_customize "skills/${skill_name}" "$project_dir" >/dev/null 2>&1
+
+  # Change the recorded toolkit_hash to simulate upstream change
+  jq --arg name "$skill_name" '.skills[$name].toolkit_hash = "fake-old-hash"' "$manifest" > "${manifest}.tmp"
+  mv "${manifest}.tmp" "$manifest"
+
+  # Now check drift — should detect skill drift
+  local output
+  output=$(manifest_check_drift "$project_dir" 2>&1)
+  if echo "$output" | grep -q "DRIFT.*skills/${skill_name}"; then
+    echo "  PASS: skill drift detected"
+    PASS=$((PASS + 1))
+  else
+    echo "  FAIL: skill drift not detected"
+    echo "    Output: $output"
+    FAIL=$((FAIL + 1))
+  fi
+}
+
+# ============================================================================
+# Test: manifest_revert_all_drifted bulk reverts (Fix #4)
+# ============================================================================
+
+test_manifest_revert_all_drifted() {
+  echo ""
+  echo "=== Test: manifest_revert_all_drifted ==="
+
+  TMPDIR=$(mktemp -d)
+  local project_dir="${TMPDIR}/project"
+  mkdir -p "$project_dir"
+
+  export TOOLKIT_ROOT="$TOOLKIT_SRC"
+  source "${TOOLKIT_SRC}/lib/manifest.sh"
+
+  # Create manifest
+  manifest_init "$project_dir" >/dev/null 2>&1
+
+  local manifest="${project_dir}/toolkit-manifest.json"
+
+  # Mark an agent as customized and simulate drift
+  manifest_customize "agents/reviewer.md" "$project_dir" >/dev/null 2>&1
+  jq '.agents["reviewer.md"].toolkit_hash = "fake-old-hash"' "$manifest" > "${manifest}.tmp"
+  mv "${manifest}.tmp" "$manifest"
+
+  # Create the claude dir structure (simulating a real project)
+  local claude_dir="${project_dir}/.claude"
+  mkdir -p "${claude_dir}/agents"
+  mkdir -p "${claude_dir}/toolkit"
+  # Create a fake toolkit dir link for the revert to work
+  ln -sf "$TOOLKIT_SRC" "${claude_dir}/toolkit" 2>/dev/null || cp -r "$TOOLKIT_SRC/agents" "${claude_dir}/toolkit/"
+
+  # Create a customized agent file
+  echo "# customized content" > "${claude_dir}/agents/reviewer.md"
+
+  # Run revert all
+  local output
+  output=$(manifest_revert_all_drifted "$project_dir" "$claude_dir" 2>&1)
+  if echo "$output" | grep -q "Reverted.*agents/reviewer.md"; then
+    echo "  PASS: agent reverted"
+    PASS=$((PASS + 1))
+  else
+    echo "  FAIL: agent not reverted"
+    echo "    Output: $output"
+    FAIL=$((FAIL + 1))
+  fi
+
+  # Check manifest status is back to "managed"
+  local status
+  status=$(jq -r '.agents["reviewer.md"].status' "$manifest")
+  if [[ "$status" == "managed" ]]; then
+    echo "  PASS: status reverted to managed"
+    PASS=$((PASS + 1))
+  else
+    echo "  FAIL: status is '$status', expected 'managed'"
     FAIL=$((FAIL + 1))
   fi
 }
@@ -394,6 +516,8 @@ test_manifest_init
 test_manifest_customize
 test_manifest_customize_invalid_path
 test_manifest_check_drift
+test_manifest_check_skill_drift
+test_manifest_revert_all_drifted
 test_manifest_update_skill_skips_customized
 test_manifest_corruption_recovery
 test_validate_manifest_missing

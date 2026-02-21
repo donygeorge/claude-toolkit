@@ -75,15 +75,25 @@ cmd_update() {
   local version=""
   local latest=false
   local force=false
+  local revert_all=false
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
       --latest) latest=true; shift ;;
       --force) force=true; shift ;;
+      --revert-all) revert_all=true; shift ;;
       v*) version="$1"; shift ;;
       *) _error "Unknown option: $1"; return 1 ;;
     esac
   done
+
+  # Handle --revert-all: bulk revert drifted files without updating
+  if [[ "$revert_all" == true ]]; then
+    echo "Reverting all drifted files to toolkit source..."
+    export TOOLKIT_ROOT="$TOOLKIT_DIR"
+    manifest_revert_all_drifted "$PROJECT_DIR" "$CLAUDE_DIR"
+    return $?
+  fi
 
   _require_jq || return 1
 

@@ -40,8 +40,13 @@ if [ "$_should_reload_config" = true ] && [ -f "$CACHE_FILE" ]; then
   fi
 fi
 
+# Warn if toolkit.toml exists but cache is missing entirely (hooks will use
+# defaults instead of project-specific configuration — a silent footgun)
+if [ -f "$TOML_FILE" ] && [ ! -f "$CACHE_FILE" ]; then
+  echo "[toolkit:_config] WARN: toolkit-cache.env is missing. Hooks are using defaults, not your toolkit.toml settings." >&2
+  echo "[toolkit:_config] WARN: Run: python3 generate-config-cache.py --toml .claude/toolkit.toml --output .claude/toolkit-cache.env" >&2
 # Warn if TOML is newer than cache (always check, even with cached config)
-if [ -f "$TOML_FILE" ] && [ -f "$CACHE_FILE" ] && [ "$TOML_FILE" -nt "$CACHE_FILE" ]; then
+elif [ -f "$TOML_FILE" ] && [ -f "$CACHE_FILE" ] && [ "$TOML_FILE" -nt "$CACHE_FILE" ]; then
   echo "[toolkit:_config] WARN: toolkit.toml is newer than toolkit-cache.env. Run: python3 generate-config-cache.py --toml .claude/toolkit.toml --output .claude/toolkit-cache.env" >&2
 fi
 
