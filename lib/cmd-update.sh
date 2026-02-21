@@ -9,34 +9,107 @@
 # ============================================================================
 
 _refresh_symlinks() {
-  # Re-create agent symlinks if broken
-  for agent_file in "${TOOLKIT_DIR}"/agents/*.md; do
-    [[ -f "$agent_file" ]] || continue
-    local agent_name
-    agent_name=$(basename "$agent_file")
-    local target="${CLAUDE_DIR}/agents/${agent_name}"
-    local relative_path="../toolkit/agents/${agent_name}"
+  # Read agent install list from toolkit.toml
+  local toml_file="${CLAUDE_DIR}/toolkit.toml"
+  local install_list=""
+  local has_agents_config=false
+  if [[ -f "$toml_file" ]]; then
+    install_list=$(_read_toml_array "$toml_file" "agents.install" 2>/dev/null || true)
+    if [[ -n "$install_list" ]]; then
+      has_agents_config=true
+    fi
+  fi
 
-    # Skip customized agents
-    if [[ -f "$MANIFEST_PATH" ]]; then
-      local status
-      status=$(jq -r --arg name "$agent_name" '.agents[$name].status // "managed"' "$MANIFEST_PATH" 2>/dev/null || echo "managed")
-      if [[ "$status" == "customized" ]]; then
-        _info "Skipping customized agent: ${agent_name}"
+  # Backward compat: if no [agents] config, treat as "all" (don't remove anything)
+  local install_all=false
+  local install_none=false
+  if [[ "$has_agents_config" != true ]]; then
+    install_all=true
+  else
+    # Handle magic values
+    if printf '%s\n' "$install_list" | grep -Fxq "all"; then
+      install_all=true
+    elif printf '%s\n' "$install_list" | grep -Fxq "none"; then
+      install_none=true
+    fi
+  fi
+
+  # Re-create agent symlinks for agents in the install list
+  if [[ "$install_none" != true ]]; then
+    for agent_file in "${TOOLKIT_DIR}"/agents/*.md; do
+      [[ -f "$agent_file" ]] || continue
+      local agent_name
+      agent_name=$(basename "$agent_file")
+      local agent_base="${agent_name%.md}"
+      local target="${CLAUDE_DIR}/agents/${agent_name}"
+      local relative_path="../toolkit/agents/${agent_name}"
+
+      # Filter: skip agents not in the install list (unless install_all)
+      if [[ "$install_all" != true ]]; then
+        if ! printf '%s\n' "$install_list" | grep -Fxq "$agent_base"; then
+          continue
+        fi
+      fi
+
+      # Skip customized agents
+      if [[ -f "$MANIFEST_PATH" ]]; then
+        local status
+        status=$(jq -r --arg name "$agent_name" '.agents[$name].status // "managed"' "$MANIFEST_PATH" 2>/dev/null || echo "managed")
+        if [[ "$status" == "customized" ]]; then
+          _info "Skipping customized agent: ${agent_name}"
+          continue
+        fi
+      fi
+
+      # If it's a broken symlink or doesn't exist, re-create
+      if [[ -L "$target" ]] && [[ ! -e "$target" ]]; then
+        rm -f "$target"
+        ln -sf "$relative_path" "$target"
+        _ok "Fixed broken symlink: agents/${agent_name}"
+      elif [[ ! -e "$target" ]]; then
+        ln -sf "$relative_path" "$target" 2>/dev/null || cp "$agent_file" "$target"
+        _ok "Created: agents/${agent_name}"
+      fi
+    done
+  fi
+
+  # Clean up agents that are no longer in the install list
+  if [[ "$has_agents_config" == true ]] && [[ "$install_all" != true ]]; then
+    for existing_agent in "${CLAUDE_DIR}"/agents/*.md; do
+      [[ -f "$existing_agent" || -L "$existing_agent" ]] || continue
+      local existing_name
+      existing_name=$(basename "$existing_agent")
+      local existing_base="${existing_name%.md}"
+
+      # Check if this agent is NOT a toolkit agent (user-created) — skip those
+      if [[ ! -f "${TOOLKIT_DIR}/agents/${existing_name}" ]]; then
         continue
       fi
-    fi
 
-    # If it's a broken symlink or doesn't exist, re-create
-    if [[ -L "$target" ]] && [[ ! -e "$target" ]]; then
-      rm -f "$target"
-      ln -sf "$relative_path" "$target"
-      _ok "Fixed broken symlink: agents/${agent_name}"
-    elif [[ ! -e "$target" ]]; then
-      ln -sf "$relative_path" "$target" 2>/dev/null || cp "$agent_file" "$target"
-      _ok "Created: agents/${agent_name}"
-    fi
-  done
+      # Check if agent is in the install list (or none mode removes all)
+      local should_keep=false
+      if [[ "$install_none" != true ]]; then
+        if printf '%s\n' "$install_list" | grep -Fxq "$existing_base"; then
+          should_keep=true
+        fi
+      fi
+
+      if [[ "$should_keep" != true ]]; then
+        # Check if customized — preserve with warning
+        if [[ -f "$MANIFEST_PATH" ]]; then
+          local cust_status
+          cust_status=$(jq -r --arg name "$existing_name" '.agents[$name].status // "managed"' "$MANIFEST_PATH" 2>/dev/null || echo "managed")
+          if [[ "$cust_status" == "customized" ]]; then
+            _warn "Agent ${existing_base} not in agents.install but is customized — keeping"
+            continue
+          fi
+        fi
+
+        rm -f "$existing_agent"
+        _ok "Removed agents/${existing_name} (no longer in agents.install)"
+      fi
+    done
+  fi
 
   # Re-create rule symlinks if broken
   for rule_file in "${TOOLKIT_DIR}"/rules/*.md; do
@@ -180,6 +253,35 @@ cmd_update() {
   echo ""
   echo "Refreshing symlinks..."
   _refresh_symlinks
+
+  # Migration hint for legacy installs
+  local toml_file="${CLAUDE_DIR}/toolkit.toml"
+  local has_agents_section=false
+  if [[ -f "$toml_file" ]]; then
+    local agents_check
+    agents_check=$(_read_toml_array "$toml_file" "agents.install" 2>/dev/null || true)
+    if [[ -n "$agents_check" ]]; then
+      has_agents_section=true
+    fi
+  fi
+  if [[ "$has_agents_section" != true ]]; then
+    # Count how many toolkit agents are installed in .claude/agents/
+    local installed_agent_count=0
+    local total_toolkit_agents=0
+    for af in "${TOOLKIT_DIR}"/agents/*.md; do
+      [[ -f "$af" ]] || continue
+      total_toolkit_agents=$((total_toolkit_agents + 1))
+      local afname
+      afname=$(basename "$af")
+      if [[ -f "${CLAUDE_DIR}/agents/${afname}" || -L "${CLAUDE_DIR}/agents/${afname}" ]]; then
+        installed_agent_count=$((installed_agent_count + 1))
+      fi
+    done
+    if [[ "$installed_agent_count" -eq "$total_toolkit_agents" ]] && [[ "$total_toolkit_agents" -gt 0 ]]; then
+      _info "Tip: Add [agents] section to toolkit.toml to reduce context overhead"
+      _info "  Default agents.install = [\"reviewer\", \"commit-check\"] saves ~40KB of context"
+    fi
+  fi
 
   # Update managed skills and create any new skills added in the update
   echo ""

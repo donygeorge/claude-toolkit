@@ -222,11 +222,11 @@ Update handles selective agent refresh and cleanup of deinstalled agents.
 
 **Exit Criteria**:
 
-- [ ] `toolkit.sh update` on a project WITHOUT `[agents]` config keeps all existing agents
-- [ ] `toolkit.sh update` on a project WITH `agents.install = ["reviewer"]` removes other agent symlinks
-- [ ] Customized agents are preserved even when removed from the install list
-- [ ] Migration hint is printed when no `[agents]` config exists and all 10 agents present
-- [ ] `shellcheck -x -S warning lib/cmd-update.sh` passes
+- [x] `toolkit.sh update` on a project WITHOUT `[agents]` config keeps all existing agents
+- [x] `toolkit.sh update` on a project WITH `agents.install = ["reviewer"]` removes other agent symlinks
+- [x] Customized agents are preserved even when removed from the install list
+- [x] Migration hint is printed when no `[agents]` config exists and all 10 agents present
+- [x] `shellcheck -x -S warning lib/cmd-update.sh` passes
 
 ---
 
