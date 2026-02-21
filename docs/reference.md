@@ -106,6 +106,14 @@ Project identification.
 | `version_file` | string | `"VERSION"` | Path to file containing the current version |
 | `stacks` | array | `[]` | Technology stacks: `"python"`, `"ios"`, `"typescript"` |
 
+### `[agents]` — Agent Installation
+
+| Key | Type | Default | Description |
+| --- | ---- | ------- | ----------- |
+| `install` | list | `["reviewer", "commit-check"]` | Agent names to install in `.claude/agents/`. Special values: `["all"]` or `["none"]`. |
+
+Available agents: `reviewer`, `qa`, `security`, `ux`, `pm`, `docs`, `architect`, `commit-check`, `plan`, `gemini`
+
 ### `[hooks.setup]`
 
 Environment validation (runs once per session start).

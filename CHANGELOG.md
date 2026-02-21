@@ -11,6 +11,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- **Selective agent installation**: New `[agents]` section in `toolkit.toml` controls which agents are installed into `.claude/agents/`. Default installs only `reviewer` and `commit-check` (~8.5KB vs ~49KB for all 10 agents — 83% context reduction). Skills automatically fall back to on-demand loading for uninstalled agents. Existing installations are unaffected until the config is explicitly added.
 - **Skill drift tracking**: Skills now store `toolkit_hash` in the manifest (hash of SKILL.md), enabling drift detection when customized skills have upstream changes — matching the existing behavior for agents and rules
 - **Bulk drift resolution**: Added `toolkit.sh update --revert-all` to bulk-revert all customized+drifted files to managed state. The toolkit-update skill now offers bulk options (revert all / keep all / review individually) when 3+ files have drift, avoiding tedious per-file prompts
 
