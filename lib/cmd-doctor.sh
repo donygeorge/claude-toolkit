@@ -228,9 +228,53 @@ cmd_doctor() {
   # ---- 9. Symlink health ----
   echo ""
   echo "Checking symlinks..."
+
+  # Read agent install list for filtering
+  local agent_install_list=""
+  local has_agents_config=false
+  local agent_install_all=false
+  local agent_install_none=false
+  if [[ -f "$toml_file" ]]; then
+    agent_install_list=$(_read_toml_array "$toml_file" "agents.install" 2>/dev/null || true)
+    if [[ -n "$agent_install_list" ]]; then
+      has_agents_config=true
+      if printf '%s\n' "$agent_install_list" | grep -Fxq "all"; then
+        agent_install_all=true
+      elif printf '%s\n' "$agent_install_list" | grep -Fxq "none"; then
+        agent_install_none=true
+      fi
+    fi
+  fi
+
   local broken_count=0
   local total_links=0
-  for link in "${CLAUDE_DIR}"/agents/*.md "${CLAUDE_DIR}"/rules/*.md; do
+
+  # Check agent symlinks — only for agents that should be installed
+  for link in "${CLAUDE_DIR}"/agents/*.md; do
+    [[ -L "$link" ]] || continue
+    local link_name
+    link_name=$(basename "$link")
+    local link_base="${link_name%.md}"
+
+    # If agents config exists, only count agents in the install list
+    if [[ "$has_agents_config" == true ]] && [[ "$agent_install_all" != true ]]; then
+      if [[ "$agent_install_none" == true ]]; then
+        continue
+      fi
+      if ! printf '%s\n' "$agent_install_list" | grep -Fxq "$link_base"; then
+        continue
+      fi
+    fi
+
+    total_links=$((total_links + 1))
+    if [[ ! -e "$link" ]]; then
+      _error "Broken symlink: ${link#"${PROJECT_DIR}"/}"
+      broken_count=$((broken_count + 1))
+    fi
+  done
+
+  # Check rule symlinks
+  for link in "${CLAUDE_DIR}"/rules/*.md; do
     [[ -L "$link" ]] || continue
     total_links=$((total_links + 1))
     if [[ ! -e "$link" ]]; then
@@ -238,6 +282,7 @@ cmd_doctor() {
       broken_count=$((broken_count + 1))
     fi
   done
+
   checks=$((checks + 1))
   if [[ $broken_count -eq 0 ]]; then
     if [[ $total_links -gt 0 ]]; then
@@ -250,6 +295,42 @@ cmd_doctor() {
     _error "${broken_count} broken symlink(s) found"
     _info "  Fix: Run '$0 init --force'"
     failures=$((failures + 1))
+  fi
+
+  # ---- 9b. Agent context budget ----
+  echo ""
+  echo "Checking agent context budget..."
+  checks=$((checks + 1))
+  local agent_count=0
+  local agent_total_bytes=0
+  local total_available=0
+  # Count available agents from toolkit source
+  for agent_src in "${TOOLKIT_DIR}"/agents/*.md; do
+    [[ -f "$agent_src" ]] || continue
+    total_available=$((total_available + 1))
+  done
+  # Sum sizes of installed agent files in .claude/agents/
+  for agent_file in "${CLAUDE_DIR}"/agents/*.md; do
+    [[ -f "$agent_file" || -L "$agent_file" ]] || continue
+    [[ -e "$agent_file" ]] || continue  # skip broken symlinks
+    agent_count=$((agent_count + 1))
+    local file_size=0
+    file_size=$(wc -c < "$agent_file" 2>/dev/null || echo 0)
+    agent_total_bytes=$((agent_total_bytes + file_size))
+  done
+  # Convert to KB with one decimal place
+  local agent_total_kb
+  if [[ $agent_total_bytes -gt 0 ]]; then
+    agent_total_kb=$(awk "BEGIN { printf \"%.1f\", $agent_total_bytes / 1024 }")
+  else
+    agent_total_kb="0.0"
+  fi
+  _ok "Agent context: ${agent_total_kb}KB (${agent_count} of ${total_available} agents installed)"
+  if [[ $agent_total_bytes -gt 20480 ]]; then
+    _warn "Agent context exceeds 20KB — consider reducing agents.install to save context"
+    warnings=$((warnings + 1))
+  else
+    passed=$((passed + 1))
   fi
 
   # ---- 10. Manifest health ----

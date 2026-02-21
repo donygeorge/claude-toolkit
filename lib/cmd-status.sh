@@ -56,6 +56,75 @@ cmd_status() {
     echo "    (none found)"
   fi
 
+  # Agents info
+  echo ""
+  echo "  Agents:"
+  local agent_install_list=""
+  if [[ -f "$toml_file" ]]; then
+    agent_install_list=$(_read_toml_array "$toml_file" "agents.install" 2>/dev/null || true)
+  fi
+  # Default to reviewer and commit-check if no config
+  if [[ -z "$agent_install_list" ]]; then
+    agent_install_list=$'reviewer\ncommit-check'
+  fi
+
+  local agent_install_all=false
+  local agent_install_none=false
+  if printf '%s\n' "$agent_install_list" | grep -Fxq "all"; then
+    agent_install_all=true
+  elif printf '%s\n' "$agent_install_list" | grep -Fxq "none"; then
+    agent_install_none=true
+  fi
+
+  echo "    Installed:"
+  local installed_count=0
+  local available_agents=""
+  for agent_src in "${TOOLKIT_DIR}"/agents/*.md; do
+    [[ -f "$agent_src" ]] || continue
+    local agent_name
+    agent_name=$(basename "$agent_src")
+    local agent_base="${agent_name%.md}"
+
+    local is_installed=false
+    if [[ "$agent_install_all" == true ]]; then
+      is_installed=true
+    elif [[ "$agent_install_none" == true ]]; then
+      is_installed=false
+    elif printf '%s\n' "$agent_install_list" | grep -Fxq "$agent_base"; then
+      is_installed=true
+    fi
+
+    if [[ "$is_installed" == true ]]; then
+      local agent_file="${CLAUDE_DIR}/agents/${agent_name}"
+      local size_info=""
+      if [[ -f "$agent_file" || -L "$agent_file" ]] && [[ -e "$agent_file" ]]; then
+        local file_size
+        file_size=$(wc -c < "$agent_file" 2>/dev/null || echo 0)
+        local file_kb
+        file_kb=$(awk "BEGIN { printf \"%.1f\", $file_size / 1024 }")
+        size_info=" (${file_kb}KB)"
+      fi
+      echo "      ${agent_base}${size_info}"
+      installed_count=$((installed_count + 1))
+    else
+      if [[ -n "$available_agents" ]]; then
+        available_agents="${available_agents} ${agent_base}"
+      else
+        available_agents="$agent_base"
+      fi
+    fi
+  done
+  if [[ $installed_count -eq 0 ]]; then
+    echo "      (none)"
+  fi
+
+  if [[ -n "$available_agents" ]]; then
+    echo "    Available (not installed):"
+    for avail in $available_agents; do
+      echo "      ${avail}"
+    done
+  fi
+
   # Check config staleness
   local cache_file="${CLAUDE_DIR}/toolkit-cache.env"
   if [[ -f "$toml_file" ]] && [[ -f "$cache_file" ]]; then

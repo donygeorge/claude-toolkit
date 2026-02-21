@@ -61,24 +61,68 @@ cmd_validate() {
     warnings=$((warnings + 1))
   fi
 
+  # Read agent install list from toolkit.toml for symlink and orphan checks
+  local agent_install_list=""
+  local has_agents_config=false
+  local agent_install_all=false
+  local agent_install_none=false
+  if [[ -f "$toml_file" ]]; then
+    agent_install_list=$(_read_toml_array "$toml_file" "agents.install" 2>/dev/null || true)
+    if [[ -n "$agent_install_list" ]]; then
+      has_agents_config=true
+      if printf '%s\n' "$agent_install_list" | grep -Fxq "all"; then
+        agent_install_all=true
+      elif printf '%s\n' "$agent_install_list" | grep -Fxq "none"; then
+        agent_install_none=true
+      fi
+    fi
+  fi
+
   # Check all symlinks resolve (agents, rules, skills)
   echo ""
   echo "Checking symlinks..."
   local broken_links=0
-  for link in "${CLAUDE_DIR}"/agents/*.md "${CLAUDE_DIR}"/rules/*.md; do
+
+  # Check agent symlinks — only for agents in the install list
+  for link in "${CLAUDE_DIR}"/agents/*.md; do
     [[ -L "$link" ]] || continue
+    local link_name
+    link_name=$(basename "$link")
+    local link_base="${link_name%.md}"
+
+    # If agents config exists, only check agents in the install list
+    if [[ "$has_agents_config" == true ]] && [[ "$agent_install_all" != true ]]; then
+      if [[ "$agent_install_none" == true ]]; then
+        continue  # No agents should be installed; skip symlink check
+      fi
+      if ! printf '%s\n' "$agent_install_list" | grep -Fxq "$link_base"; then
+        continue  # Agent not in install list; skip symlink check
+      fi
+    fi
+
     if [[ ! -e "$link" ]]; then
-      _error "Broken symlink: ${link#${PROJECT_DIR}/}"
+      _error "Broken symlink: ${link#"${PROJECT_DIR}"/}"
       broken_links=$((broken_links + 1))
       errors=$((errors + 1))
     fi
   done
+
+  # Check rule symlinks
+  for link in "${CLAUDE_DIR}"/rules/*.md; do
+    [[ -L "$link" ]] || continue
+    if [[ ! -e "$link" ]]; then
+      _error "Broken symlink: ${link#"${PROJECT_DIR}"/}"
+      broken_links=$((broken_links + 1))
+      errors=$((errors + 1))
+    fi
+  done
+
   # Check skill symlinks/copies
   if [[ -d "${CLAUDE_DIR}/skills" ]]; then
     for link in "${CLAUDE_DIR}"/skills/*/; do
       [[ -L "${link%/}" ]] || continue
       if [[ ! -e "$link" ]]; then
-        _error "Broken skill symlink: ${link#${PROJECT_DIR}/}"
+        _error "Broken skill symlink: ${link#"${PROJECT_DIR}"/}"
         broken_links=$((broken_links + 1))
         errors=$((errors + 1))
       fi
@@ -86,6 +130,34 @@ cmd_validate() {
   fi
   if [[ $broken_links -eq 0 ]]; then
     _ok "All symlinks resolve"
+  fi
+
+  # Check for orphaned agents (in .claude/agents/ but NOT in agents.install)
+  if [[ "$has_agents_config" == true ]] && [[ "$agent_install_all" != true ]]; then
+    echo ""
+    echo "Checking agent install config..."
+    local orphaned_count=0
+    for agent_file in "${CLAUDE_DIR}"/agents/*.md; do
+      [[ -f "$agent_file" || -L "$agent_file" ]] || continue
+      local agent_name
+      agent_name=$(basename "$agent_file")
+      local agent_base="${agent_name%.md}"
+
+      if [[ "$agent_install_none" == true ]]; then
+        _warn "Orphaned agent: agents/${agent_name} (not in agents.install — consuming context)"
+        orphaned_count=$((orphaned_count + 1))
+        warnings=$((warnings + 1))
+      elif ! printf '%s\n' "$agent_install_list" | grep -Fxq "$agent_base"; then
+        _warn "Orphaned agent: agents/${agent_name} (not in agents.install — consuming context)"
+        orphaned_count=$((orphaned_count + 1))
+        warnings=$((warnings + 1))
+      fi
+    done
+    if [[ $orphaned_count -eq 0 ]]; then
+      _ok "All agents match agents.install config"
+    else
+      _info "  Orphaned agents add to system prompt size. Remove them or add to agents.install."
+    fi
   fi
 
   # Check all toolkit skills are registered in .claude/skills/

@@ -311,12 +311,12 @@ Make validate, doctor, status, and explain agent-config-aware.
 
 **Exit Criteria**:
 
-- [ ] `toolkit.sh validate` does not report false errors for intentionally uninstalled agents
-- [ ] `toolkit.sh validate` warns about orphaned agents not in config
-- [ ] `toolkit.sh doctor` reports agent context budget with size and count
-- [ ] `toolkit.sh status` shows installed vs available agents
-- [ ] `toolkit.sh explain agents` mentions the `[agents]` config
-- [ ] `shellcheck -x -S warning lib/cmd-validate.sh lib/cmd-doctor.sh lib/cmd-status.sh lib/cmd-explain.sh` passes
+- [x] `toolkit.sh validate` does not report false errors for intentionally uninstalled agents
+- [x] `toolkit.sh validate` warns about orphaned agents not in config
+- [x] `toolkit.sh doctor` reports agent context budget with size and count
+- [x] `toolkit.sh status` shows installed vs available agents
+- [x] `toolkit.sh explain agents` mentions the `[agents]` config
+- [x] `shellcheck -x -S warning lib/cmd-validate.sh lib/cmd-doctor.sh lib/cmd-status.sh lib/cmd-explain.sh` passes
 
 ---
 
