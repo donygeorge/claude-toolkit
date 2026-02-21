@@ -112,10 +112,21 @@ shortcuts:
    - Call scope-resolver skill to get Scope Bundle
    - Captures: files, diff, risk_profile, entrypoints, commit_hash
 
-3. **Launch Agents**
-   - Read agent prompts from `.claude/agents/<name>.md`
-   - Launch up to 3 agents in parallel via Task tool
-   - Apply timeouts: smoke (10m), deep (60m)
+3. **Resolve and Launch Agents**
+   For each agent to launch, determine the loading strategy:
+
+   **If installed** (`.claude/agents/<name>.md` exists):
+   - Use `Task(subagent_type="<name>", prompt="<scope bundle>", ...)`
+   - This is the most efficient path (~1KB context per agent)
+
+   **If not installed** (file does NOT exist in `.claude/agents/`):
+   - Read the agent prompt from `.claude/toolkit/agents/<name>.md` using the Read tool
+   - Launch with `Task(subagent_type="general-purpose", prompt="<full agent prompt content>\n\n---\n\n<scope bundle and task instructions>")`
+   - This uses more context per invocation (~10KB) but avoids always-on system prompt cost
+   - Log: "Agent <name> not installed -- using general-purpose fallback"
+
+   Launch up to 3 agents in parallel via Task tool.
+   Apply timeouts: smoke (10m), deep (60m)
 
 4. **Collect Results**
    - Wait for all agents to complete
@@ -214,18 +225,27 @@ When `--agents all` or "review all" is requested:
 3. **Example Task calls (smoke mode)**:
 
 ```python
-# Batch 1 - launch in parallel
+# For each agent, check if installed before launching.
+
+# If agent IS installed in .claude/agents/:
 Task(subagent_type="reviewer", prompt="...", run_in_background=True)
-Task(subagent_type="security", model="haiku", prompt="...", run_in_background=True)
-Task(subagent_type="docs", model="haiku", prompt="...", run_in_background=True)
+
+# If agent is NOT installed (fallback):
+# First: Read(".claude/toolkit/agents/reviewer.md") to get agent prompt
+# Then: Task(subagent_type="general-purpose", prompt="<agent prompt>\n\n---\n\n...", run_in_background=True)
+
+# Batch 1 - launch in parallel (resolve each agent first)
+Task(subagent_type="reviewer", prompt="...", run_in_background=True)       # or general-purpose fallback
+Task(subagent_type="security", model="haiku", prompt="...", run_in_background=True)  # or general-purpose fallback
+Task(subagent_type="docs", model="haiku", prompt="...", run_in_background=True)      # or general-purpose fallback
 
 # Batch 2 (sequential for shared resources)
-Task(subagent_type="qa", prompt="...")
-Task(subagent_type="ux", prompt="...")
+Task(subagent_type="qa", prompt="...")       # or general-purpose fallback
+Task(subagent_type="ux", prompt="...")       # or general-purpose fallback
 
 # Batch 3
-Task(subagent_type="pm", prompt="...", run_in_background=True)
-Task(subagent_type="architect", model="opus", prompt="...", run_in_background=True)
+Task(subagent_type="pm", prompt="...", run_in_background=True)             # or general-purpose fallback
+Task(subagent_type="architect", model="opus", prompt="...", run_in_background=True)  # or general-purpose fallback
 ```
 
 ### Tool Coordination

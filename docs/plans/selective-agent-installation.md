@@ -270,10 +270,10 @@ When a requested agent is not installed, the skill loads the agent prompt from t
 
 **Exit Criteria**:
 
-- [ ] review-suite SKILL.md documents both the installed and fallback paths
-- [ ] Example Task calls show both patterns
-- [ ] Existing skill test assertions still pass
-- [ ] The SKILL.md remains generic (no project-specific content)
+- [x] review-suite SKILL.md documents both the installed and fallback paths
+- [x] Example Task calls show both patterns
+- [x] Existing skill test assertions still pass
+- [x] The SKILL.md remains generic (no project-specific content)
 
 ---
 
