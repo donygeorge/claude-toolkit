@@ -1,6 +1,6 @@
 # Selective Agent Installation — Implementation Plan
 
-> **Status**: In Review
+> **Status**: Complete
 >
 > **Last Updated**: 2026-02-21
 >
@@ -385,10 +385,10 @@ Ensure all new behavior is tested and existing tests are updated for the new def
 
 **Exit Criteria**:
 
-- [ ] `cat VERSION` outputs `1.15.0`
-- [ ] CHANGELOG.md has the new feature entry under `[Unreleased]`
-- [ ] `docs/reference.md` documents the `[agents]` config section
-- [ ] All documentation is accurate and consistent
+- [x] `cat VERSION` outputs `1.15.0`
+- [x] CHANGELOG.md has the new feature entry under `[Unreleased]`
+- [x] `docs/reference.md` documents the `[agents]` config section
+- [x] All documentation is accurate and consistent
 
 ---
 
@@ -413,9 +413,9 @@ Run the full test suite and validate everything works end-to-end.
 
 **Exit Criteria**:
 
-- [ ] All 6 test/lint commands exit with code 0
-- [ ] Manual verification confirms correct agent installation behavior
-- [ ] `cat VERSION` outputs `1.15.0`
+- [x] All 6 test/lint commands exit with code 0
+- [x] Manual verification confirms correct agent installation behavior
+- [x] `cat VERSION` outputs `1.15.0`
 
 ## Testing Strategy
 
