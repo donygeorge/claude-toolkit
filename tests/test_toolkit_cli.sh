@@ -207,10 +207,13 @@ test_init_from_example() {
   # Check toolkit.toml was created
   assert_file_exists "toolkit.toml created" "${project_dir}/.claude/toolkit.toml"
 
-  # Check agents are symlinked
+  # Check default agents are symlinked (only reviewer and commit-check per agents.install default)
   assert_dir_exists "agents directory" "${project_dir}/.claude/agents"
   assert_symlink "reviewer.md is symlink" "${project_dir}/.claude/agents/reviewer.md"
-  assert_symlink "qa.md is symlink" "${project_dir}/.claude/agents/qa.md"
+  assert_symlink "commit-check.md is symlink" "${project_dir}/.claude/agents/commit-check.md"
+  # Non-default agents should NOT be present
+  assert_file_not_exists "qa.md not installed by default" "${project_dir}/.claude/agents/qa.md"
+  assert_file_not_exists "security.md not installed by default" "${project_dir}/.claude/agents/security.md"
 
   # Check skills are copied (not symlinked)
   assert_dir_exists "skills directory" "${project_dir}/.claude/skills"
@@ -993,6 +996,345 @@ test_validate_unprotected_settings() {
 }
 
 # ============================================================================
+# Test: init default agents — only reviewer and commit-check
+# ============================================================================
+
+test_init_default_agents() {
+  echo ""
+  echo "=== Test: init default agents ==="
+
+  local project_dir
+  project_dir=$(setup_test_project)
+  local toolkit_sh="${project_dir}/.claude/toolkit/toolkit.sh"
+
+  # Init with --from-example (default config has agents.install = ["reviewer", "commit-check"])
+  (cd "$project_dir" && bash "$toolkit_sh" init --from-example) >/dev/null 2>&1
+
+  # Count agents installed
+  local agent_count
+  agent_count=$(find "${project_dir}/.claude/agents" -maxdepth 1 -name '*.md' 2>/dev/null | wc -l | tr -d ' ')
+  assert_eq "exactly 2 agents installed by default" "2" "$agent_count"
+
+  # Verify the correct two
+  assert_symlink "reviewer.md installed" "${project_dir}/.claude/agents/reviewer.md"
+  assert_symlink "commit-check.md installed" "${project_dir}/.claude/agents/commit-check.md"
+
+  # Verify non-default agents are NOT installed
+  assert_file_not_exists "qa.md not installed" "${project_dir}/.claude/agents/qa.md"
+  assert_file_not_exists "security.md not installed" "${project_dir}/.claude/agents/security.md"
+  assert_file_not_exists "architect.md not installed" "${project_dir}/.claude/agents/architect.md"
+  assert_file_not_exists "plan.md not installed" "${project_dir}/.claude/agents/plan.md"
+  assert_file_not_exists "pm.md not installed" "${project_dir}/.claude/agents/pm.md"
+  assert_file_not_exists "docs.md not installed" "${project_dir}/.claude/agents/docs.md"
+  assert_file_not_exists "ux.md not installed" "${project_dir}/.claude/agents/ux.md"
+  assert_file_not_exists "gemini.md not installed" "${project_dir}/.claude/agents/gemini.md"
+}
+
+# ============================================================================
+# Test: init with agents.install = ["all"] installs all 10 agents
+# ============================================================================
+
+test_init_agents_all() {
+  echo ""
+  echo "=== Test: init agents.install = [\"all\"] ==="
+
+  local project_dir
+  project_dir=$(setup_test_project)
+  local toolkit_sh="${project_dir}/.claude/toolkit/toolkit.sh"
+
+  # Create toolkit.toml with agents.install = ["all"]
+  cp "${project_dir}/.claude/toolkit/templates/toolkit.toml.example" "${project_dir}/.claude/toolkit.toml"
+  # Replace the install line
+  sed -i.bak 's/^install = \["reviewer", "commit-check"\]/install = ["all"]/' "${project_dir}/.claude/toolkit.toml"
+  rm -f "${project_dir}/.claude/toolkit.toml.bak"
+
+  # Run init
+  (cd "$project_dir" && bash "$toolkit_sh" init) >/dev/null 2>&1
+
+  # Count agents — should be all 10
+  local agent_count
+  agent_count=$(find "${project_dir}/.claude/agents" -maxdepth 1 -name '*.md' 2>/dev/null | wc -l | tr -d ' ')
+  assert_eq "all 10 agents installed" "10" "$agent_count"
+
+  # Spot-check a few
+  assert_symlink "reviewer.md installed" "${project_dir}/.claude/agents/reviewer.md"
+  assert_symlink "qa.md installed" "${project_dir}/.claude/agents/qa.md"
+  assert_symlink "security.md installed" "${project_dir}/.claude/agents/security.md"
+  assert_symlink "architect.md installed" "${project_dir}/.claude/agents/architect.md"
+  assert_symlink "gemini.md installed" "${project_dir}/.claude/agents/gemini.md"
+}
+
+# ============================================================================
+# Test: init with agents.install = ["none"] installs no agents
+# ============================================================================
+
+test_init_agents_none() {
+  echo ""
+  echo "=== Test: init agents.install = [\"none\"] ==="
+
+  local project_dir
+  project_dir=$(setup_test_project)
+  local toolkit_sh="${project_dir}/.claude/toolkit/toolkit.sh"
+
+  # Create toolkit.toml with agents.install = ["none"]
+  cp "${project_dir}/.claude/toolkit/templates/toolkit.toml.example" "${project_dir}/.claude/toolkit.toml"
+  sed -i.bak 's/^install = \["reviewer", "commit-check"\]/install = ["none"]/' "${project_dir}/.claude/toolkit.toml"
+  rm -f "${project_dir}/.claude/toolkit.toml.bak"
+
+  # Run init
+  (cd "$project_dir" && bash "$toolkit_sh" init) >/dev/null 2>&1
+
+  # Count agents — should be 0
+  local agent_count
+  agent_count=$(find "${project_dir}/.claude/agents" -maxdepth 1 -name '*.md' 2>/dev/null | wc -l | tr -d ' ')
+  assert_eq "0 agents installed with none" "0" "$agent_count"
+
+  # Verify none exist
+  assert_file_not_exists "reviewer.md not installed" "${project_dir}/.claude/agents/reviewer.md"
+  assert_file_not_exists "qa.md not installed" "${project_dir}/.claude/agents/qa.md"
+}
+
+# ============================================================================
+# Test: init with custom agents.install = ["reviewer", "security"]
+# ============================================================================
+
+test_init_agents_custom() {
+  echo ""
+  echo "=== Test: init agents.install = [\"reviewer\", \"security\"] ==="
+
+  local project_dir
+  project_dir=$(setup_test_project)
+  local toolkit_sh="${project_dir}/.claude/toolkit/toolkit.sh"
+
+  # Create toolkit.toml with agents.install = ["reviewer", "security"]
+  cp "${project_dir}/.claude/toolkit/templates/toolkit.toml.example" "${project_dir}/.claude/toolkit.toml"
+  sed -i.bak 's/^install = \["reviewer", "commit-check"\]/install = ["reviewer", "security"]/' "${project_dir}/.claude/toolkit.toml"
+  rm -f "${project_dir}/.claude/toolkit.toml.bak"
+
+  # Run init
+  (cd "$project_dir" && bash "$toolkit_sh" init) >/dev/null 2>&1
+
+  # Count agents — should be exactly 2
+  local agent_count
+  agent_count=$(find "${project_dir}/.claude/agents" -maxdepth 1 -name '*.md' 2>/dev/null | wc -l | tr -d ' ')
+  assert_eq "exactly 2 custom agents installed" "2" "$agent_count"
+
+  # Verify the correct two
+  assert_symlink "reviewer.md installed" "${project_dir}/.claude/agents/reviewer.md"
+  assert_symlink "security.md installed" "${project_dir}/.claude/agents/security.md"
+
+  # Verify others are NOT present
+  assert_file_not_exists "commit-check.md not installed" "${project_dir}/.claude/agents/commit-check.md"
+  assert_file_not_exists "qa.md not installed" "${project_dir}/.claude/agents/qa.md"
+  assert_file_not_exists "architect.md not installed" "${project_dir}/.claude/agents/architect.md"
+}
+
+# ============================================================================
+# Test: dry-run shows correct agents based on config
+# ============================================================================
+
+test_init_dry_run_agents() {
+  echo ""
+  echo "=== Test: init --dry-run shows agent selection ==="
+
+  local project_dir
+  project_dir=$(setup_test_project)
+  local toolkit_sh="${project_dir}/.claude/toolkit/toolkit.sh"
+
+  # Create toolkit.toml with default agents (reviewer, commit-check)
+  cp "${project_dir}/.claude/toolkit/templates/toolkit.toml.example" "${project_dir}/.claude/toolkit.toml"
+
+  # Run dry-run
+  local output
+  output=$(bash "$toolkit_sh" init --dry-run 2>&1)
+
+  # Should mention symlink for default agents
+  if echo "$output" | grep -q "Would symlink agents/reviewer.md"; then
+    echo "  PASS: dry-run shows reviewer.md would be symlinked"
+    PASS=$((PASS + 1))
+  else
+    echo "  FAIL: dry-run doesn't show reviewer.md"
+    echo "    Output: $(echo "$output" | grep -i agent | head -5)"
+    FAIL=$((FAIL + 1))
+  fi
+
+  if echo "$output" | grep -q "Would symlink agents/commit-check.md"; then
+    echo "  PASS: dry-run shows commit-check.md would be symlinked"
+    PASS=$((PASS + 1))
+  else
+    echo "  FAIL: dry-run doesn't show commit-check.md"
+    FAIL=$((FAIL + 1))
+  fi
+
+  # Should skip non-default agents
+  if echo "$output" | grep -q "Would skip agents/qa.md"; then
+    echo "  PASS: dry-run shows qa.md would be skipped"
+    PASS=$((PASS + 1))
+  else
+    echo "  FAIL: dry-run doesn't show qa.md being skipped"
+    echo "    Output: $(echo "$output" | grep -i agent | head -10)"
+    FAIL=$((FAIL + 1))
+  fi
+
+  # Now test with agents.install = ["all"]
+  sed -i.bak 's/^install = \["reviewer", "commit-check"\]/install = ["all"]/' "${project_dir}/.claude/toolkit.toml"
+  rm -f "${project_dir}/.claude/toolkit.toml.bak"
+
+  output=$(bash "$toolkit_sh" init --dry-run 2>&1)
+
+  # Should NOT skip any agents when "all"
+  if echo "$output" | grep -q "Would symlink agents/qa.md"; then
+    echo "  PASS: dry-run with all shows qa.md would be symlinked"
+    PASS=$((PASS + 1))
+  else
+    echo "  FAIL: dry-run with all doesn't show qa.md would be symlinked"
+    echo "    Output: $(echo "$output" | grep -i agent | head -10)"
+    FAIL=$((FAIL + 1))
+  fi
+
+  # Test with agents.install = ["none"]
+  sed -i.bak 's/^install = \["all"\]/install = ["none"]/' "${project_dir}/.claude/toolkit.toml"
+  rm -f "${project_dir}/.claude/toolkit.toml.bak"
+
+  output=$(bash "$toolkit_sh" init --dry-run 2>&1)
+
+  if echo "$output" | grep -q "Would skip all agents"; then
+    echo "  PASS: dry-run with none shows all agents would be skipped"
+    PASS=$((PASS + 1))
+  else
+    echo "  FAIL: dry-run with none doesn't indicate skipping all agents"
+    echo "    Output: $(echo "$output" | grep -i agent | head -10)"
+    FAIL=$((FAIL + 1))
+  fi
+}
+
+# ============================================================================
+# Helper: invoke _refresh_symlinks in a subshell with the right environment
+# ============================================================================
+
+run_refresh_symlinks() {
+  local project_dir="$1"
+  local toolkit_dir="${project_dir}/.claude/toolkit"
+
+  # We need to source the helper functions from toolkit.sh without running main().
+  # Define the minimal helpers, then source manifest.sh and cmd-update.sh.
+  bash -c '
+    set -euo pipefail
+    export PROJECT_DIR="'"$project_dir"'"
+    export CLAUDE_DIR="'"${project_dir}/.claude"'"
+    export TOOLKIT_DIR="'"$toolkit_dir"'"
+    export MANIFEST_PATH="'"${project_dir}/.claude/toolkit-manifest.json"'"
+
+    # Minimal helpers needed by _refresh_symlinks
+    _info() { echo "  [info] $*"; }
+    _warn() { echo "  [warn] $*" >&2; }
+    _error() { echo "  [error] $*" >&2; }
+    _ok() { echo "  [ok] $*"; }
+
+    _read_toml_value() {
+      local file="$1" key="$2"
+      python3 -c "
+import tomllib, sys
+with open(sys.argv[1], '"'"'rb'"'"') as f:
+    data = tomllib.load(f)
+keys = sys.argv[2].split('"'"'.'"'"')
+val = data
+for k in keys:
+    if isinstance(val, dict) and k in val:
+        val = val[k]
+    else:
+        sys.exit(1)
+if isinstance(val, list):
+    for item in val:
+        print(item)
+else:
+    print(val)
+" "$file" "$key" 2>/dev/null
+    }
+    _read_toml_array() { _read_toml_value "$1" "$2"; }
+
+    source "${TOOLKIT_DIR}/lib/manifest.sh"
+    source "${TOOLKIT_DIR}/lib/cmd-update.sh"
+    _refresh_symlinks
+  ' 2>&1
+}
+
+# ============================================================================
+# Test: update without [agents] config keeps all existing agents (backward compat)
+# ============================================================================
+
+test_update_no_agents_config_keeps_all() {
+  echo ""
+  echo "=== Test: update without agents config keeps all agents ==="
+
+  local project_dir
+  project_dir=$(setup_test_project)
+  local toolkit_sh="${project_dir}/.claude/toolkit/toolkit.sh"
+
+  # Init with all agents by using agents.install = ["all"]
+  cp "${project_dir}/.claude/toolkit/templates/toolkit.toml.example" "${project_dir}/.claude/toolkit.toml"
+  sed -i.bak 's/^install = \["reviewer", "commit-check"\]/install = ["all"]/' "${project_dir}/.claude/toolkit.toml"
+  rm -f "${project_dir}/.claude/toolkit.toml.bak"
+  (cd "$project_dir" && bash "$toolkit_sh" init) >/dev/null 2>&1
+
+  # Verify all 10 agents are installed
+  local agent_count
+  agent_count=$(find "${project_dir}/.claude/agents" -maxdepth 1 -name '*.md' 2>/dev/null | wc -l | tr -d ' ')
+  assert_eq "all 10 agents installed before update" "10" "$agent_count"
+
+  # Now remove the [agents] section from toolkit.toml to simulate legacy config
+  # Delete from [agents] header through (but not including) the next section header
+  sed -i.bak '/^\[agents\]/,/^\[/{/^\[agents\]/d;/^\[/!d;}' "${project_dir}/.claude/toolkit.toml"
+  rm -f "${project_dir}/.claude/toolkit.toml.bak"
+
+  # Run _refresh_symlinks via helper
+  run_refresh_symlinks "$project_dir" >/dev/null 2>&1
+
+  # All 10 agents should still be present (backward compat)
+  agent_count=$(find "${project_dir}/.claude/agents" -maxdepth 1 -name '*.md' 2>/dev/null | wc -l | tr -d ' ')
+  assert_eq "all 10 agents still present after refresh without agents config" "10" "$agent_count"
+}
+
+# ============================================================================
+# Test: update with agents.install = ["reviewer"] removes non-listed agents
+# ============================================================================
+
+test_update_agents_config_removes_unlisted() {
+  echo ""
+  echo "=== Test: update with agents config removes unlisted agents ==="
+
+  local project_dir
+  project_dir=$(setup_test_project)
+  local toolkit_sh="${project_dir}/.claude/toolkit/toolkit.sh"
+
+  # Init with all agents
+  cp "${project_dir}/.claude/toolkit/templates/toolkit.toml.example" "${project_dir}/.claude/toolkit.toml"
+  sed -i.bak 's/^install = \["reviewer", "commit-check"\]/install = ["all"]/' "${project_dir}/.claude/toolkit.toml"
+  rm -f "${project_dir}/.claude/toolkit.toml.bak"
+  (cd "$project_dir" && bash "$toolkit_sh" init) >/dev/null 2>&1
+
+  # Verify all agents are installed
+  local agent_count
+  agent_count=$(find "${project_dir}/.claude/agents" -maxdepth 1 -name '*.md' 2>/dev/null | wc -l | tr -d ' ')
+  assert_eq "all 10 agents installed before update" "10" "$agent_count"
+
+  # Change config to only install reviewer
+  sed -i.bak 's/^install = \["all"\]/install = ["reviewer"]/' "${project_dir}/.claude/toolkit.toml"
+  rm -f "${project_dir}/.claude/toolkit.toml.bak"
+
+  # Run _refresh_symlinks via helper
+  run_refresh_symlinks "$project_dir" >/dev/null 2>&1
+
+  # Only reviewer should remain
+  agent_count=$(find "${project_dir}/.claude/agents" -maxdepth 1 -name '*.md' 2>/dev/null | wc -l | tr -d ' ')
+  assert_eq "only 1 agent after refresh with agents.install=[reviewer]" "1" "$agent_count"
+  assert_file_exists "reviewer.md still present" "${project_dir}/.claude/agents/reviewer.md"
+  assert_file_not_exists "qa.md removed" "${project_dir}/.claude/agents/qa.md"
+  assert_file_not_exists "security.md removed" "${project_dir}/.claude/agents/security.md"
+  assert_file_not_exists "commit-check.md removed" "${project_dir}/.claude/agents/commit-check.md"
+}
+
+# ============================================================================
 # Run all tests
 # ============================================================================
 
@@ -1025,6 +1367,13 @@ test_init_malformed_settings_json
 test_init_malformed_mcp_json
 test_session_start_settings_warning
 test_validate_unprotected_settings
+test_init_default_agents
+test_init_agents_all
+test_init_agents_none
+test_init_agents_custom
+test_init_dry_run_agents
+test_update_no_agents_config_keeps_all
+test_update_agents_config_removes_unlisted
 
 echo ""
 echo "==============================="

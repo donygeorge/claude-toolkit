@@ -348,10 +348,10 @@ Ensure all new behavior is tested and existing tests are updated for the new def
 
 **Exit Criteria**:
 
-- [ ] `bash tests/test_toolkit_cli.sh` passes with new tests
-- [ ] `python3 -m pytest tests/test_generate_config_cache.py -v` passes
-- [ ] No existing tests broken by the new defaults
-- [ ] `bash tests/test_manifest.sh` still passes
+- [x] `bash tests/test_toolkit_cli.sh` passes with new tests
+- [x] `python3 -m pytest tests/test_generate_config_cache.py -v` passes
+- [x] No existing tests broken by the new defaults
+- [x] `bash tests/test_manifest.sh` still passes
 
 ---
 
