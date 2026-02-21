@@ -201,14 +201,14 @@ cmd_update() {
     echo "Updating to version: ${version}"
   elif [[ "$latest" == true ]]; then
     # Latest main
-    ref="claude-toolkit/main"
+    ref="main"
     echo "Updating to latest main..."
   else
     # Latest semver tag
     ref=$(git -C "$PROJECT_DIR" tag -l 'v*' --sort=-version:refname 2>/dev/null | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -1 || true)
     if [[ -z "$ref" ]]; then
       _warn "No semver tags found. Pulling from main instead."
-      ref="claude-toolkit/main"
+      ref="main"
     else
       echo "Updating to latest release: ${ref}"
     fi
