@@ -33,3 +33,4 @@ artifacts/
 # Local dev: symlinks for toolkit's own skill discovery (not needed in consuming projects)
 .claude/skills
 .claude/commands
+.claude/toolkit
