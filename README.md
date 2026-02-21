@@ -87,6 +87,26 @@ git commit -m "Add claude-toolkit"
 
 </details>
 
+## Updating
+
+If the toolkit is already installed, paste the following prompt into Claude Code to update it:
+
+```text
+Update claude-toolkit to the latest version.
+
+Toolkit repo: https://github.com/donygeorge/claude-toolkit.git
+
+1. Ensure the remote exists:
+   git remote add claude-toolkit https://github.com/donygeorge/claude-toolkit.git || true
+2. Pull the latest toolkit code:
+   git fetch claude-toolkit --tags
+   bash .claude/toolkit/toolkit.sh update
+3. Read and follow .claude/skills/toolkit-update/SKILL.md (the /toolkit-update skill)
+   to validate the installation, resolve any drift, and commit.
+```
+
+Or simply run `/toolkit-update` if the toolkit-update skill is already installed (v1.14.0+).
+
 ## Skill Workflow
 
 Skills form a pipeline from ideation through verification. Each stage feeds its output to the next, or you can enter the pipeline at any point.
