@@ -922,3 +922,175 @@ class TestTddEnforcementConfig:
         )
         assert result.returncode == 0
         assert result.stdout.strip() == "strict"
+
+
+# ===================================================================
+# Agents config section (M0 — selective agent installation)
+# ===================================================================
+
+
+class TestAgentsConfig:
+    """Tests for the [agents] config section and agents.install key."""
+
+    def test_schema_has_agents_install(self):
+        """SCHEMA must include agents.install as list."""
+        assert "agents" in SCHEMA
+        assert "install" in SCHEMA["agents"]
+        assert SCHEMA["agents"]["install"] is list
+
+    def test_agents_section_in_sample_toml(self):
+        """Sample fixture should include [agents] section."""
+        output = generate_cache(SAMPLE_TOML)
+        assert "TOOLKIT_AGENTS_INSTALL=" in output
+
+    def test_agents_install_value_in_sample_toml(self):
+        """Sample fixture should generate correct TOOLKIT_AGENTS_INSTALL value."""
+        output = generate_cache(SAMPLE_TOML)
+        assert "TOOLKIT_AGENTS_INSTALL='[\"reviewer\",\"commit-check\"]'" in output
+
+    def test_agents_install_accepts_list(self, tmp_path):
+        """agents.install should accept a list of strings."""
+        toml_file = tmp_path / "agents.toml"
+        toml_file.write_text(
+            '[agents]\ninstall = ["reviewer", "security", "qa"]\n'
+        )
+        output = generate_cache(toml_file)
+        assert "TOOLKIT_AGENTS_INSTALL='[\"reviewer\",\"security\",\"qa\"]'" in output
+
+    def test_agents_install_accepts_all_magic_value(self, tmp_path):
+        """agents.install should accept the 'all' magic value."""
+        toml_file = tmp_path / "agents_all.toml"
+        toml_file.write_text('[agents]\ninstall = ["all"]\n')
+        output = generate_cache(toml_file)
+        assert "TOOLKIT_AGENTS_INSTALL='[\"all\"]'" in output
+
+    def test_agents_install_accepts_none_magic_value(self, tmp_path):
+        """agents.install should accept the 'none' magic value."""
+        toml_file = tmp_path / "agents_none.toml"
+        toml_file.write_text('[agents]\ninstall = ["none"]\n')
+        output = generate_cache(toml_file)
+        assert "TOOLKIT_AGENTS_INSTALL='[\"none\"]'" in output
+
+    def test_agents_install_accepts_empty_list(self, tmp_path):
+        """agents.install should accept an empty list."""
+        toml_file = tmp_path / "agents_empty.toml"
+        toml_file.write_text("[agents]\ninstall = []\n")
+        output = generate_cache(toml_file)
+        assert "TOOLKIT_AGENTS_INSTALL='[]'" in output
+
+    def test_unknown_agents_key_rejected(self):
+        """Unknown keys under [agents] should be rejected by schema."""
+        data = {"agents": {"install": ["reviewer"], "unknown_key": "bad"}}
+        errors = validate_schema(data, SCHEMA)
+        assert len(errors) == 1
+        assert "unknown_key" in errors[0]
+
+    def test_agents_install_rejects_string(self):
+        """agents.install should reject a plain string (must be a list)."""
+        data = {"agents": {"install": "reviewer"}}
+        errors = validate_schema(data, SCHEMA)
+        assert any("Expected list" in e for e in errors)
+
+    def test_agents_install_rejects_int(self):
+        """agents.install should reject an integer."""
+        data = {"agents": {"install": 42}}
+        errors = validate_schema(data, SCHEMA)
+        assert any("Expected list" in e for e in errors)
+
+    def test_agents_install_string_rejected_in_toml(self, tmp_path):
+        """Full pipeline: agents.install as a string in TOML should fail."""
+        bad_toml = tmp_path / "bad_agents.toml"
+        bad_toml.write_text('[agents]\ninstall = "reviewer"\n')
+        with pytest.raises(ValueError, match="Schema validation failed"):
+            generate_cache(bad_toml)
+
+    def test_backward_compatible_no_agents_section(self, tmp_path):
+        """Existing TOML files without [agents] should still generate valid output."""
+        toml_file = tmp_path / "legacy.toml"
+        toml_file.write_text(textwrap.dedent("""\
+            [project]
+            name = "legacy-project"
+            stacks = ["python"]
+        """))
+        output = generate_cache(toml_file)
+        assert "TOOLKIT_PROJECT_NAME='legacy-project'" in output
+        # No TOOLKIT_AGENTS line should appear (not set in TOML)
+        assert "TOOLKIT_AGENTS" not in output
+
+    def test_validate_only_accepts_agents_section(self):
+        """CLI --validate-only should accept the [agents] section."""
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(SCRIPT),
+                "--validate-only",
+                "--toml",
+                str(SAMPLE_TOML),
+            ],
+            capture_output=True,
+            text=True,
+        )
+        assert result.returncode == 0
+        assert "Valid" in result.stdout
+
+    def test_sourceable_agents_install(self, tmp_path):
+        """Generated cache with agents.install should be valid bash."""
+        toml_file = tmp_path / "agents.toml"
+        toml_file.write_text(
+            '[agents]\ninstall = ["reviewer", "commit-check"]\n'
+        )
+        out = tmp_path / "cache.env"
+        subprocess.run(
+            [
+                sys.executable,
+                str(SCRIPT),
+                "--toml",
+                str(toml_file),
+                "--output",
+                str(out),
+            ],
+            check=True,
+        )
+        result = subprocess.run(
+            [
+                "bash",
+                "-c",
+                f'source "{out}" && echo "$TOOLKIT_AGENTS_INSTALL"',
+            ],
+            capture_output=True,
+            text=True,
+        )
+        assert result.returncode == 0
+        assert result.stdout.strip() == '["reviewer","commit-check"]'
+
+    def test_agents_install_parseable_by_jq(self, tmp_path):
+        """TOOLKIT_AGENTS_INSTALL should be parseable by jq."""
+        toml_file = tmp_path / "agents.toml"
+        toml_file.write_text(
+            '[agents]\ninstall = ["reviewer", "commit-check"]\n'
+        )
+        out = tmp_path / "cache.env"
+        subprocess.run(
+            [
+                sys.executable,
+                str(SCRIPT),
+                "--toml",
+                str(toml_file),
+                "--output",
+                str(out),
+            ],
+            check=True,
+        )
+        result = subprocess.run(
+            [
+                "bash",
+                "-c",
+                f'source "{out}" && echo "$TOOLKIT_AGENTS_INSTALL" | jq -r ".[]"',
+            ],
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode == 0:  # jq might not be installed in CI
+            lines = result.stdout.strip().split("\n")
+            assert "reviewer" in lines
+            assert "commit-check" in lines

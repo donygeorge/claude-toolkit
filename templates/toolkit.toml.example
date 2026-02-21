@@ -24,6 +24,18 @@ version_file = "VERSION"
 stacks = ["python"]
 
 # ---------------------------------------------------------------------------
+# [agents] — Agent installation configuration
+# ---------------------------------------------------------------------------
+[agents]
+# Which agents to install in .claude/agents/ (loaded into Claude's system prompt).
+# Agents NOT installed are still available on-demand via skills (e.g., /review security).
+# Values: list of agent names (without .md extension)
+# Special values: ["all"] installs all agents, ["none"] installs no agents
+# Default: ["reviewer", "commit-check"]
+# Available: reviewer, qa, security, ux, pm, docs, architect, commit-check, plan, gemini
+install = ["reviewer", "commit-check"]
+
+# ---------------------------------------------------------------------------
 # [hooks.setup] — Environment validation (runs once per session)
 # ---------------------------------------------------------------------------
 [hooks.setup]

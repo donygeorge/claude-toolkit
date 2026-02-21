@@ -127,6 +127,9 @@ SCHEMA: dict[str, dict[str, type | dict]] = {
         "app_name": str,
         "permission_sound": str,
     },
+    "agents": {
+        "install": list,
+    },
 }
 
 

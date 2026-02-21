@@ -6,6 +6,9 @@ name = "my-project"
 version_file = "VERSION"
 stacks = ["python", "ios"]
 
+[agents]
+install = ["reviewer", "commit-check"]
+
 [hooks.setup]
 python_min_version = "3.11"
 required_tools = ["ruff", "jq"]
